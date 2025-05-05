@@ -1,0 +1,37 @@
+If you have not purchased a Number Duck commercial license from File Scribe, these terms do not apply to you, and your use of the software is instead governed by the GNU Affero General Public License, version 3 (see License.txt).
+
+NUMBER DUCK API COMMERCIAL LICENSE AGREEMENT
+Copyright (c) 2012-2025 File Scribe
+
+1. LICENSE AGREEMENT 
+This document is an agreement between File Scribe ("Licensor") and Licensee regarding the use of the Number Duck API by the Licensee in development of Software Products. 
+
+2. COPYRIGHT 
+All material contained in the distribution library is Copyright © File Scribe, unless otherwise noted. 
+
+3. OWNERSHIP 
+The title and ownership of the Software and shall remain with Licensor. All rights to patents, copyrights, or any other intellectual property rights shall remain with Licensor, or their respective owner. 
+
+4. LICENSE GRANT 
+a. Licensee may use The API as part of their software products on the condition the Licensee agrees to all the terms of this license agreement.
+b. Licensee may not redistribute, transfer, sub-license or sell The API, except as included within their software products.
+c. The software products must have substantially different functionality than, and must not compete directly with, the API.
+d. The software products must not enable end users to produce separate software products that incorporate the API.
+e. Apart from the per developer fee, the Licensee may distribute these products under their own trade name, without any additional distribution, royalty or per end user fees.
+f. Modifications and new releases of The API may be made by Licensor from time to time. Modifications and new releases of The API which are made available to Licensee earlier than tweleve (12) months after the commencement date of this agreement are also covered by this agreement. Any modifications and new releases made after this date are not covered by this agreement.
+g. Any modifications made to The API by Licensee shall also be covered by this agreement. 
+
+5. FEE 
+The fee to be paid by Licensee for this agreement is based on the number of Developers that will use The API. The commencement date of this agreement is from the day that Licensor confirms this payment. 
+
+6. DISCLAIMER OF WARRANTY 
+Licensee acknowledges they have had access to The API for evaluation. The API is provided “AS IS” and any warranty, expressed or implied, including without limitation, the implied warranties of merchantability and fitness for a particular purpose and non-infringement of any third party rights are disclaimed. 
+
+7. NO LIABILITY 
+Licensee agrees that use of the Software is at their own risk. Licensee agrees that they or any third party shall not have any claim against Licensor or anyone associated directly or indirectly with Licensor for any direct, indirect, consequential, special, exemplary, punitive, and/or other damages (including with out limitation harm, injury, loss of profits, loss of data and/or business interruption) from any cause, in connection to the use and/or distribution of The API.
+
+8. MISCELLANEOUS 
+If any provision in this agreement is unenforceable or invalid it shall not affect the rest of the agreement. Licensee agrees to replace any unenforceable or invalid provision with a valid provision that upholds the intent of the provision to the greatest extent possible. The validity and interpretation of this agreement will be governed by the laws of Australia in the state of Victoria. 
+
+9. AGREEMENT 
+This agreement constitutes the complete agreement concerning this license. Any change to this agreement must be made in writing.

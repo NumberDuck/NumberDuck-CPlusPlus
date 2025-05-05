@@ -1,0 +1,2868 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>NumberDuck v3.0.0 [J140] API Reference</title>
+		<style type='text/css'>
+			body
+			{
+				font: 12px Helvetica, sans-serif;
+				color: #404040;
+				margin: auto; width: 800px;
+			}
+
+			h1, h2, h3, h4, h5
+			{
+				color: black;
+				font-family: Arial, sans-serif;
+			}
+
+			A:link {text-decoration: none}
+			A:visited {text-decoration: none}
+			A:active {text-decoration: none}
+			A:hover {text-decoration: none; color: red;}
+
+			.keyword
+			{
+				color: blue;
+				font-family: monospace;
+			}
+			.identifier
+			{
+				color: black;
+				font-family: monospace;
+			}
+
+			.functionBody
+			{
+				padding-left: 15px;
+			}
+		</style>
+</head>
+<body>
+<h1>NumberDuck v3.0.0 [J140] API Reference</h1>
+
+<!--Start-->
+<div id='classlist'>
+<a href='#Workbook'>Workbook</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>Provides read/write access to Excel .xls files.</p>
+
+<a href='#Workbook_Workbook'><span class='keyword'></span> <span class='identifier'>Workbook()</span>
+
+</a><br>
+<a href='#Workbook_~Workbook'><span class='keyword'></span> <span class='identifier'>~Workbook()</span>
+
+</a><br>
+<a href='#Workbook_Clear'><span class='keyword'>void</span> <span class='identifier'>Clear()</span>
+
+</a><br>
+<a href='#Workbook_Load'><span class='keyword'>bool</span> <span class='identifier'>Load(const char* szFileName)</span>
+
+</a><br>
+<a href='#Workbook_Save'><span class='keyword'>bool</span> <span class='identifier'>Save(const char* szFileName, Workbook::FileType eFileType)</span>
+
+</a><br>
+<a href='#Workbook_GetNumWorksheet'><span class='keyword'>unsigned int</span> <span class='identifier'>GetNumWorksheet()</span>
+
+</a><br>
+<a href='#Workbook_GetWorksheetByIndex'><span class='keyword'>Worksheet*</span> <span class='identifier'>GetWorksheetByIndex(unsigned int nIndex)</span>
+
+</a><br>
+<a href='#Workbook_CreateWorksheet'><span class='keyword'>Worksheet*</span> <span class='identifier'>CreateWorksheet()</span>
+
+</a><br>
+<a href='#Workbook_PurgeWorksheet'><span class='keyword'>void</span> <span class='identifier'>PurgeWorksheet(unsigned int nIndex)</span>
+
+</a><br>
+<a href='#Workbook_GetNumStyle'><span class='keyword'>unsigned int</span> <span class='identifier'>GetNumStyle()</span>
+
+</a><br>
+<a href='#Workbook_GetStyleByIndex'><span class='keyword'>Style*</span> <span class='identifier'>GetStyleByIndex(unsigned int nIndex)</span>
+
+</a><br>
+<a href='#Workbook_GetDefaultStyle'><span class='keyword'>Style*</span> <span class='identifier'>GetDefaultStyle()</span>
+
+</a><br>
+<a href='#Workbook_CreateStyle'><span class='keyword'>Style*</span> <span class='identifier'>CreateStyle()</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#Worksheet'>Worksheet</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>Provides access to cells and other stuff of a worksheet.</p>
+
+<a href='#Worksheet_GetName'><span class='keyword'>const char*</span> <span class='identifier'>GetName()</span>
+
+</a><br>
+<a href='#Worksheet_SetName'><span class='keyword'>bool</span> <span class='identifier'>SetName(const char* szName)</span>
+
+</a><br>
+<a href='#Worksheet_GetOrientation'><span class='keyword'>Worksheet::Orientation</span> <span class='identifier'>GetOrientation()</span>
+
+</a><br>
+<a href='#Worksheet_SetOrientation'><span class='keyword'>void</span> <span class='identifier'>SetOrientation(Worksheet::Orientation eOrientation)</span>
+
+</a><br>
+<a href='#Worksheet_GetShowGridlines'><span class='keyword'>bool</span> <span class='identifier'>GetShowGridlines()</span>
+
+</a><br>
+<a href='#Worksheet_SetShowGridlines'><span class='keyword'>void</span> <span class='identifier'>SetShowGridlines(bool bShowGridlines)</span>
+
+</a><br>
+<a href='#Worksheet_GetPrintGridlines'><span class='keyword'>bool</span> <span class='identifier'>GetPrintGridlines()</span>
+
+</a><br>
+<a href='#Worksheet_SetPrintGridlines'><span class='keyword'>void</span> <span class='identifier'>SetPrintGridlines(bool bPrintGridlines)</span>
+
+</a><br>
+<a href='#Worksheet_GetColumnWidth'><span class='keyword'>uint16_t</span> <span class='identifier'>GetColumnWidth(uint16_t nColumn)</span>
+
+</a><br>
+<a href='#Worksheet_SetColumnWidth'><span class='keyword'>void</span> <span class='identifier'>SetColumnWidth(uint16_t nColumn, uint16_t nWidth)</span>
+
+</a><br>
+<a href='#Worksheet_GetColumnHidden'><span class='keyword'>bool</span> <span class='identifier'>GetColumnHidden(uint16_t nColumn)</span>
+
+</a><br>
+<a href='#Worksheet_SetColumnHidden'><span class='keyword'>void</span> <span class='identifier'>SetColumnHidden(uint16_t nColumn, bool bHidden)</span>
+
+</a><br>
+<a href='#Worksheet_InsertColumn'><span class='keyword'>void</span> <span class='identifier'>InsertColumn(uint16_t nColumn)</span>
+
+</a><br>
+<a href='#Worksheet_DeleteColumn'><span class='keyword'>void</span> <span class='identifier'>DeleteColumn(uint16_t nColumn)</span>
+
+</a><br>
+<a href='#Worksheet_GetRowHeight'><span class='keyword'>uint16_t</span> <span class='identifier'>GetRowHeight(uint16_t nRow)</span>
+
+</a><br>
+<a href='#Worksheet_SetRowHeight'><span class='keyword'>void</span> <span class='identifier'>SetRowHeight(uint16_t nRow, uint16_t nHeight)</span>
+
+</a><br>
+<a href='#Worksheet_InsertRow'><span class='keyword'>void</span> <span class='identifier'>InsertRow(uint16_t nRow)</span>
+
+</a><br>
+<a href='#Worksheet_DeleteRow'><span class='keyword'>void</span> <span class='identifier'>DeleteRow(uint16_t nRow)</span>
+
+</a><br>
+<a href='#Worksheet_GetCellByAddress'><span class='keyword'>Cell*</span> <span class='identifier'>GetCellByAddress(const char* szAddress)</span>
+
+</a><br>
+<a href='#Worksheet_GetCell'><span class='keyword'>Cell*</span> <span class='identifier'>GetCell(uint16_t nX, uint16_t nY)</span>
+
+</a><br>
+<a href='#Worksheet_GetCellByRC'><span class='keyword'>Cell*</span> <span class='identifier'>GetCellByRC(uint16_t nRow, uint16_t nColumn)</span>
+
+</a><br>
+<a href='#Worksheet_GetNumPicture'><span class='keyword'>int</span> <span class='identifier'>GetNumPicture()</span>
+
+</a><br>
+<a href='#Worksheet_GetPictureByIndex'><span class='keyword'>Picture*</span> <span class='identifier'>GetPictureByIndex(int nIndex)</span>
+
+</a><br>
+<a href='#Worksheet_CreatePicture'><span class='keyword'>Picture*</span> <span class='identifier'>CreatePicture(const char* szFileName)</span>
+
+</a><br>
+<a href='#Worksheet_PurgePicture'><span class='keyword'>void</span> <span class='identifier'>PurgePicture(int nIndex)</span>
+
+</a><br>
+<a href='#Worksheet_GetNumChart'><span class='keyword'>int</span> <span class='identifier'>GetNumChart()</span>
+
+</a><br>
+<a href='#Worksheet_GetChartByIndex'><span class='keyword'>Chart*</span> <span class='identifier'>GetChartByIndex(int nIndex)</span>
+
+</a><br>
+<a href='#Worksheet_CreateChart'><span class='keyword'>Chart*</span> <span class='identifier'>CreateChart(Chart::Type eType)</span>
+
+</a><br>
+<a href='#Worksheet_PurgeChart'><span class='keyword'>void</span> <span class='identifier'>PurgeChart(int nIndex)</span>
+
+</a><br>
+<a href='#Worksheet_GetNumMergedCell'><span class='keyword'>int</span> <span class='identifier'>GetNumMergedCell()</span>
+
+</a><br>
+<a href='#Worksheet_GetMergedCellByIndex'><span class='keyword'>MergedCell*</span> <span class='identifier'>GetMergedCellByIndex(int nIndex)</span>
+
+</a><br>
+<a href='#Worksheet_CreateMergedCell'><span class='keyword'>MergedCell*</span> <span class='identifier'>CreateMergedCell(uint16_t nX, uint16_t nY, uint16_t nWidth, uint16_t nHeight)</span>
+
+</a><br>
+<a href='#Worksheet_PurgeMergedCell'><span class='keyword'>void</span> <span class='identifier'>PurgeMergedCell(int nIndex)</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#Cell'>Cell</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>Cell objects give access to the properties of a single cell.</p>
+
+<a href='#Cell_Equals'><span class='keyword'>bool</span> <span class='identifier'>Equals(const Cell* pCell)</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Cell_GetValue'><span class='keyword'>const Value*</span> <span class='identifier'>GetValue()</span>
+
+</a><br>
+<a href='#Cell_GetType'><span class='keyword'>Value::Type</span> <span class='identifier'>GetType()</span>
+
+</a><br>
+<a href='#Cell_Clear'><span class='keyword'>void</span> <span class='identifier'>Clear()</span>
+
+</a><br>
+<a href='#Cell_SetString'><span class='keyword'>void</span> <span class='identifier'>SetString(const char* szString)</span>
+
+</a><br>
+<a href='#Cell_GetString'><span class='keyword'>const char*</span> <span class='identifier'>GetString()</span>
+
+</a><br>
+<a href='#Cell_SetFloat'><span class='keyword'>void</span> <span class='identifier'>SetFloat(double fFloat)</span>
+
+</a><br>
+<a href='#Cell_GetFloat'><span class='keyword'>double</span> <span class='identifier'>GetFloat()</span>
+
+</a><br>
+<a href='#Cell_SetBoolean'><span class='keyword'>void</span> <span class='identifier'>SetBoolean(bool bBoolean)</span>
+
+</a><br>
+<a href='#Cell_GetBoolean'><span class='keyword'>bool</span> <span class='identifier'>GetBoolean()</span>
+
+</a><br>
+<a href='#Cell_SetFormula'><span class='keyword'>void</span> <span class='identifier'>SetFormula(const char* szFormula)</span>
+
+</a><br>
+<a href='#Cell_GetFormula'><span class='keyword'>const char*</span> <span class='identifier'>GetFormula()</span>
+
+</a><br>
+<a href='#Cell_EvaulateFormula'><span class='keyword'>const Value*</span> <span class='identifier'>EvaulateFormula()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Cell_GetStyle'><span class='keyword'>Style*</span> <span class='identifier'>GetStyle()</span>
+
+</a><br>
+<a href='#Cell_SetStyle'><span class='keyword'>bool</span> <span class='identifier'>SetStyle(Style* pStyle)</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#Value'>Value</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>A Value is an object that can contain different types of values.</p>
+
+<a href='#Value_~Value'><span class='keyword'></span> <span class='identifier'>~Value()</span>
+
+</a><br>
+<a href='#Value_Equals'><span class='keyword'>bool</span> <span class='identifier'>Equals(const Value* pValue)</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Value_GetType'><span class='keyword'>Value::Type</span> <span class='identifier'>GetType()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Value_GetString'><span class='keyword'>const char*</span> <span class='identifier'>GetString()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Value_GetFloat'><span class='keyword'>double</span> <span class='identifier'>GetFloat()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Value_GetBoolean'><span class='keyword'>bool</span> <span class='identifier'>GetBoolean()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Value_GetFormula'><span class='keyword'>const char*</span> <span class='identifier'>GetFormula()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Value_EvaulateFormula'><span class='keyword'>const Value*</span> <span class='identifier'>EvaulateFormula()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#Style'>Style</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>Used for styling cells.</p>
+
+<a href='#Style_GetFont'><span class='keyword'>Font*</span> <span class='identifier'>GetFont()</span>
+
+</a><br>
+<a href='#Style_GetHorizontalAlign'><span class='keyword'>Style::HorizontalAlign</span> <span class='identifier'>GetHorizontalAlign()</span>
+
+</a><br>
+<a href='#Style_SetHorizontalAlign'><span class='keyword'>void</span> <span class='identifier'>SetHorizontalAlign(Style::HorizontalAlign eHorizontalAlign)</span>
+
+</a><br>
+<a href='#Style_GetVerticalAlign'><span class='keyword'>Style::VerticalAlign</span> <span class='identifier'>GetVerticalAlign()</span>
+
+</a><br>
+<a href='#Style_SetVerticalAlign'><span class='keyword'>void</span> <span class='identifier'>SetVerticalAlign(Style::VerticalAlign eVerticalAlign)</span>
+
+</a><br>
+<a href='#Style_GetBackgroundColor'><span class='keyword'>Color*</span> <span class='identifier'>GetBackgroundColor(bool bCreateIfMissing)</span>
+
+</a><br>
+<a href='#Style_ClearBackgroundColor'><span class='keyword'>void</span> <span class='identifier'>ClearBackgroundColor()</span>
+
+</a><br>
+<a href='#Style_GetFillPattern'><span class='keyword'>Style::FillPattern</span> <span class='identifier'>GetFillPattern()</span>
+
+</a><br>
+<a href='#Style_SetFillPattern'><span class='keyword'>void</span> <span class='identifier'>SetFillPattern(Style::FillPattern eFillPattern)</span>
+
+</a><br>
+<a href='#Style_GetFillPatternColor'><span class='keyword'>Color*</span> <span class='identifier'>GetFillPatternColor(bool bCreateIfMissing)</span>
+
+</a><br>
+<a href='#Style_ClearFillPatternColor'><span class='keyword'>void</span> <span class='identifier'>ClearFillPatternColor()</span>
+
+</a><br>
+<a href='#Style_GetTopBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetTopBorderLine()</span>
+
+</a><br>
+<a href='#Style_GetRightBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetRightBorderLine()</span>
+
+</a><br>
+<a href='#Style_GetBottomBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetBottomBorderLine()</span>
+
+</a><br>
+<a href='#Style_GetLeftBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetLeftBorderLine()</span>
+
+</a><br>
+<a href='#Style_GetFormat'><span class='keyword'>const char*</span> <span class='identifier'>GetFormat()</span>
+
+</a><br>
+<a href='#Style_SetFormat'><span class='keyword'>void</span> <span class='identifier'>SetFormat(const char* szFormat)</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#Color'>Color</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>RGB color information. Used by the <em>Style</em> class.</p>
+
+<a href='#Color_Color'><span class='keyword'></span> <span class='identifier'>Color(unsigned char nRed, unsigned char nGreen, unsigned char nBlue)</span>
+
+</a><br>
+<a href='#Color_~Color'><span class='keyword'></span> <span class='identifier'>~Color()</span>
+
+</a><br>
+<a href='#Color_Equals'><span class='keyword'>bool</span> <span class='identifier'>Equals(const Color* pColor)</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Color_Set'><span class='keyword'>void</span> <span class='identifier'>Set(unsigned char nRed, unsigned char nGreen, unsigned char nBlue)</span>
+
+</a><br>
+<a href='#Color_SetFromRgba'><span class='keyword'>void</span> <span class='identifier'>SetFromRgba(unsigned int nRgba)</span>
+
+</a><br>
+<a href='#Color_SetFromColor'><span class='keyword'>void</span> <span class='identifier'>SetFromColor(const Color* pColor)</span>
+
+</a><br>
+<a href='#Color_GetRed'><span class='keyword'>unsigned char</span> <span class='identifier'>GetRed()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Color_SetRed'><span class='keyword'>void</span> <span class='identifier'>SetRed(unsigned char nRed)</span>
+
+</a><br>
+<a href='#Color_GetGreen'><span class='keyword'>unsigned char</span> <span class='identifier'>GetGreen()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Color_SetGreen'><span class='keyword'>void</span> <span class='identifier'>SetGreen(unsigned char nGreen)</span>
+
+</a><br>
+<a href='#Color_GetBlue'><span class='keyword'>unsigned char</span> <span class='identifier'>GetBlue()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Color_SetBlue'><span class='keyword'>void</span> <span class='identifier'>SetBlue(unsigned char nBlue)</span>
+
+</a><br>
+<a href='#Color_GetRgba'><span class='keyword'>unsigned int</span> <span class='identifier'>GetRgba()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#Picture'>Picture</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>Represents an embedded picture inside a worksheet.</p>
+
+<a href='#Picture_GetX'><span class='keyword'>unsigned int</span> <span class='identifier'>GetX()</span>
+
+</a><br>
+<a href='#Picture_SetX'><span class='keyword'>bool</span> <span class='identifier'>SetX(unsigned int nX)</span>
+
+</a><br>
+<a href='#Picture_GetY'><span class='keyword'>unsigned int</span> <span class='identifier'>GetY()</span>
+
+</a><br>
+<a href='#Picture_SetY'><span class='keyword'>bool</span> <span class='identifier'>SetY(unsigned int nY)</span>
+
+</a><br>
+<a href='#Picture_GetSubX'><span class='keyword'>unsigned int</span> <span class='identifier'>GetSubX()</span>
+
+</a><br>
+<a href='#Picture_SetSubX'><span class='keyword'>void</span> <span class='identifier'>SetSubX(unsigned int nSubX)</span>
+
+</a><br>
+<a href='#Picture_GetSubY'><span class='keyword'>unsigned int</span> <span class='identifier'>GetSubY()</span>
+
+</a><br>
+<a href='#Picture_SetSubY'><span class='keyword'>void</span> <span class='identifier'>SetSubY(unsigned int nSubY)</span>
+
+</a><br>
+<a href='#Picture_GetWidth'><span class='keyword'>unsigned int</span> <span class='identifier'>GetWidth()</span>
+
+</a><br>
+<a href='#Picture_SetWidth'><span class='keyword'>void</span> <span class='identifier'>SetWidth(unsigned int nWidth)</span>
+
+</a><br>
+<a href='#Picture_GetHeight'><span class='keyword'>unsigned int</span> <span class='identifier'>GetHeight()</span>
+
+</a><br>
+<a href='#Picture_SetHeight'><span class='keyword'>void</span> <span class='identifier'>SetHeight(unsigned int nHeight)</span>
+
+</a><br>
+<a href='#Picture_GetUrl'><span class='keyword'>const char*</span> <span class='identifier'>GetUrl()</span>
+
+</a><br>
+<a href='#Picture_SetUrl'><span class='keyword'>void</span> <span class='identifier'>SetUrl(const char* szUrl)</span>
+
+</a><br>
+<a href='#Picture_GetBlob'><span class='keyword'>Blob*</span> <span class='identifier'>GetBlob()</span>
+
+</a><br>
+<a href='#Picture_GetFormat'><span class='keyword'>Picture::Format</span> <span class='identifier'>GetFormat()</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#Chart'>Chart</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>Represents an embedded chart inside a worksheet.</p>
+
+<a href='#Chart_GetX'><span class='keyword'>unsigned int</span> <span class='identifier'>GetX()</span>
+
+</a><br>
+<a href='#Chart_SetX'><span class='keyword'>bool</span> <span class='identifier'>SetX(unsigned int nX)</span>
+
+</a><br>
+<a href='#Chart_GetY'><span class='keyword'>unsigned int</span> <span class='identifier'>GetY()</span>
+
+</a><br>
+<a href='#Chart_SetY'><span class='keyword'>bool</span> <span class='identifier'>SetY(unsigned int nY)</span>
+
+</a><br>
+<a href='#Chart_GetSubX'><span class='keyword'>unsigned int</span> <span class='identifier'>GetSubX()</span>
+
+</a><br>
+<a href='#Chart_SetSubX'><span class='keyword'>void</span> <span class='identifier'>SetSubX(unsigned int nSubX)</span>
+
+</a><br>
+<a href='#Chart_GetSubY'><span class='keyword'>unsigned int</span> <span class='identifier'>GetSubY()</span>
+
+</a><br>
+<a href='#Chart_SetSubY'><span class='keyword'>void</span> <span class='identifier'>SetSubY(unsigned int nSubY)</span>
+
+</a><br>
+<a href='#Chart_GetWidth'><span class='keyword'>unsigned int</span> <span class='identifier'>GetWidth()</span>
+
+</a><br>
+<a href='#Chart_SetWidth'><span class='keyword'>void</span> <span class='identifier'>SetWidth(unsigned int nWidth)</span>
+
+</a><br>
+<a href='#Chart_GetHeight'><span class='keyword'>unsigned int</span> <span class='identifier'>GetHeight()</span>
+
+</a><br>
+<a href='#Chart_SetHeight'><span class='keyword'>void</span> <span class='identifier'>SetHeight(unsigned int nHeight)</span>
+
+</a><br>
+<a href='#Chart_GetType'><span class='keyword'>Chart::Type</span> <span class='identifier'>GetType()</span>
+
+</a><br>
+<a href='#Chart_SetType'><span class='keyword'>void</span> <span class='identifier'>SetType(Chart::Type eType)</span>
+
+</a><br>
+<a href='#Chart_GetNumSeries'><span class='keyword'>unsigned int</span> <span class='identifier'>GetNumSeries()</span>
+
+</a><br>
+<a href='#Chart_GetSeriesByIndex'><span class='keyword'>Series*</span> <span class='identifier'>GetSeriesByIndex(unsigned int nIndex)</span>
+
+</a><br>
+<a href='#Chart_CreateSeries'><span class='keyword'>Series*</span> <span class='identifier'>CreateSeries(const char* szValues)</span>
+
+</a><br>
+<a href='#Chart_PurgeSeries'><span class='keyword'>void</span> <span class='identifier'>PurgeSeries(unsigned int nIndex)</span>
+
+</a><br>
+<a href='#Chart_GetCategories'><span class='keyword'>const char*</span> <span class='identifier'>GetCategories()</span>
+
+</a><br>
+<a href='#Chart_SetCategories'><span class='keyword'>bool</span> <span class='identifier'>SetCategories(const char* szCategories)</span>
+
+</a><br>
+<a href='#Chart_GetTitle'><span class='keyword'>const char*</span> <span class='identifier'>GetTitle()</span>
+
+</a><br>
+<a href='#Chart_SetTitle'><span class='keyword'>void</span> <span class='identifier'>SetTitle(const char* szTitle)</span>
+
+</a><br>
+<a href='#Chart_GetHorizontalAxisLabel'><span class='keyword'>const char*</span> <span class='identifier'>GetHorizontalAxisLabel()</span>
+
+</a><br>
+<a href='#Chart_SetHorizontalAxisLabel'><span class='keyword'>void</span> <span class='identifier'>SetHorizontalAxisLabel(const char* szHorizontalAxisLabel)</span>
+
+</a><br>
+<a href='#Chart_GetVerticalAxisLabel'><span class='keyword'>const char*</span> <span class='identifier'>GetVerticalAxisLabel()</span>
+
+</a><br>
+<a href='#Chart_SetVerticalAxisLabel'><span class='keyword'>void</span> <span class='identifier'>SetVerticalAxisLabel(const char* szVerticalAxisLabel)</span>
+
+</a><br>
+<a href='#Chart_GetLegend'><span class='keyword'>Legend*</span> <span class='identifier'>GetLegend()</span>
+
+</a><br>
+<a href='#Chart_GetFrameBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetFrameBorderLine()</span>
+
+</a><br>
+<a href='#Chart_GetFrameFill'><span class='keyword'>Fill*</span> <span class='identifier'>GetFrameFill()</span>
+
+</a><br>
+<a href='#Chart_GetPlotBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetPlotBorderLine()</span>
+
+</a><br>
+<a href='#Chart_GetPlotFill'><span class='keyword'>Fill*</span> <span class='identifier'>GetPlotFill()</span>
+
+</a><br>
+<a href='#Chart_GetHorizontalAxisLine'><span class='keyword'>Line*</span> <span class='identifier'>GetHorizontalAxisLine()</span>
+
+</a><br>
+<a href='#Chart_GetHorizontalGridLine'><span class='keyword'>Line*</span> <span class='identifier'>GetHorizontalGridLine()</span>
+
+</a><br>
+<a href='#Chart_GetVerticalAxisLine'><span class='keyword'>Line*</span> <span class='identifier'>GetVerticalAxisLine()</span>
+
+</a><br>
+<a href='#Chart_GetVerticalGridLine'><span class='keyword'>Line*</span> <span class='identifier'>GetVerticalGridLine()</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#Series'>Series</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>Represents a data series inside this <em>Chart</em>.</p>
+
+<a href='#Series_GetName'><span class='keyword'>const char*</span> <span class='identifier'>GetName()</span>
+
+</a><br>
+<a href='#Series_SetName'><span class='keyword'>bool</span> <span class='identifier'>SetName(const char* szName)</span>
+
+</a><br>
+<a href='#Series_GetValues'><span class='keyword'>const char*</span> <span class='identifier'>GetValues()</span>
+
+</a><br>
+<a href='#Series_SetValues'><span class='keyword'>bool</span> <span class='identifier'>SetValues(const char* szValues)</span>
+
+</a><br>
+<a href='#Series_GetLine'><span class='keyword'>Line*</span> <span class='identifier'>GetLine()</span>
+
+</a><br>
+<a href='#Series_GetFill'><span class='keyword'>Fill*</span> <span class='identifier'>GetFill()</span>
+
+</a><br>
+<a href='#Series_GetMarker'><span class='keyword'>Marker*</span> <span class='identifier'>GetMarker()</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#Legend'>Legend</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>Represents the legend inside of a <em>Chart</em>.</p>
+
+<a href='#Legend_GetHidden'><span class='keyword'>bool</span> <span class='identifier'>GetHidden()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Legend_SetHidden'><span class='keyword'>void</span> <span class='identifier'>SetHidden(bool bHidden)</span>
+
+</a><br>
+<a href='#Legend_GetBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetBorderLine()</span>
+
+</a><br>
+<a href='#Legend_GetFill'><span class='keyword'>Fill*</span> <span class='identifier'>GetFill()</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#Font'>Font</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>Used in various places to style text.</p>
+
+<a href='#Font_GetName'><span class='keyword'>const char*</span> <span class='identifier'>GetName()</span>
+
+</a><br>
+<a href='#Font_SetName'><span class='keyword'>void</span> <span class='identifier'>SetName(const char* szName)</span>
+
+</a><br>
+<a href='#Font_GetSize'><span class='keyword'>unsigned char</span> <span class='identifier'>GetSize()</span>
+
+</a><br>
+<a href='#Font_SetSize'><span class='keyword'>void</span> <span class='identifier'>SetSize(unsigned char nSize)</span>
+
+</a><br>
+<a href='#Font_GetColor'><span class='keyword'>Color*</span> <span class='identifier'>GetColor(bool bCreateIfMissing)</span>
+
+</a><br>
+<a href='#Font_ClearColor'><span class='keyword'>void</span> <span class='identifier'>ClearColor()</span>
+
+</a><br>
+<a href='#Font_GetBold'><span class='keyword'>bool</span> <span class='identifier'>GetBold()</span>
+
+</a><br>
+<a href='#Font_SetBold'><span class='keyword'>void</span> <span class='identifier'>SetBold(bool bBold)</span>
+
+</a><br>
+<a href='#Font_GetItalic'><span class='keyword'>bool</span> <span class='identifier'>GetItalic()</span>
+
+</a><br>
+<a href='#Font_SetItalic'><span class='keyword'>void</span> <span class='identifier'>SetItalic(bool bItalic)</span>
+
+</a><br>
+<a href='#Font_GetUnderline'><span class='keyword'>Font::Underline</span> <span class='identifier'>GetUnderline()</span>
+
+</a><br>
+<a href='#Font_SetUnderline'><span class='keyword'>void</span> <span class='identifier'>SetUnderline(Font::Underline eUnderline)</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#Line'>Line</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>Lines are used to style different sections of <em>Chart</em>s.</p>
+
+<a href='#Line_Equals'><span class='keyword'>bool</span> <span class='identifier'>Equals(const Line* pLine)</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Line_GetType'><span class='keyword'>Line::Type</span> <span class='identifier'>GetType()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Line_SetType'><span class='keyword'>void</span> <span class='identifier'>SetType(Line::Type eType)</span>
+
+</a><br>
+<a href='#Line_GetColor'><span class='keyword'>Color*</span> <span class='identifier'>GetColor()</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#Fill'>Fill</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>Used to modify the fill color of different sections of <em>Chart</em>s.</p>
+
+<a href='#Fill_Equals'><span class='keyword'>bool</span> <span class='identifier'>Equals(const Fill* pFill)</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Fill_GetType'><span class='keyword'>Fill::Type</span> <span class='identifier'>GetType()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Fill_SetType'><span class='keyword'>void</span> <span class='identifier'>SetType(Fill::Type eType)</span>
+
+</a><br>
+<a href='#Fill_GetForegroundColor'><span class='keyword'>Color*</span> <span class='identifier'>GetForegroundColor()</span>
+
+</a><br>
+<a href='#Fill_GetBackgroundColor'><span class='keyword'>Color*</span> <span class='identifier'>GetBackgroundColor()</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#Marker'>Marker</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>Marker are used to style markers on Line <em>Chart</em>s.</p>
+
+<a href='#Marker_Equals'><span class='keyword'>bool</span> <span class='identifier'>Equals(const Marker* pMarker)</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Marker_GetType'><span class='keyword'>Marker::Type</span> <span class='identifier'>GetType()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Marker_SetType'><span class='keyword'>void</span> <span class='identifier'>SetType(Marker::Type eType)</span>
+
+</a><br>
+<a href='#Marker_GetFillColor'><span class='keyword'>Color*</span> <span class='identifier'>GetFillColor(bool bCreateIfMissing)</span>
+
+</a><br>
+<a href='#Marker_SetFillColor'><span class='keyword'>void</span> <span class='identifier'>SetFillColor(const Color* pColor)</span>
+
+</a><br>
+<a href='#Marker_ClearFillColor'><span class='keyword'>void</span> <span class='identifier'>ClearFillColor()</span>
+
+</a><br>
+<a href='#Marker_GetBorderColor'><span class='keyword'>Color*</span> <span class='identifier'>GetBorderColor(bool bCreateIfMissing)</span>
+
+</a><br>
+<a href='#Marker_SetBorderColor'><span class='keyword'>void</span> <span class='identifier'>SetBorderColor(const Color* pColor)</span>
+
+</a><br>
+<a href='#Marker_ClearBorderColor'><span class='keyword'>void</span> <span class='identifier'>ClearBorderColor()</span>
+
+</a><br>
+<a href='#Marker_GetSize'><span class='keyword'>int</span> <span class='identifier'>GetSize()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#Marker_SetSize'><span class='keyword'>void</span> <span class='identifier'>SetSize(int nSize)</span>
+
+</a><br>
+</div>
+<br><br>
+<a href='#MergedCell'>MergedCell</a>
+<div style='padding: 0px; padding-left: 20px;'>
+<p>Allows you to modify merged cells that have been previously defined.</p>
+
+<a href='#MergedCell_GetX'><span class='keyword'>unsigned int</span> <span class='identifier'>GetX()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#MergedCell_SetX'><span class='keyword'>void</span> <span class='identifier'>SetX(unsigned int nX)</span>
+
+</a><br>
+<a href='#MergedCell_GetY'><span class='keyword'>unsigned int</span> <span class='identifier'>GetY()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#MergedCell_SetY'><span class='keyword'>void</span> <span class='identifier'>SetY(unsigned int nY)</span>
+
+</a><br>
+<a href='#MergedCell_GetWidth'><span class='keyword'>unsigned int</span> <span class='identifier'>GetWidth()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#MergedCell_SetWidth'><span class='keyword'>void</span> <span class='identifier'>SetWidth(unsigned int nWidth)</span>
+
+</a><br>
+<a href='#MergedCell_GetHeight'><span class='keyword'>unsigned int</span> <span class='identifier'>GetHeight()</span>
+<span class='keyword'>const</span>
+
+</a><br>
+<a href='#MergedCell_SetHeight'><span class='keyword'>void</span> <span class='identifier'>SetHeight(unsigned int nHeight)</span>
+
+</a><br>
+</div>
+<br><br>
+</div>
+
+<h2><a id='Workbook'>Workbook</a></h2>
+<div><p>Provides read/write access to Excel .xls files.</p>
+</div>
+<h3><a id='Workbook_Workbook'><span class='keyword'></span> <span class='identifier'>Workbook()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Unassuming constructor.</p>
+
+
+</div>
+<h3><a id='Workbook_~Workbook'><span class='keyword'></span> <span class='identifier'>~Workbook()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Resolute destructor.</p>
+
+
+</div>
+<h3><a id='Workbook_Clear'><span class='keyword'>void</span> <span class='identifier'>Clear()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Clears this workbook back to defaults. The same result as deleting the object and constructing it again.</p>
+
+
+</div>
+<h3><a id='Workbook_Load'><span class='keyword'>bool</span> <span class='identifier'>Load(const char* szFileName)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Loads a .xls file from disk.</p>
+
+<p>Currently only simple Excel .xls formatted files are supported.</p>
+
+<p>Returns <em>false</em> on error.</p>
+
+<p>A common error in loading is that the file is locked because it is already open in Excel.</p>
+
+
+</div>
+<h3><a id='Workbook_Save'><span class='keyword'>bool</span> <span class='identifier'>Save(const char* szFileName, Workbook::FileType eFileType)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Saves the current workbook to disk in Excel .xls format.</p>
+
+<p>Possible file types are:</p>
+
+<ul>
+<li>Workbook::TYPE_XLS</li>
+<li>Workbook::TYPE&#95;XLSX</li>
+</ul>
+
+<p>Returns <em>false</em> on error.</p>
+
+<p>Eg: pWorkbook->Save("BananaReport.xls");</p>
+
+
+</div>
+<h3><a id='Workbook_GetNumWorksheet'><span class='keyword'>unsigned int</span> <span class='identifier'>GetNumWorksheet()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the number of worksheets available.</p>
+
+
+</div>
+<h3><a id='Workbook_GetWorksheetByIndex'><span class='keyword'>Worksheet*</span> <span class='identifier'>GetWorksheetByIndex(unsigned int nIndex)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Worksheet</em> from the given index.</p>
+
+<p>Returns <em>NULL</em> if the given index is out of range.</p>
+
+
+</div>
+<h3><a id='Workbook_CreateWorksheet'><span class='keyword'>Worksheet*</span> <span class='identifier'>CreateWorksheet()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Creates a new <em>Worksheet</em> and returns a pointer to it.</p>
+
+<p>If the workbook already has the maximum allowed number of worksheets,
+this function returns null.</p>
+
+
+</div>
+<h3><a id='Workbook_PurgeWorksheet'><span class='keyword'>void</span> <span class='identifier'>PurgeWorksheet(unsigned int nIndex)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Deletes the <em>Worksheet</em> at the given index.</p>
+
+
+</div>
+<h3><a id='Workbook_GetNumStyle'><span class='keyword'>unsigned int</span> <span class='identifier'>GetNumStyle()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the number of existing <em>Styles</em> available in this <em>Workbook</em>.</p>
+
+<p>More styles may be created with the <em>CreateStyle</em> function.</p>
+
+
+</div>
+<h3><a id='Workbook_GetStyleByIndex'><span class='keyword'>Style*</span> <span class='identifier'>GetStyleByIndex(unsigned int nIndex)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the <em>Style</em> at the given index.</p>
+
+<p>Returns <em>NULL</em> if you give an out of range index like a silly person.</p>
+
+
+</div>
+<h3><a id='Workbook_GetDefaultStyle'><span class='keyword'>Style*</span> <span class='identifier'>GetDefaultStyle()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the default <em>Style</em> for this <em>Workbook</em>.</p>
+
+<p>This is a simple wrapper for GetStyleByIndex(0).</p>
+
+
+</div>
+<h3><a id='Workbook_CreateStyle'><span class='keyword'>Style*</span> <span class='identifier'>CreateStyle()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Creates a new <em>Style</em> and returns a pointer to it.</p>
+
+<p>Using this pointer you can set all the pretties for a <em>Cell</em>.</p>
+
+
+</div>
+<h2><a id='Worksheet'>Worksheet</a></h2>
+<div><p>Provides access to cells and other stuff of a worksheet.</p>
+</div>
+<h3><a id='Worksheet_GetName'><span class='keyword'>const char*</span> <span class='identifier'>GetName()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the name of the worksheet in UTF8.</p>
+
+
+</div>
+<h3><a id='Worksheet_SetName'><span class='keyword'>bool</span> <span class='identifier'>SetName(const char* szName)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the name of the worksheet. Returns false if the name is already in use by another <em>Worksheet</em>.</p>
+
+<p><em>szName</em> is a UTF8 string.</p>
+
+
+</div>
+<h3><a id='Worksheet_GetOrientation'><span class='keyword'>Worksheet::Orientation</span> <span class='identifier'>GetOrientation()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the orientation of the worksheet for printing.</p>
+
+<p>Possible orientations are:</p>
+
+<ul>
+<li>Worksheet::ORIENTATION_PORTRAIT</li>
+<li>Worksheet::ORIENTATION_LANDSCAPE</li>
+</ul>
+
+
+</div>
+<h3><a id='Worksheet_SetOrientation'><span class='keyword'>void</span> <span class='identifier'>SetOrientation(Worksheet::Orientation eOrientation)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the page orientation for printing.</p>
+
+<p>See Worksheet::SetOrientation for a list of possible orientations.</p>
+
+
+</div>
+<h3><a id='Worksheet_GetShowGridlines'><span class='keyword'>bool</span> <span class='identifier'>GetShowGridlines()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns true if grid lines are shown.</p>
+
+
+</div>
+<h3><a id='Worksheet_SetShowGridlines'><span class='keyword'>void</span> <span class='identifier'>SetShowGridlines(bool bShowGridlines)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets if grid lines will be shown.</p>
+
+
+</div>
+<h3><a id='Worksheet_GetPrintGridlines'><span class='keyword'>bool</span> <span class='identifier'>GetPrintGridlines()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns true if grid lines are printed.</p>
+
+
+</div>
+<h3><a id='Worksheet_SetPrintGridlines'><span class='keyword'>void</span> <span class='identifier'>SetPrintGridlines(bool bPrintGridlines)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets if grid lines will be printed.</p>
+
+
+</div>
+<h3><a id='Worksheet_GetColumnWidth'><span class='keyword'>uint16_t</span> <span class='identifier'>GetColumnWidth(uint16_t nColumn)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the width of the given column in pixels.</p>
+
+
+</div>
+<h3><a id='Worksheet_SetColumnWidth'><span class='keyword'>void</span> <span class='identifier'>SetColumnWidth(uint16_t nColumn, uint16_t nWidth)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the width of the column in pixels.</p>
+
+
+</div>
+<h3><a id='Worksheet_GetColumnHidden'><span class='keyword'>bool</span> <span class='identifier'>GetColumnHidden(uint16_t nColumn)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns true if the given column is hidden.</p>
+
+
+</div>
+<h3><a id='Worksheet_SetColumnHidden'><span class='keyword'>void</span> <span class='identifier'>SetColumnHidden(uint16_t nColumn, bool bHidden)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Allows you to show or hide the given column.</p>
+
+
+</div>
+<h3><a id='Worksheet_InsertColumn'><span class='keyword'>void</span> <span class='identifier'>InsertColumn(uint16_t nColumn)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Inserts a column before the given one.</p>
+
+<p>The 255th column is removed to make room for it.</p>
+
+
+</div>
+<h3><a id='Worksheet_DeleteColumn'><span class='keyword'>void</span> <span class='identifier'>DeleteColumn(uint16_t nColumn)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Deletes the given column.</p>
+
+
+</div>
+<h3><a id='Worksheet_GetRowHeight'><span class='keyword'>uint16_t</span> <span class='identifier'>GetRowHeight(uint16_t nRow)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the height of the given row in pixels.</p>
+
+
+</div>
+<h3><a id='Worksheet_SetRowHeight'><span class='keyword'>void</span> <span class='identifier'>SetRowHeight(uint16_t nRow, uint16_t nHeight)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the pixel height of the given row of the worksheet.</p>
+
+
+</div>
+<h3><a id='Worksheet_InsertRow'><span class='keyword'>void</span> <span class='identifier'>InsertRow(uint16_t nRow)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Inserts a row before the given one.</p>
+
+<p>The 65535th row is removed to make room for it.</p>
+
+
+</div>
+<h3><a id='Worksheet_DeleteRow'><span class='keyword'>void</span> <span class='identifier'>DeleteRow(uint16_t nRow)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Deletes the given row.</p>
+
+
+</div>
+<h3><a id='Worksheet_GetCellByAddress'><span class='keyword'>Cell*</span> <span class='identifier'>GetCellByAddress(const char* szAddress)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the <em>Cell</em> at the address given.</p>
+
+<p>Eg: pWorksheet->GetCell("B5"); </p>
+
+
+</div>
+<h3><a id='Worksheet_GetCell'><span class='keyword'>Cell*</span> <span class='identifier'>GetCell(uint16_t nX, uint16_t nY)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the <em>Cell</em> at the zero based coordinates given.</p>
+
+<p>Eg: pWorkSheet->GetCell(1, 4); // same as pWorksheet->GetCell("B5");</p>
+
+
+</div>
+<h3><a id='Worksheet_GetCellByRC'><span class='keyword'>Cell*</span> <span class='identifier'>GetCellByRC(uint16_t nRow, uint16_t nColumn)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the <em>Cell</em> at the RC coordinates given.</p>
+
+<p>Eg: pWorkSheet->GetCell(1, 1); // same as pWorksheet->GetCell("A1");</p>
+
+
+</div>
+<h3><a id='Worksheet_GetNumPicture'><span class='keyword'>int</span> <span class='identifier'>GetNumPicture()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the number of pictures embedded in this worksheet.</p>
+
+
+</div>
+<h3><a id='Worksheet_GetPictureByIndex'><span class='keyword'>Picture*</span> <span class='identifier'>GetPictureByIndex(int nIndex)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Picture</em> from the given index.</p>
+
+<p>Returns <em>NULL</em> if the given index is out of range.</p>
+
+
+</div>
+<h3><a id='Worksheet_CreatePicture'><span class='keyword'>Picture*</span> <span class='identifier'>CreatePicture(const char* szFileName)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Creates a new <em>Picture</em> and returns a pointer to it.</p>
+
+<p><em>szFileName</em> is the path to a PNG or JPEG file.</p>
+
+<p>Returns NULL if <em>szFileName</em> file cannout be found or is the wrong format.</p>
+
+
+</div>
+<h3><a id='Worksheet_PurgePicture'><span class='keyword'>void</span> <span class='identifier'>PurgePicture(int nIndex)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Deletes the <em>Picture</em> at the given index.</p>
+
+
+</div>
+<h3><a id='Worksheet_GetNumChart'><span class='keyword'>int</span> <span class='identifier'>GetNumChart()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the number of charts embedded in this worksheet.</p>
+
+
+</div>
+<h3><a id='Worksheet_GetChartByIndex'><span class='keyword'>Chart*</span> <span class='identifier'>GetChartByIndex(int nIndex)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Chart</em> from the given index.</p>
+
+<p>Returns <em>NULL</em> if the given index is out of range.</p>
+
+
+</div>
+<h3><a id='Worksheet_CreateChart'><span class='keyword'>Chart*</span> <span class='identifier'>CreateChart(Chart::Type eType)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Creates a new <em>Chart</em> and returns a pointer to it.</p>
+
+<p>See Chart::GetType for a list of possible types.</p>
+
+<p>Eg: pWorksheet->CreateChart(Chart::TYPE_AREA);</p>
+
+
+</div>
+<h3><a id='Worksheet_PurgeChart'><span class='keyword'>void</span> <span class='identifier'>PurgeChart(int nIndex)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Deletes the <em>Chart</em> at the given index.</p>
+
+
+</div>
+<h3><a id='Worksheet_GetNumMergedCell'><span class='keyword'>int</span> <span class='identifier'>GetNumMergedCell()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the number of merged cells in this worksheet.</p>
+
+
+</div>
+<h3><a id='Worksheet_GetMergedCellByIndex'><span class='keyword'>MergedCell*</span> <span class='identifier'>GetMergedCellByIndex(int nIndex)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>MergedCell</em> from the given index.</p>
+
+<p>Returns <em>NULL</em> if the given index is out of range.</p>
+
+
+</div>
+<h3><a id='Worksheet_CreateMergedCell'><span class='keyword'>MergedCell*</span> <span class='identifier'>CreateMergedCell(uint16_t nX, uint16_t nY, uint16_t nWidth, uint16_t nHeight)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Creates a new <em>MergedCell</em> and returns a pointer to it.</p>
+
+<p>Returns NULL if the given coordinates are out of range.</p>
+
+
+</div>
+<h3><a id='Worksheet_PurgeMergedCell'><span class='keyword'>void</span> <span class='identifier'>PurgeMergedCell(int nIndex)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Deletes the <em>MergedCell</em> at the given index, unmerging the cells.</p>
+
+
+</div>
+<h2><a id='Cell'>Cell</a></h2>
+<div><p>Cell objects give access to the properties of a single cell.
+This is all pretty straightforward right?</p>
+</div>
+<h3><a id='Cell_Equals'><span class='keyword'>bool</span> <span class='identifier'>Equals(const Cell* pCell)</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Comparison function, returns true if this cell matches the one given.</p>
+
+<p>Eg: If both cells contain the same number.</p>
+
+
+</div>
+<h3><a id='Cell_GetValue'><span class='keyword'>const Value*</span> <span class='identifier'>GetValue()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the value in this cell.</p>
+
+<p>Most of the time you will not need this, unless you want to easily compare
+the result of a formula against a cell.</p>
+
+
+</div>
+<h3><a id='Cell_GetType'><span class='keyword'>Value::Type</span> <span class='identifier'>GetType()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the type of the contents of this cell.</p>
+
+<p>Possible types are:</p>
+
+<ul>
+<li>Value::TYPE_EMPTY</li>
+<li>Value::TYPE_STRING</li>
+<li>Value::TYPE_FLOAT</li>
+<li>Value::TYPE_BOOLEAN</li>
+<li>Value::TYPE_FORMULA</li>
+</ul>
+
+
+</div>
+<h3><a id='Cell_Clear'><span class='keyword'>void</span> <span class='identifier'>Clear()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Clears this cell back to a pristine untouched state.</p>
+
+
+</div>
+<h3><a id='Cell_SetString'><span class='keyword'>void</span> <span class='identifier'>SetString(const char* szString)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Stores the given string in the cell.</p>
+
+<p>A cell may only store a single type of value at a time, eg: string, float, boolean, formula etc.</p>
+
+
+</div>
+<h3><a id='Cell_GetString'><span class='keyword'>const char*</span> <span class='identifier'>GetString()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the string stored in this cell.</p>
+
+<p>If the cell type is not TYPE<em>STRING this function will return an empty string. Use _GetType</em> to check.</p>
+
+
+</div>
+<h3><a id='Cell_SetFloat'><span class='keyword'>void</span> <span class='identifier'>SetFloat(double fFloat)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Stores the given float in the cell.</p>
+
+<p>A cell may only store a single type of value at a time, eg: string, float, boolean, formula etc.</p>
+
+
+</div>
+<h3><a id='Cell_GetFloat'><span class='keyword'>double</span> <span class='identifier'>GetFloat()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the float stored in this cell.</p>
+
+<p>If the cell type is not TYPE<em>FLOAT this function will return 0.0. Use _GetType</em> to check.</p>
+
+
+</div>
+<h3><a id='Cell_SetBoolean'><span class='keyword'>void</span> <span class='identifier'>SetBoolean(bool bBoolean)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Stores the given boolean in the cell.</p>
+
+<p>A cell may only store a single type of value at a time, eg: string, float, boolean, formula etc.</p>
+
+
+</div>
+<h3><a id='Cell_GetBoolean'><span class='keyword'>bool</span> <span class='identifier'>GetBoolean()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the boolean stored in this cell.</p>
+
+<p>If the cell type is not TYPE<em>BOOLEAN this function will return false. Use _GetType</em> to check.</p>
+
+
+</div>
+<h3><a id='Cell_SetFormula'><span class='keyword'>void</span> <span class='identifier'>SetFormula(const char* szFormula)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Stores the given formula in the cell.</p>
+
+<p>A cell may only store a single type of value at a time, eg: string, float, boolean, formula etc.</p>
+
+<p>Eg: pCell->SetFormula("=SUM(A1:A5)");</p>
+
+
+</div>
+<h3><a id='Cell_GetFormula'><span class='keyword'>const char*</span> <span class='identifier'>GetFormula()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the formula stored in this cell. The formula will be prefixed with "=".</p>
+
+<p>If the cell type is not TYPE<em>FORMULA this function will return "=". Use _GetType</em> to check.</p>
+
+
+</div>
+<h3><a id='Cell_EvaulateFormula'><span class='keyword'>const Value*</span> <span class='identifier'>EvaulateFormula()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Evaluates the formula stored in this cell and returns the result as a <em>Value</em>.</p>
+
+<p>If the cell type is not TYPE<em>FORMULA this function will return a _Value</em> of TYPE<em>ERROR. Use _GetType</em> to check.</p>
+
+
+</div>
+<h3><a id='Cell_GetStyle'><span class='keyword'>Style*</span> <span class='identifier'>GetStyle()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Gets the current <em>Style</em> applied to this cell.</p>
+
+<p>Compare against <em>Workbook::GetDefaultStyle</em> to see if this cell is using default styling.</p>
+
+
+</div>
+<h3><a id='Cell_SetStyle'><span class='keyword'>bool</span> <span class='identifier'>SetStyle(Style* pStyle)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the <em>Style</em> used by this cell.</p>
+
+<p>Use <em>Workbook::CreateStyle</em> to create a new style.</p>
+
+<p>Or use <em>Cell::GetStyle</em> or <em>Workbook::GetStyleByIndex</em> to use an existing style.</p>
+
+<p>Returns false on error, usually if you try to pass in a <em>NULL</em> pointer or a <em>Style</em> that comes from a different workbook.</p>
+
+
+</div>
+<h2><a id='Value'>Value</a></h2>
+<div><p>A Value is an object that can contain different types of values.</p>
+</div>
+<h3><a id='Value_~Value'><span class='keyword'></span> <span class='identifier'>~Value()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>HAX!!! destructor.</p>
+
+
+</div>
+<h3><a id='Value_Equals'><span class='keyword'>bool</span> <span class='identifier'>Equals(const Value* pValue)</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Comparison function, returns true if this value matches the one given.</p>
+
+
+</div>
+<h3><a id='Value_GetType'><span class='keyword'>Value::Type</span> <span class='identifier'>GetType()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the type of the contents of this cell.</p>
+
+<p>Possible types are:</p>
+
+<ul>
+<li>TYPE_EMPTY</li>
+<li>TYPE_STRING</li>
+<li>TYPE_FLOAT</li>
+<li>TYPE_BOOLEAN</li>
+<li>TYPE_FORMULA</li>
+</ul>
+
+<p>If this Value is the result of a formula evaluation, it may also be: TYPE_ERROR.</p>
+
+
+</div>
+<h3><a id='Value_GetString'><span class='keyword'>const char*</span> <span class='identifier'>GetString()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the string stored in this Value.</p>
+
+<p>If the Value type is not TYPE<em>STRING this function will return an empty string. Use _GetType</em> to check.</p>
+
+
+</div>
+<h3><a id='Value_GetFloat'><span class='keyword'>double</span> <span class='identifier'>GetFloat()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the float stored in this Value.</p>
+
+<p>If the Value type is not TYPE<em>FLOAT this function will return 0.0. Use _GetType</em> to check.</p>
+
+
+</div>
+<h3><a id='Value_GetBoolean'><span class='keyword'>bool</span> <span class='identifier'>GetBoolean()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the boolean stored in this Value.</p>
+
+<p>If the Value type is not TYPE<em>BOOLEAN this function will return false. Use _GetType</em> to check.</p>
+
+
+</div>
+<h3><a id='Value_GetFormula'><span class='keyword'>const char*</span> <span class='identifier'>GetFormula()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the formula stored in this Value. The formula will be prefixed with "=".</p>
+
+<p>If the Value type is not TYPE<em>FORMULA this function will return "=". Use _GetType</em> to check.</p>
+
+
+</div>
+<h3><a id='Value_EvaulateFormula'><span class='keyword'>const Value*</span> <span class='identifier'>EvaulateFormula()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Evaluates the formula stored in this Value and returns the result as a <em>Value</em>.</p>
+
+<p>If the Value type is not TYPE<em>FORMULA this function will return a _Value</em> of TYPE<em>ERROR. Use _GetType</em> to check.</p>
+
+
+</div>
+<h2><a id='Style'>Style</a></h2>
+<div><p>Used for styling cells.</p>
+
+<p>Use <em>Workbook::CreateStyle</em> to create a new style.</p>
+
+<p>Or use <em>Cell::GetStyle</em> or <em>Workbook::GetStyleByIndex</em> to use an existing <em>Style</em>.</p>
+</div>
+<h3><a id='Style_GetFont'><span class='keyword'>Font*</span> <span class='identifier'>GetFont()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to a <em>Font</em> for changing font pretties.</p>
+
+
+</div>
+<h3><a id='Style_GetHorizontalAlign'><span class='keyword'>Style::HorizontalAlign</span> <span class='identifier'>GetHorizontalAlign()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns horizontal alignment of text for this <em>Style</em>.</p>
+
+<p>Possible types are:</p>
+
+<ul>
+<li>HORIZONTAL&#95;ALIGN&#95;GENERAL</li>
+<li>HORIZONTAL&#95;ALIGN&#95;LEFT</li>
+<li>HORIZONTAL&#95;ALIGN&#95;CENTER</li>
+<li>HORIZONTAL&#95;ALIGN&#95;RIGHT</li>
+<li>HORIZONTAL&#95;ALIGN&#95;FILL</li>
+<li>HORIZONTAL&#95;ALIGN&#95;JUSTIFY</li>
+<li>HORIZONTAL&#95;ALIGN&#95;CENTER&#95;ACROSS&#95;SELECTION</li>
+<li>HORIZONTAL&#95;ALIGN&#95;DISTRIBUTED</li>
+</ul>
+
+
+</div>
+<h3><a id='Style_SetHorizontalAlign'><span class='keyword'>void</span> <span class='identifier'>SetHorizontalAlign(Style::HorizontalAlign eHorizontalAlign)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the type of horizontal alignment used by this <em>Style</em>.</p>
+
+<p>See Style::GetHorizontalAlign for the list of possible alignment types.</p>
+
+<p>Eg: pStyle->SetHorizontalAlign(Style::HORIZONTAL&#95;ALIGN&#95;GENERAL);</p>
+
+
+</div>
+<h3><a id='Style_GetVerticalAlign'><span class='keyword'>Style::VerticalAlign</span> <span class='identifier'>GetVerticalAlign()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns vertical alignment of text for this <em>Style</em>.</p>
+
+<p>Possible types are:</p>
+
+<ul>
+<li>VERTICAL&#95;ALIGN&#95;TOP</li>
+<li>VERTICAL&#95;ALIGN&#95;CENTER</li>
+<li>VERTICAL&#95;ALIGN&#95;BOTTOM</li>
+<li>VERTICAL&#95;ALIGN&#95;JUSTIFY</li>
+<li>VERTICAL&#95;ALIGN&#95;DISTRIBUTED</li>
+</ul>
+
+
+</div>
+<h3><a id='Style_SetVerticalAlign'><span class='keyword'>void</span> <span class='identifier'>SetVerticalAlign(Style::VerticalAlign eVerticalAlign)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the type of vertical alignment used by this <em>Style</em>.</p>
+
+<p>See Style::GetVerticalAlign for the list of possible alignment types.</p>
+
+<p>Eg: pStyle->SetVerticalAlign(Style::VERTICAL&#95;ALIGN&#95;CENTER);</p>
+
+
+</div>
+<h3><a id='Style_GetBackgroundColor'><span class='keyword'>Color*</span> <span class='identifier'>GetBackgroundColor(bool bCreateIfMissing)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the background color.</p>
+
+
+</div>
+<h3><a id='Style_ClearBackgroundColor'><span class='keyword'>void</span> <span class='identifier'>ClearBackgroundColor()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Clears the background color.</p>
+
+<p>Note that clear is different from white. The white comes from the users system settings so it could in fact be any color.</p>
+
+
+</div>
+<h3><a id='Style_GetFillPattern'><span class='keyword'>Style::FillPattern</span> <span class='identifier'>GetFillPattern()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the fill pattern used for the background of this <em>Style</em>.</p>
+
+<p>Fill patterns are laid on top of the background color.</p>
+
+<p>Possible types are:</p>
+
+<ul>
+<li>FILL&#95;PATTERN&#95;NONE</li>
+<li>FILL&#95;PATTERN&#95;50</li>
+<li>FILL&#95;PATTERN&#95;75</li>
+<li>FILL&#95;PATTERN&#95;25</li>
+<li>FILL&#95;PATTERN&#95;125</li>
+<li>FILL&#95;PATTERN&#95;625</li>
+<li>FILL&#95;PATTERN&#95;HORIZONTAL&#95;STRIPE</li>
+<li>FILL&#95;PATTERN&#95;VARTICAL&#95;STRIPE</li>
+<li>FILL&#95;PATTERN&#95;DIAGONAL&#95;STRIPE</li>
+<li>FILL&#95;PATTERN&#95;REVERSE&#95;DIAGONAL&#95;STRIPE</li>
+<li>FILL&#95;PATTERN&#95;DIAGONAL&#95;CROSSHATCH</li>
+<li>FILL&#95;PATTERN&#95;THICK&#95;DIAGONAL&#95;CROSSHATCH</li>
+<li>FILL&#95;PATTERN&#95;THIN&#95;HORIZONTAL&#95;STRIPE</li>
+<li>FILL&#95;PATTERN&#95;THIN&#95;VERTICAL&#95;STRIPE</li>
+<li>FILL&#95;PATTERN&#95;THIN&#95;REVERSE&#95;VERTICAL&#95;STRIPE</li>
+<li>FILL&#95;PATTERN&#95;THIN&#95;DIAGONAL&#95;STRIPE</li>
+<li>FILL&#95;PATTERN&#95;THIN&#95;HORIZONTAL&#95;CROSSHATCH</li>
+<li>FILL&#95;PATTERN&#95;THIN&#95;DIAGONAL&#95;CROSSHATCH</li>
+</ul>
+
+
+</div>
+<h3><a id='Style_SetFillPattern'><span class='keyword'>void</span> <span class='identifier'>SetFillPattern(Style::FillPattern eFillPattern)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the fill pattern used for the background of this <em>Style</em>.</p>
+
+<p>See Style::GetFillPattern for the list of possible fill patterns.</p>
+
+<p>Eg: pStyle->SetFillPattewrn(Style::FILL&#95;PATTERN&#95;50);</p>
+
+
+</div>
+<h3><a id='Style_GetFillPatternColor'><span class='keyword'>Color*</span> <span class='identifier'>GetFillPatternColor(bool bCreateIfMissing)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the fill pattern color.</p>
+
+
+</div>
+<h3><a id='Style_ClearFillPatternColor'><span class='keyword'>void</span> <span class='identifier'>ClearFillPatternColor()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Clears the fill pattern color.</p>
+
+<p>Like the background color, When the fill pattern color is cleared, it will be chosen from the users system settings, which is most likely black.</p>
+
+
+</div>
+<h3><a id='Style_GetTopBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetTopBorderLine()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the <em>Line</em> for the top border.</p>
+
+
+</div>
+<h3><a id='Style_GetRightBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetRightBorderLine()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the <em>Line</em> for the right border.</p>
+
+
+</div>
+<h3><a id='Style_GetBottomBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetBottomBorderLine()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the <em>Line</em> for the bottom border.</p>
+
+
+</div>
+<h3><a id='Style_GetLeftBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetLeftBorderLine()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the <em>Line</em> for the left border.</p>
+
+
+</div>
+<h3><a id='Style_GetFormat'><span class='keyword'>const char*</span> <span class='identifier'>GetFormat()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the formattig for this _Style, which controls how Excel displays numbers and text.</p>
+
+<p>Todo: moar info</p>
+
+
+</div>
+<h3><a id='Style_SetFormat'><span class='keyword'>void</span> <span class='identifier'>SetFormat(const char* szFormat)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the formatting used by this <em>Style</em>.</p>
+
+<p>Note that Number Duck does not validate the format entered, and if it is invalid, Excel will pop up an error when opening the file.</p>
+
+<p>It's best to escape question marks, to avoid your compiler interperating them as <a href="https://en.wikipedia.org/wiki/Digraphs_and_trigraphs#C">trigraphs</a> ("??/" being converted to "\"). </p>
+
+<p>Eg: pStyle->SetFormat("m/d/yy h:mm");</p>
+
+
+</div>
+<h2><a id='Color'>Color</a></h2>
+<div><p>RGB color information. Used by the <em>Style</em> class.</p>
+</div>
+<h3><a id='Color_Color'><span class='keyword'></span> <span class='identifier'>Color(unsigned char nRed, unsigned char nGreen, unsigned char nBlue)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Constructor.</p>
+
+<p>Eg: pStyle->SetColor(Color(0x00, 0xFF, 0x00));</p>
+
+
+</div>
+<h3><a id='Color_~Color'><span class='keyword'></span> <span class='identifier'>~Color()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Resolute destructor.</p>
+
+
+</div>
+<h3><a id='Color_Equals'><span class='keyword'>bool</span> <span class='identifier'>Equals(const Color* pColor)</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns true if this <em>Color</em> matches the one given.</p>
+
+
+</div>
+<h3><a id='Color_Set'><span class='keyword'>void</span> <span class='identifier'>Set(unsigned char nRed, unsigned char nGreen, unsigned char nBlue)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets all components of this Color at once.</p>
+
+<p>Eg: pColor->Set(0xBE, 0xEE, 0xFF);</p>
+
+
+</div>
+<h3><a id='Color_SetFromRgba'><span class='keyword'>void</span> <span class='identifier'>SetFromRgba(unsigned int nRgba)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Similar to <em>Set</em>, sets all components of this Color at once.</p>
+
+<p>Eg: pColor->SetFromRgba(0xBEEEFF);</p>
+
+
+</div>
+<h3><a id='Color_SetFromColor'><span class='keyword'>void</span> <span class='identifier'>SetFromColor(const Color* pColor)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets all components of this Color, from the components of another Color.</p>
+
+<p>Eg: pColor->SetFromColor(pOtherColor);</p>
+
+
+</div>
+<h3><a id='Color_GetRed'><span class='keyword'>unsigned char</span> <span class='identifier'>GetRed()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the red value of this color.</p>
+
+
+</div>
+<h3><a id='Color_SetRed'><span class='keyword'>void</span> <span class='identifier'>SetRed(unsigned char nRed)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the red value of this color.</p>
+
+
+</div>
+<h3><a id='Color_GetGreen'><span class='keyword'>unsigned char</span> <span class='identifier'>GetGreen()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the green value of this color.</p>
+
+
+</div>
+<h3><a id='Color_SetGreen'><span class='keyword'>void</span> <span class='identifier'>SetGreen(unsigned char nGreen)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the red value of this color.</p>
+
+
+</div>
+<h3><a id='Color_GetBlue'><span class='keyword'>unsigned char</span> <span class='identifier'>GetBlue()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the blue value of this color.</p>
+
+
+</div>
+<h3><a id='Color_SetBlue'><span class='keyword'>void</span> <span class='identifier'>SetBlue(unsigned char nBlue)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the blue value of this color.</p>
+
+
+</div>
+<h3><a id='Color_GetRgba'><span class='keyword'>unsigned int</span> <span class='identifier'>GetRgba()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the this color as a 32bit RGBA int.</p>
+
+
+</div>
+<h2><a id='Picture'>Picture</a></h2>
+<div><p>Represents an embedded picture inside a worksheet.</p>
+
+<p>Use Workbook::CreatePicture to create a new picture from an image on disk.
+Or use Workbook::GetPictureByIndex to get an existing picture.</p>
+
+<p>Pictures can only be created from PNG or JPEG files. Existing pictures already
+embedded in the spreadsheet can be any format.</p>
+</div>
+<h3><a id='Picture_GetX'><span class='keyword'>unsigned int</span> <span class='identifier'>GetX()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the column where the top left corner of the picture is anchored.</p>
+
+
+</div>
+<h3><a id='Picture_SetX'><span class='keyword'>bool</span> <span class='identifier'>SetX(unsigned int nX)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the column where top left corner of the picture is anchored.</p>
+
+<p>Returns false if an out of bounds column is given.</p>
+
+
+</div>
+<h3><a id='Picture_GetY'><span class='keyword'>unsigned int</span> <span class='identifier'>GetY()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the row where the top left corner of the picture is anchored.</p>
+
+
+</div>
+<h3><a id='Picture_SetY'><span class='keyword'>bool</span> <span class='identifier'>SetY(unsigned int nY)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the row where top left corner of the picture is anchored.</p>
+
+<p>Returns false if an out of bounds row is given.</p>
+
+
+</div>
+<h3><a id='Picture_GetSubX'><span class='keyword'>unsigned int</span> <span class='identifier'>GetSubX()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the horizontal pixel offset of the picture within the cell given by <em>GetX()</em> and <em>GetY()</em>.</p>
+
+
+</div>
+<h3><a id='Picture_SetSubX'><span class='keyword'>void</span> <span class='identifier'>SetSubX(unsigned int nSubX)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the horizontal pixel offset of this picture inside the cell.</p>
+
+
+</div>
+<h3><a id='Picture_GetSubY'><span class='keyword'>unsigned int</span> <span class='identifier'>GetSubY()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the vertical pixel offset of the picture within the cell given by <em>GetX()</em> and <em>GetY()</em>.</p>
+
+
+</div>
+<h3><a id='Picture_SetSubY'><span class='keyword'>void</span> <span class='identifier'>SetSubY(unsigned int nSubY)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the vertical pixel offset of this picture inside the cell.</p>
+
+
+</div>
+<h3><a id='Picture_GetWidth'><span class='keyword'>unsigned int</span> <span class='identifier'>GetWidth()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the width of the pitcure, in pixels.</p>
+
+
+</div>
+<h3><a id='Picture_SetWidth'><span class='keyword'>void</span> <span class='identifier'>SetWidth(unsigned int nWidth)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the width of the picture, in pixels.</p>
+
+
+</div>
+<h3><a id='Picture_GetHeight'><span class='keyword'>unsigned int</span> <span class='identifier'>GetHeight()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the height of the pitcure, in pixels.</p>
+
+
+</div>
+<h3><a id='Picture_SetHeight'><span class='keyword'>void</span> <span class='identifier'>SetHeight(unsigned int nHeight)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the height of the picture, in pixels.</p>
+
+
+</div>
+<h3><a id='Picture_GetUrl'><span class='keyword'>const char*</span> <span class='identifier'>GetUrl()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the url linked to from this picture, or an empty string if there is no link.</p>
+
+
+</div>
+<h3><a id='Picture_SetUrl'><span class='keyword'>void</span> <span class='identifier'>SetUrl(const char* szUrl)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the url this picture is linked to. Pass an empty string to not link to anything.</p>
+
+
+</div>
+<h3><a id='Picture_GetBlob'><span class='keyword'>Blob*</span> <span class='identifier'>GetBlob()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the binary data for this image.</p>
+
+<p>See <em>GetFormat()</em> for what image format this data is in.</p>
+
+
+</div>
+<h3><a id='Picture_GetFormat'><span class='keyword'>Picture::Format</span> <span class='identifier'>GetFormat()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the image format of the data given by <em>GetData()</em>.</p>
+
+<p>Possible types are:</p>
+
+<ul>
+<li>FORMAT_PNG</li>
+<li>FORMAT_JPEG</li>
+<li>FORMAT_EMF</li>
+<li>FORMAT_WMF</li>
+<li>FORMAT_PICT</li>
+<li>FORMAT_DIB</li>
+<li>FORMAT_TIFF</li>
+</ul>
+
+
+</div>
+<h2><a id='Chart'>Chart</a></h2>
+<div><p>Represents an embedded chart inside a worksheet.</p>
+
+<p>Use Workbook::CreateChart to create.
+Or use Workbook::GetChartByIndex to get an existing chart.</p>
+</div>
+<h3><a id='Chart_GetX'><span class='keyword'>unsigned int</span> <span class='identifier'>GetX()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the column where the top left corner of the chart is anchored.</p>
+
+
+</div>
+<h3><a id='Chart_SetX'><span class='keyword'>bool</span> <span class='identifier'>SetX(unsigned int nX)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the column where top left corner of the chart is anchored.</p>
+
+<p>Returns false if an out of bounds column is given.</p>
+
+
+</div>
+<h3><a id='Chart_GetY'><span class='keyword'>unsigned int</span> <span class='identifier'>GetY()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the row where the top left corner of the chart is anchored.</p>
+
+
+</div>
+<h3><a id='Chart_SetY'><span class='keyword'>bool</span> <span class='identifier'>SetY(unsigned int nY)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the row where top left corner of the chart is anchored.</p>
+
+<p>Returns false if an out of bounds row is given.</p>
+
+
+</div>
+<h3><a id='Chart_GetSubX'><span class='keyword'>unsigned int</span> <span class='identifier'>GetSubX()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the horizontal pixel offset of the chart within the cell given by <em>GetX()</em> and <em>GetY()</em>.</p>
+
+
+</div>
+<h3><a id='Chart_SetSubX'><span class='keyword'>void</span> <span class='identifier'>SetSubX(unsigned int nSubX)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the horizontal pixel offset of this chart inside the cell.</p>
+
+
+</div>
+<h3><a id='Chart_GetSubY'><span class='keyword'>unsigned int</span> <span class='identifier'>GetSubY()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the vertical pixel offset of the chart within the cell given by <em>GetX()</em> and <em>GetY()</em>.</p>
+
+
+</div>
+<h3><a id='Chart_SetSubY'><span class='keyword'>void</span> <span class='identifier'>SetSubY(unsigned int nSubY)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the vertical pixel offset of this chart inside the cell.</p>
+
+
+</div>
+<h3><a id='Chart_GetWidth'><span class='keyword'>unsigned int</span> <span class='identifier'>GetWidth()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the width of the chart, in pixels.</p>
+
+
+</div>
+<h3><a id='Chart_SetWidth'><span class='keyword'>void</span> <span class='identifier'>SetWidth(unsigned int nWidth)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the width of the chart, in pixels.</p>
+
+
+</div>
+<h3><a id='Chart_GetHeight'><span class='keyword'>unsigned int</span> <span class='identifier'>GetHeight()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the height of the chart, in pixels.</p>
+
+
+</div>
+<h3><a id='Chart_SetHeight'><span class='keyword'>void</span> <span class='identifier'>SetHeight(unsigned int nHeight)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the height of the chart, in pixels.</p>
+
+
+</div>
+<h3><a id='Chart_GetType'><span class='keyword'>Chart::Type</span> <span class='identifier'>GetType()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the chart type.</p>
+
+<p>Possible types are:</p>
+
+<ul>
+<li>TYPE&#95;COLUMN</li>
+<li>TYPE&#95;COLUMN&#95;STACKED</li>
+<li>TYPE&#95;COLUMN&#95;STACKED&#95;100</li>
+<li>TYPE&#95;BAR</li>
+<li>TYPE&#95;BAR&#95;STACKED</li>
+<li>TYPE&#95;BAR&#95;STACKED&#95;100</li>
+<li>TYPE&#95;LINE</li>
+<li>TYPE&#95;LINE&#95;STACKED</li>
+<li>TYPE&#95;LINE&#95;STACKED&#95;100</li>
+<li>TYPE&#95;AREA</li>
+<li>TYPE&#95;AREA&#95;STACKED</li>
+<li>TYPE&#95;AREA&#95;STACKED&#95;100</li>
+</ul>
+
+
+</div>
+<h3><a id='Chart_SetType'><span class='keyword'>void</span> <span class='identifier'>SetType(Chart::Type eType)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the chart type.</p>
+
+<p>See Chart::GetType for the list of possible chart types.</p>
+
+<p>Eg: pChart->SetType(Chart::TYPE_LINE);</p>
+
+
+</div>
+<h3><a id='Chart_GetNumSeries'><span class='keyword'>unsigned int</span> <span class='identifier'>GetNumSeries()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the number of <em>Series</em> contained in this chart.</p>
+
+
+</div>
+<h3><a id='Chart_GetSeriesByIndex'><span class='keyword'>Series*</span> <span class='identifier'>GetSeriesByIndex(unsigned int nIndex)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Series</em> from the given index.</p>
+
+<p>Returns <em>NULL</em> if the given index is out of range.</p>
+
+
+</div>
+<h3><a id='Chart_CreateSeries'><span class='keyword'>Series*</span> <span class='identifier'>CreateSeries(const char* szValues)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Creates a new <em>Series</em> and returns a pointer to it.</p>
+
+<p><em>szValues</em> MUST be a 2D or 3D formula referencing the values for this series.</p>
+
+<p>Eg: pChart->CreateSeries("=B2:G2");</p>
+
+<p>Or: pChart->CreateSeries("=Sheet1!$B$2:$G$2");</p>
+
+
+</div>
+<h3><a id='Chart_PurgeSeries'><span class='keyword'>void</span> <span class='identifier'>PurgeSeries(unsigned int nIndex)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Deletes the <em>Series</em> at the given index.</p>
+
+
+</div>
+<h3><a id='Chart_GetCategories'><span class='keyword'>const char*</span> <span class='identifier'>GetCategories()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a formula referencing the categories for this chart.</p>
+
+<p>Categories are the things that go along the horizontal axis of your chart (or vertical if it's a bar chart).</p>
+
+<p>The formula will either contain the most verbose 3D area possible (Eg: "=Sheet1!$A$1:$G$1"), or an empty formula (Eg: "=").</p>
+
+<p>An empty formula will default the chart to dispaying 1,2,3... along the axis.</p>
+
+
+</div>
+<h3><a id='Chart_SetCategories'><span class='keyword'>bool</span> <span class='identifier'>SetCategories(const char* szCategories)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the categories used by this <em>Chart</em>.</p>
+
+<p><em>szValues</em> MUST be a formula containing a 2D or 3D area, or an empty formula.</p>
+
+<p>Eg: pChart->SetCategories("=B1:G1");</p>
+
+<p>Or: pChart->SetCategories("=Sheet1!$A$1:$G$1");</p>
+
+<p>Or: pChart->SetCategories("=");</p>
+
+
+</div>
+<h3><a id='Chart_GetTitle'><span class='keyword'>const char*</span> <span class='identifier'>GetTitle()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a string containing the title of this <em>Chart</em>.</p>
+
+<p>An empty string means that this <em>Chart</em> does not have a title.</p>
+
+
+</div>
+<h3><a id='Chart_SetTitle'><span class='keyword'>void</span> <span class='identifier'>SetTitle(const char* szTitle)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the title to be displayed on this <em>Chart</em>.</p>
+
+<p>Pass in an empty string to remove the title.</p>
+
+
+</div>
+<h3><a id='Chart_GetHorizontalAxisLabel'><span class='keyword'>const char*</span> <span class='identifier'>GetHorizontalAxisLabel()</span>
+
+</a></h3>
+<div class='functionBody'>
+
+
+
+</div>
+<h3><a id='Chart_SetHorizontalAxisLabel'><span class='keyword'>void</span> <span class='identifier'>SetHorizontalAxisLabel(const char* szHorizontalAxisLabel)</span>
+
+</a></h3>
+<div class='functionBody'>
+
+
+
+</div>
+<h3><a id='Chart_GetVerticalAxisLabel'><span class='keyword'>const char*</span> <span class='identifier'>GetVerticalAxisLabel()</span>
+
+</a></h3>
+<div class='functionBody'>
+
+
+
+</div>
+<h3><a id='Chart_SetVerticalAxisLabel'><span class='keyword'>void</span> <span class='identifier'>SetVerticalAxisLabel(const char* szVerticalAxisLabel)</span>
+
+</a></h3>
+<div class='functionBody'>
+
+
+
+</div>
+<h3><a id='Chart_GetLegend'><span class='keyword'>Legend*</span> <span class='identifier'>GetLegend()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Legend</em> for this <em>Chart</em> so you can change its appearence or hide it entirely.</p>
+
+
+</div>
+<h3><a id='Chart_GetFrameBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetFrameBorderLine()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Line</em> for the border of the frame of this <em>Chart</em>.</p>
+
+<p>The frame is the furthest edges of the chart.</p>
+
+
+</div>
+<h3><a id='Chart_GetFrameFill'><span class='keyword'>Fill*</span> <span class='identifier'>GetFrameFill()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Fill</em> for the background of the frame of this <em>Chart</em>.</p>
+
+<p>The frame is the furthest edges of the chart.</p>
+
+
+</div>
+<h3><a id='Chart_GetPlotBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetPlotBorderLine()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Line</em> for the border of the plot area of this <em>Chart</em>.</p>
+
+<p>The plot area is the rectangle inside the chart, bordered by the axis.</p>
+
+
+</div>
+<h3><a id='Chart_GetPlotFill'><span class='keyword'>Fill*</span> <span class='identifier'>GetPlotFill()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Fill</em> for the background of the plot area of this <em>Chart</em>.</p>
+
+<p>The plot area is the rectangle inside the chart, bordered by the axis.</p>
+
+
+</div>
+<h3><a id='Chart_GetHorizontalAxisLine'><span class='keyword'>Line*</span> <span class='identifier'>GetHorizontalAxisLine()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Line</em> of the horizontal axis of this <em>Chart</em>.</p>
+
+
+</div>
+<h3><a id='Chart_GetHorizontalGridLine'><span class='keyword'>Line*</span> <span class='identifier'>GetHorizontalGridLine()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Line</em> of the horizontal grid lines of this <em>Chart</em>.</p>
+
+
+</div>
+<h3><a id='Chart_GetVerticalAxisLine'><span class='keyword'>Line*</span> <span class='identifier'>GetVerticalAxisLine()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Line</em> of the vertical axis of this <em>Chart</em>.</p>
+
+
+</div>
+<h3><a id='Chart_GetVerticalGridLine'><span class='keyword'>Line*</span> <span class='identifier'>GetVerticalGridLine()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Line</em> of the vertical grid lines of this <em>Chart</em>.</p>
+
+
+</div>
+<h2><a id='Series'>Series</a></h2>
+<div><p>Represents a data series inside this <em>Chart</em>.</p>
+
+<p>Use Chart::CreateSeries to create.
+Or use Chart::GetSeriesByIndex to get an existing <em>Series</em>.</p>
+</div>
+<h3><a id='Series_GetName'><span class='keyword'>const char*</span> <span class='identifier'>GetName()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a formula containing the 3D address of a cell to use as the name of this <em>Series</em>.</p>
+
+
+</div>
+<h3><a id='Series_SetName'><span class='keyword'>bool</span> <span class='identifier'>SetName(const char* szName)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the address of the cell containing the name of this <em>Series</em>.</p>
+
+<p>Eg: pSeries->SetName("=Sheet1!A3");</p>
+
+
+</div>
+<h3><a id='Series_GetValues'><span class='keyword'>const char*</span> <span class='identifier'>GetValues()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a formula for the 3D area of cells containing the values to use for this <em>Series</em>.</p>
+
+
+</div>
+<h3><a id='Series_SetValues'><span class='keyword'>bool</span> <span class='identifier'>SetValues(const char* szValues)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the formula that references the cells containing the values for this series.</p>
+
+<p><em>szValues</em> can be a 2D or 3D formula.</p>
+
+<p>Eg: pSeries->SetValues("=B2:G2");</p>
+
+<p>Or: pSeries->SetValues("=Sheet1!$B$2:$G$2");</p>
+
+
+</div>
+<h3><a id='Series_GetLine'><span class='keyword'>Line*</span> <span class='identifier'>GetLine()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Line</em> used by this <em>Series</em>.</p>
+
+
+</div>
+<h3><a id='Series_GetFill'><span class='keyword'>Fill*</span> <span class='identifier'>GetFill()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Fill</em> used by this <em>Series</em>.</p>
+
+<p>The fill is ignored for Line charts.</p>
+
+
+</div>
+<h3><a id='Series_GetMarker'><span class='keyword'>Marker*</span> <span class='identifier'>GetMarker()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Marker</em> used by this <em>Series</em>.</p>
+
+<p>The marker style is only used for Line charts, it is ignored otherwise.</p>
+
+
+</div>
+<h2><a id='Legend'>Legend</a></h2>
+<div><p>Represents the legend inside of a <em>Chart</em>.</p>
+
+<p>Use Chart::GetLegend to get a pointer to it.</p>
+</div>
+<h3><a id='Legend_GetHidden'><span class='keyword'>bool</span> <span class='identifier'>GetHidden()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns true if this legend is not displayed.</p>
+
+
+</div>
+<h3><a id='Legend_SetHidden'><span class='keyword'>void</span> <span class='identifier'>SetHidden(bool bHidden)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Used to show or hide the <em>Legend</em>.</p>
+
+<p>Eg: pChart->GetLegend()->SetHidden(true);</p>
+
+
+</div>
+<h3><a id='Legend_GetBorderLine'><span class='keyword'>Line*</span> <span class='identifier'>GetBorderLine()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Line</em> for the border of this <em>Legend</em>.</p>
+
+
+</div>
+<h3><a id='Legend_GetFill'><span class='keyword'>Fill*</span> <span class='identifier'>GetFill()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns a pointer to the <em>Fill</em> for the background of this <em>Legend</em>.</p>
+
+
+</div>
+<h2><a id='Font'>Font</a></h2>
+<div><p>Used in various places to style text.</p>
+</div>
+<h3><a id='Font_GetName'><span class='keyword'>const char*</span> <span class='identifier'>GetName()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the name of the current font face used by this <em>Font</em>.</p>
+
+
+</div>
+<h3><a id='Font_SetName'><span class='keyword'>void</span> <span class='identifier'>SetName(const char* szName)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the font face to be used by this <em>Font</em>.</p>
+
+<p>Eg: pStyle->SetFont("Comic Sans MS");</p>
+
+
+</div>
+<h3><a id='Font_GetSize'><span class='keyword'>unsigned char</span> <span class='identifier'>GetSize()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the font size, in pixels, used by this <em>Font</em>.</p>
+
+
+</div>
+<h3><a id='Font_SetSize'><span class='keyword'>void</span> <span class='identifier'>SetSize(unsigned char nSize)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the font size of this <em>Font</em>, in pixels.</p>
+
+<p>Eg: pStyle->SetSize(10);</p>
+
+
+</div>
+<h3><a id='Font_GetColor'><span class='keyword'>Color*</span> <span class='identifier'>GetColor(bool bCreateIfMissing)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the current font color.</p>
+
+
+</div>
+<h3><a id='Font_ClearColor'><span class='keyword'>void</span> <span class='identifier'>ClearColor()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Clears the font color to be used by this <em>Font</em> back to the default.</p>
+
+<p>The default is usually black, but may be different based on the users system settings when viewing the spreadsheet.</p>
+
+
+</div>
+<h3><a id='Font_GetBold'><span class='keyword'>bool</span> <span class='identifier'>GetBold()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the emboldment status for this <em>Font</em>.</p>
+
+
+</div>
+<h3><a id='Font_SetBold'><span class='keyword'>void</span> <span class='identifier'>SetBold(bool bBold)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Used to set whether the font used by this <em>Font</em> is bold or not.</p>
+
+<p>Eg: pStyle->SetBold(true);</p>
+
+
+</div>
+<h3><a id='Font_GetItalic'><span class='keyword'>bool</span> <span class='identifier'>GetItalic()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns true if the font used by this <em>Font</em> is italicized.</p>
+
+
+</div>
+<h3><a id='Font_SetItalic'><span class='keyword'>void</span> <span class='identifier'>SetItalic(bool bItalic)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Used to set whether the font used by this <em>Font</em> is italic or not.</p>
+
+<p>Eg: pStyle->SetItalic(true);</p>
+
+
+</div>
+<h3><a id='Font_GetUnderline'><span class='keyword'>Font::Underline</span> <span class='identifier'>GetUnderline()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the type of underline used by this <em>Font</em>.</p>
+
+<p>Possible types are:</p>
+
+<ul>
+<li>UNDERLINE_NONE</li>
+<li>UNDERLINE_SINGLE</li>
+<li>UNDERLINE_DOUBLE</li>
+<li>UNDERLINE&#95;SINGLE&#95;ACCOUNTING</li>
+<li>UNDERLINE&#95;DOUBLE&#95;ACCOUNTING</li>
+</ul>
+
+
+</div>
+<h3><a id='Font_SetUnderline'><span class='keyword'>void</span> <span class='identifier'>SetUnderline(Font::Underline eUnderline)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the type of underline used by this <em>Font</em>.</p>
+
+<p>See Style::GetUnderline for the list of possible underline types.</p>
+
+<p>Eg: pStyle->SetUnderline(Style::UNDERLINE_SINGLE);</p>
+
+
+</div>
+<h2><a id='Line'>Line</a></h2>
+<div><p>Lines are used to style different sections of <em>Chart</em>s.</p>
+
+<p>To disable a line, set the Type to Line::TYPE_NONE.</p>
+</div>
+<h3><a id='Line_Equals'><span class='keyword'>bool</span> <span class='identifier'>Equals(const Line* pLine)</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns true if this <em>Line</em> has the same appearence as <em>pLine</em>.</p>
+
+<p>Eg: if (pSeriesA->GetLine()->Equals(pSeriesB->GetLine()))</p>
+
+
+</div>
+<h3><a id='Line_GetType'><span class='keyword'>Line::Type</span> <span class='identifier'>GetType()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the line type.</p>
+
+<p>Possible types are:</p>
+
+<ul>
+<li>TYPE&#95;NONE</li>
+<li>TYPE&#95;THIN</li>
+<li>TYPE&#95;DASHED</li>
+<li>TYPE&#95;DOTTED</li>
+<li>TYPE&#95;DASH&#95;DOT</li>
+<li>TYPE&#95;DASH&#95;DOT&#95;DOT</li>
+<li>TYPE&#95;MEDIUM</li>
+<li>TYPE&#95;MEDIUM&#95;DASHED</li>
+<li>TYPE&#95;MEDIUM&#95;DASH&#95;DOT</li>
+<li>TYPE&#95;MEDIUM&#95;DASH&#95;DOT&#95;DOT</li>
+<li>TYPE&#95;THICK</li>
+</ul>
+
+
+</div>
+<h3><a id='Line_SetType'><span class='keyword'>void</span> <span class='identifier'>SetType(Line::Type eType)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the line type.</p>
+
+<p>See Line::GetType for the list of possible types.</p>
+
+<p>Eg: pLine->SetType(Chart::TYPE&#95;DOTTED);</p>
+
+
+</div>
+<h3><a id='Line_GetColor'><span class='keyword'>Color*</span> <span class='identifier'>GetColor()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the current line color.</p>
+
+
+</div>
+<h2><a id='Fill'>Fill</a></h2>
+<div><p>Used to modify the fill color of different sections of <em>Chart</em>s.</p>
+
+<p>To disable a fill, set the Type to Fill::TYPE_NONE.</p>
+</div>
+<h3><a id='Fill_Equals'><span class='keyword'>bool</span> <span class='identifier'>Equals(const Fill* pFill)</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns true if this <em>Fill</em> has the same appearence as <em>pFill</em>.</p>
+
+<p>Eg: if (pSeriesA->GetFill()->Equals(pSeriesB->GetFill()))</p>
+
+
+</div>
+<h3><a id='Fill_GetType'><span class='keyword'>Fill::Type</span> <span class='identifier'>GetType()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the line type.</p>
+
+<p>Possible types are:</p>
+
+<ul>
+<li>TYPE&#95;NONE</li>
+<li>TYPE&#95;SOLID</li>
+</ul>
+
+
+</div>
+<h3><a id='Fill_SetType'><span class='keyword'>void</span> <span class='identifier'>SetType(Fill::Type eType)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the fill type.</p>
+
+<p>See Fill::GetType for the list of possible types.</p>
+
+<p>Eg: pFill->SetType(Chart::TYPE&#95;NONE);</p>
+
+
+</div>
+<h3><a id='Fill_GetForegroundColor'><span class='keyword'>Color*</span> <span class='identifier'>GetForegroundColor()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the current foreground color.</p>
+
+<p>This is the only color used for solid fills.</p>
+
+
+</div>
+<h3><a id='Fill_GetBackgroundColor'><span class='keyword'>Color*</span> <span class='identifier'>GetBackgroundColor()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the current background color.</p>
+
+<p>The background color is used in addition to the foreground color in pattern fills.</p>
+
+
+</div>
+<h2><a id='Marker'>Marker</a></h2>
+<div><p>Marker are used to style markers on Line <em>Chart</em>s.</p>
+
+<p>To disable a marker, set the Type to Marker::TYPE_NONE.</p>
+</div>
+<h3><a id='Marker_Equals'><span class='keyword'>bool</span> <span class='identifier'>Equals(const Marker* pMarker)</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns true if this <em>Marker</em> has the same appearence as <em>pMarker</em>.</p>
+
+<p>Eg: if (pSeriesA->GetMarker()->Equals(pSeriesB->GetMarker()))</p>
+
+
+</div>
+<h3><a id='Marker_GetType'><span class='keyword'>Marker::Type</span> <span class='identifier'>GetType()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the marker type.</p>
+
+<p>Possible types are:</p>
+
+<ul>
+<li>TYPE&#95;NONE</li>
+<li>TYPE&#95;SQUARE</li>
+<li>TYPE&#95;DIAMOND</li>
+<li>TYPE&#95;TRIANGLE</li>
+<li>TYPE&#95;X</li>
+<li>TYPE&#95;ASTERISK</li>
+<li>TYPE&#95;SHORT&#95;BAR</li>
+<li>TYPE&#95;LONG&#95;BAR</li>
+<li>TYPE&#95;CIRCULAR</li>
+<li>TYPE&#95;PLUS</li>
+</ul>
+
+
+</div>
+<h3><a id='Marker_SetType'><span class='keyword'>void</span> <span class='identifier'>SetType(Marker::Type eType)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the marker type.</p>
+
+<p>See Marker::GetType for the list of possible types.</p>
+
+<p>Eg: pMarker->SetType(Chart::TYPE&#95;TRIANGLE);</p>
+
+
+</div>
+<h3><a id='Marker_GetFillColor'><span class='keyword'>Color*</span> <span class='identifier'>GetFillColor(bool bCreateIfMissing)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the current fill color for the marker, or NULL for a transparent fill.</p>
+
+
+</div>
+<h3><a id='Marker_SetFillColor'><span class='keyword'>void</span> <span class='identifier'>SetFillColor(const Color* pColor)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the fill color.</p>
+
+<p>Eg: Color color(0xFF, 0x00, 0xFF);
+pMarker->SetFillColor(&amp;color);</p>
+
+
+</div>
+<h3><a id='Marker_ClearFillColor'><span class='keyword'>void</span> <span class='identifier'>ClearFillColor()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Clears the fill color.</p>
+
+
+</div>
+<h3><a id='Marker_GetBorderColor'><span class='keyword'>Color*</span> <span class='identifier'>GetBorderColor(bool bCreateIfMissing)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the current border color for the marker, or NULL for no border.</p>
+
+
+</div>
+<h3><a id='Marker_SetBorderColor'><span class='keyword'>void</span> <span class='identifier'>SetBorderColor(const Color* pColor)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the border color.</p>
+
+<p>Eg: Color color(0xFF, 0x00, 0xFF);
+pMarker->SetBorderColor(&amp;color);</p>
+
+
+</div>
+<h3><a id='Marker_ClearBorderColor'><span class='keyword'>void</span> <span class='identifier'>ClearBorderColor()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Clears the border color.</p>
+
+
+</div>
+<h3><a id='Marker_GetSize'><span class='keyword'>int</span> <span class='identifier'>GetSize()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the size of the marker, in pixels.</p>
+
+
+</div>
+<h3><a id='Marker_SetSize'><span class='keyword'>void</span> <span class='identifier'>SetSize(int nSize)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the size of the marker, in pixels.</p>
+
+
+</div>
+<h2><a id='MergedCell'>MergedCell</a></h2>
+<div><p>Allows you to modify merged cells that have been previously defined.</p>
+
+<p>See <em>Worksheet</em> for functions to create and purge MergedCells</p>
+</div>
+<h3><a id='MergedCell_GetX'><span class='keyword'>unsigned int</span> <span class='identifier'>GetX()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the X coordinate of the top left corner of the merged cells.</p>
+
+
+</div>
+<h3><a id='MergedCell_SetX'><span class='keyword'>void</span> <span class='identifier'>SetX(unsigned int nX)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the X coordinate of the top left corner of the merged cells.</p>
+
+
+</div>
+<h3><a id='MergedCell_GetY'><span class='keyword'>unsigned int</span> <span class='identifier'>GetY()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the Y coordinate of the top left corner of the merged cells.</p>
+
+
+</div>
+<h3><a id='MergedCell_SetY'><span class='keyword'>void</span> <span class='identifier'>SetY(unsigned int nY)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the Y coordinate of the top left corner of the merged cells.</p>
+
+
+</div>
+<h3><a id='MergedCell_GetWidth'><span class='keyword'>unsigned int</span> <span class='identifier'>GetWidth()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the width of the merged area, in cells.</p>
+
+
+</div>
+<h3><a id='MergedCell_SetWidth'><span class='keyword'>void</span> <span class='identifier'>SetWidth(unsigned int nWidth)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the width of the merged area, in cells.</p>
+
+
+</div>
+<h3><a id='MergedCell_GetHeight'><span class='keyword'>unsigned int</span> <span class='identifier'>GetHeight()</span>
+<span class='keyword'>const</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns the height of the merged area, in cells.</p>
+
+
+</div>
+<h3><a id='MergedCell_SetHeight'><span class='keyword'>void</span> <span class='identifier'>SetHeight(unsigned int nHeight)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Sets the height of the merged area, in cells.</p>
+
+
+</div>
+<!--End-->
+</body>
+</html>
