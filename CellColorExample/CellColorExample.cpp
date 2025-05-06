@@ -82,6 +82,8 @@ int main(int argc, char **argv)
 	stbi_image_free(pImageData); // free image data
 	
 	pWorkbook->Save("CellColorExample.xls", Workbook::FILE_TYPE_XLS);
+
+	delete pWorkbook;
 	return 0;
 }
 
