@@ -56,6 +56,8 @@ int main(int argc, char **argv)
 	// Now we just save to disk so that we can email our cool spreadsheet to all the investors we are courting.
 	pWorkbook->Save("FullExample.xls", Workbook::FILE_TYPE_XLS);
 
+	delete pWorkbook;
+
 	// Just for fun, and to demo more features, let's load that spreadsheet we just saved and read some data.
 	Workbook* pWorkbookIn = new Workbook();
 	if (pWorkbookIn->Load("FullExample.xls"))
@@ -65,5 +67,6 @@ int main(int argc, char **argv)
 		printf("Cell Contents: %s\n", pCellIn->GetString());
 	}
 
+	delete pWorkbookIn;
 	return 0;
 }

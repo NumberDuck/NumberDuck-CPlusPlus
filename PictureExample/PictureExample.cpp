@@ -67,5 +67,7 @@ int main(int argc, char **argv)
 	// now write to disk
 	pPicture->GetBlob()->Save(sFileName.c_str());
 
+	delete pWorkbook;
+
 	return 0;
 }
