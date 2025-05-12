@@ -1,4 +1,4 @@
-Number Duck v3.0.0 [J152]
+Number Duck v3.0.1 [J153]
 Copyright (C) 2012-2025, File Scribe
 https://numberduck.com
 
