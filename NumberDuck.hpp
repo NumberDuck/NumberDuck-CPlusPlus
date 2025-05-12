@@ -7008,14 +7008,20 @@ namespace NumberDuck
 {
 	class Workbook
 	{
+		public: enum License
+		{
+			AGPL,
+			Commercial,
+		};
+
 		public: enum FileType
 		{
-			FILE_TYPE_XLS,
-			FILE_TYPE_XLSX,
+			XLS,
+			XLSX,
 		};
 
 		public: Secret::WorkbookImplementation* m_pImpl = 0;
-		public: Workbook();
+		public: Workbook(License eLicense);
 		public: void Clear();
 		public: bool Load(const char* szFileName);
 		public: bool Save(const char* szFileName, FileType eFileType);

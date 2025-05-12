@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 
 	printf("Embedding picture!\n");
 	// Construct our workbook, and grab the default worksheet
-	Workbook* pWorkbook = new Workbook();
+	Workbook* pWorkbook = new Workbook(Workbook::License::AGPL);
 	Worksheet* pWorksheet = pWorkbook->GetWorksheetByIndex(0);
 
 	// Create the picture from our source image
@@ -30,14 +30,14 @@ int main(int argc, char **argv)
 	pPicture->SetSubX(Worksheet::DEFAULT_COLUMN_WIDTH / 2);
 	pPicture->SetSubY(Worksheet::DEFAULT_ROW_HEIGHT / 2);
 
-	pWorkbook->Save("PictureExample.xls", Workbook::FILE_TYPE_XLS);
+	pWorkbook->Save("PictureExample.xls", Workbook::FileType::XLS);
 
 	delete pWorkbook;
 
 
 	printf("Extracting picture!\n");
 	// Load the excel file with the image we want to extract
-	pWorkbook = new Workbook();
+	pWorkbook = new Workbook(Workbook::License::AGPL);
 	pWorkbook->Load("PictureExample.xls");
 	pWorksheet = pWorkbook->GetWorksheetByIndex(0);
 

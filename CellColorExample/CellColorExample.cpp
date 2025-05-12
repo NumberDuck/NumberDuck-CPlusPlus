@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 	}
 	
 	// Now we construct the workbook, and grab the default worksheet. Ready to start messing with cells
-	Workbook * pWorkbook = new Workbook();
+	Workbook * pWorkbook = new Workbook(Workbook::License::AGPL);
 	Worksheet* pWorksheet = pWorkbook->GetWorksheetByIndex(0);
 
 	// Now that we have our image and our worksheet we'll setup a nice square grid
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 	}
 	stbi_image_free(pImageData); // free image data
 	
-	pWorkbook->Save("CellColorExample.xls", Workbook::FILE_TYPE_XLS);
+	pWorkbook->Save("CellColorExample.xls", Workbook::FileType::XLS);
 
 	delete pWorkbook;
 	return 0;

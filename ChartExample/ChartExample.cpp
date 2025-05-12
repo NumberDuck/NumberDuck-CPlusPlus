@@ -11,7 +11,7 @@ int main(int argc, char **argv)
 	printf("Chart Example\n");
 	printf("Embed a chart in a spreadsheet!\n\n");
 	
-	Workbook* pWorkbook = new Workbook();
+	Workbook* pWorkbook = new Workbook(Workbook::License::AGPL);
 	Worksheet* pWorksheet = pWorkbook->GetWorksheetByIndex(0);
 
 	Cell* pCell = pWorksheet->GetCellByAddress("A1");
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 	pSeries->SetName("=C2");
 	
 	
-	pWorkbook->Save("ChartExample.xls", Workbook::FILE_TYPE_XLS);
+	pWorkbook->Save("ChartExample.xls", Workbook::FileType::XLS);
 
 	delete pWorkbook;
 

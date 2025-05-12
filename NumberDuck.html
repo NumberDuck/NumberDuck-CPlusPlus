@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>NumberDuck v3.0.0 [J145] API Reference</title>
+		<title>NumberDuck v3.0.0 [J152] API Reference</title>
 		<style type='text/css'>
 			body
 			{
@@ -39,7 +39,7 @@
 		</style>
 </head>
 <body>
-<h1>NumberDuck v3.0.0 [J145] API Reference</h1>
+<h1>NumberDuck v3.0.0 [J152] API Reference</h1>
 
 <!--Start-->
 <div id='classlist'>
@@ -47,7 +47,7 @@
 <div style='padding: 0px; padding-left: 20px;'>
 <p>Provides read/write access to Excel .xls files.</p>
 
-<a href='#Workbook_Workbook'><span class='keyword'></span> <span class='identifier'>Workbook()</span>
+<a href='#Workbook_Workbook'><span class='keyword'></span> <span class='identifier'>Workbook(Workbook::License eLicense)</span>
 
 </a><br>
 <a href='#Workbook_~Workbook'><span class='keyword'></span> <span class='identifier'>~Workbook()</span>
@@ -767,11 +767,13 @@
 <h2><a id='Workbook'>Workbook</a></h2>
 <div><p>Provides read/write access to Excel .xls files.</p>
 </div>
-<h3><a id='Workbook_Workbook'><span class='keyword'></span> <span class='identifier'>Workbook()</span>
+<h3><a id='Workbook_Workbook'><span class='keyword'></span> <span class='identifier'>Workbook(Workbook::License eLicense)</span>
 
 </a></h3>
 <div class='functionBody'>
-<p>Unassuming constructor.</p>
+<p>The main entry point for using Number Duck.</p>
+
+<p>For the license, pass in Workbook::License::AGPL for AGPL v3, or Workbook::License::Commercial if you have purchased a commercial license.</p>
 
 
 </div>
@@ -814,13 +816,13 @@
 <p>Possible file types are:</p>
 
 <ul>
-<li>Workbook::TYPE_XLS</li>
-<li>Workbook::TYPE&#95;XLSX</li>
+<li>Workbook::FileType::XLS</li>
+<li>Workbook::FileType::XLSX</li>
 </ul>
 
 <p>Returns <em>false</em> on error.</p>
 
-<p>Eg: pWorkbook->Save("BananaReport.xls");</p>
+<p>Eg: pWorkbook->Save("BananaReport.xls", Workbook::FileType::XLS);</p>
 
 
 </div>

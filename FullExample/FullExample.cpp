@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 	// This example runs through various API calls to give you an idea of all the varied and wonderful things NumberDuck can do.
 
 	// First lets create a new Workbook and set the name of the worksheet in it.
-	Workbook* pWorkbook = new Workbook();
+	Workbook* pWorkbook = new Workbook(Workbook::License::AGPL);
 	Worksheet* pWorksheet = pWorkbook->GetWorksheetByIndex(0);
 	pWorksheet->SetName("Synergy");
 
@@ -54,12 +54,12 @@ int main(int argc, char **argv)
 	pWorksheet->GetCell(1,0)->SetFloat(999);
 
 	// Now we just save to disk so that we can email our cool spreadsheet to all the investors we are courting.
-	pWorkbook->Save("FullExample.xls", Workbook::FILE_TYPE_XLS);
+	pWorkbook->Save("FullExample.xls", Workbook::FileType::XLS);
 
 	delete pWorkbook;
 
 	// Just for fun, and to demo more features, let's load that spreadsheet we just saved and read some data.
-	Workbook* pWorkbookIn = new Workbook();
+	Workbook* pWorkbookIn = new Workbook(Workbook::License::AGPL);
 	if (pWorkbookIn->Load("FullExample.xls"))
 	{
 		Worksheet* pWorksheetIn = pWorkbookIn->GetWorksheetByIndex(0);
