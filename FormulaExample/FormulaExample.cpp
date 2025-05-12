@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 	printf("Formula Example\n");
 	printf("Create a spreadsheet with formulas!\n\n");
 	
-	Workbook* pWorkbook = new Workbook();
+	Workbook* pWorkbook = new Workbook(Workbook::License::AGPL);
 	Worksheet* pWorksheet = pWorkbook->GetWorksheetByIndex(0);
 		
 	for (int i = 0; i < 5; i++)
@@ -23,12 +23,12 @@ int main(int argc, char **argv)
 	pWorksheet->GetCell(2,0)->SetFormula("=SUM(A1:A5)");
 	pWorksheet->GetCell(2,1)->SetFormula("=AVERAGE(A1:A5)");
 		
-	pWorkbook->Save("FormulaExample.xls", Workbook::FILE_TYPE_XLS);
+	pWorkbook->Save("FormulaExample.xls", Workbook::FileType::XLS);
 
 	delete pWorkbook;
 
 
-	Workbook* pWorkbookIn = new Workbook();
+	Workbook* pWorkbookIn = new Workbook(Workbook::License::AGPL);
 	if (pWorkbookIn->Load("FormulaExample.xls"))
 	{
 		Worksheet* pWorksheetIn = pWorkbookIn->GetWorksheetByIndex(0);
