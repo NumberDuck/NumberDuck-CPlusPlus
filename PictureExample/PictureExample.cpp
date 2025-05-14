@@ -48,19 +48,19 @@ int main(int argc, char **argv)
 	std::string sFileName = "DinoOut.";
 	switch (pPicture->GetFormat())
 	{
-		case Picture::FORMAT_DIB: sFileName += "bmp";
+		case Picture::Format::DIB: sFileName += "bmp";
 			break;
-		case Picture::FORMAT_EMF: sFileName += "emf";
+		case Picture::Format::EMF: sFileName += "emf";
 			break;
-		case Picture::FORMAT_JPEG: sFileName += "jpg";
+		case Picture::Format::JPEG: sFileName += "jpg";
 			break;
-		case Picture::FORMAT_PICT: sFileName += "pict";
+		case Picture::Format::PICT: sFileName += "pict";
 			break;
-		case Picture::FORMAT_PNG: sFileName += "png";
+		case Picture::Format::PNG: sFileName += "png";
 			break;
-		case Picture::FORMAT_TIFF: sFileName += "tiff";
+		case Picture::Format::TIFF: sFileName += "tiff";
 			break;
-		case Picture::FORMAT_WMF: sFileName += "wmf";
+		case Picture::Format::WMF: sFileName += "wmf";
 			break;
 	}
 

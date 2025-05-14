@@ -4537,7 +4537,7 @@ namespace NumberDuck
 
 	void Style::SetHorizontalAlign(Style::HorizontalAlign eHorizontalAlign)
 	{
-		if (eHorizontalAlign < HorizontalAlign::HORIZONTAL_ALIGN_GENERAL || eHorizontalAlign >= HorizontalAlign::NUM_HORIZONTAL_ALIGN)
+		if (eHorizontalAlign < HorizontalAlign::HORIZONTAL_ALIGN_GENERAL || eHorizontalAlign > HorizontalAlign::HORIZONTAL_ALIGN_DISTRIBUTED)
 			eHorizontalAlign = HorizontalAlign::HORIZONTAL_ALIGN_GENERAL;
 		m_pImplementation->m_eHorizontalAlign = eHorizontalAlign;
 	}
@@ -4549,7 +4549,7 @@ namespace NumberDuck
 
 	void Style::SetVerticalAlign(Style::VerticalAlign eVerticalAlign)
 	{
-		if (eVerticalAlign < VerticalAlign::VERTICAL_ALIGN_TOP || eVerticalAlign >= VerticalAlign::NUM_VERTICAL_ALIGN)
+		if (eVerticalAlign < VerticalAlign::VERTICAL_ALIGN_TOP || eVerticalAlign > VerticalAlign::VERTICAL_ALIGN_DISTRIBUTED)
 			eVerticalAlign = VerticalAlign::VERTICAL_ALIGN_BOTTOM;
 		m_pImplementation->m_eVerticalAlign = eVerticalAlign;
 	}
@@ -5822,7 +5822,7 @@ namespace NumberDuck
 				Secret::JpegImageInfo* pImageInfo = pJpegLoader->Load(pBlob);
 				if (pImageInfo != 0)
 				{
-					Picture* pOwnedPicture = new Picture(pBlob, Picture::Format::FORMAT_JPEG);
+					Picture* pOwnedPicture = new Picture(pBlob, Picture::Format::JPEG);
 					pOwnedPicture->SetWidth((unsigned int)(pImageInfo->m_nWidth));
 					pOwnedPicture->SetHeight((unsigned int)(pImageInfo->m_nHeight));
 					pPicture = pOwnedPicture;
@@ -5845,7 +5845,7 @@ namespace NumberDuck
 				Secret::PngImageInfo* pImageInfo = pPngLoader->Load(pBlob);
 				if (pImageInfo != 0)
 				{
-					Picture* pOwnedPicture = new Picture(pBlob, Picture::Format::FORMAT_PNG);
+					Picture* pOwnedPicture = new Picture(pBlob, Picture::Format::PNG);
 					pOwnedPicture->SetWidth((unsigned int)(pImageInfo->m_nWidth));
 					pOwnedPicture->SetHeight((unsigned int)(pImageInfo->m_nHeight));
 					pPicture = pOwnedPicture;
@@ -11799,21 +11799,21 @@ namespace NumberDuck
 			m_tag = 0xFF;
 			m_size = nBlipSize;
 			m_cRef = 1;
-			if (pPicture->GetFormat() == Picture::Format::FORMAT_PNG)
+			if (pPicture->GetFormat() == Picture::Format::PNG)
 			{
 				m_pHeader->m_recInstance = 0x006;
 				m_btWin32 = 6;
 				m_btMacOS = 6;
 				m_unused2 = 6;
 			}
-			else if (pPicture->GetFormat() == Picture::Format::FORMAT_JPEG)
+			else if (pPicture->GetFormat() == Picture::Format::JPEG)
 			{
 				m_pHeader->m_recInstance = 0x005;
 				m_btWin32 = 5;
 				m_btMacOS = 5;
 				m_unused2 = 2;
 			}
-			else if (pPicture->GetFormat() == Picture::Format::FORMAT_WMF)
+			else if (pPicture->GetFormat() == Picture::Format::WMF)
 			{
 				m_pHeader->m_recInstance = 0x003;
 				m_btWin32 = 3;
@@ -12116,19 +12116,19 @@ namespace NumberDuck
 		OfficeArtBlipRecord::OfficeArtBlipRecord(Picture* pPicture) : OfficeArtRecord(TYPE, IS_CONTAINER, (unsigned int)(SIZE + 1 + pPicture->GetBlob()->GetSize()), true)
 		{
 			SetDefaults();
-			if (pPicture->GetFormat() == Picture::Format::FORMAT_PNG)
+			if (pPicture->GetFormat() == Picture::Format::PNG)
 			{
 				m_pHeader->m_recType = (unsigned short)(OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_PNG);
 				m_pHeader->m_recVer = 0x0;
 				m_pHeader->m_recInstance = 0x6E0;
 			}
-			else if (pPicture->GetFormat() == Picture::Format::FORMAT_JPEG)
+			else if (pPicture->GetFormat() == Picture::Format::JPEG)
 			{
 				m_pHeader->m_recType = (unsigned short)(OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_JPEG);
 				m_pHeader->m_recVer = 0x0;
 				m_pHeader->m_recInstance = 0x46A;
 			}
-			else if (pPicture->GetFormat() == Picture::Format::FORMAT_WMF)
+			else if (pPicture->GetFormat() == Picture::Format::WMF)
 			{
 				m_pHeader->m_recType = (unsigned short)(OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_WMF);
 				m_pHeader->m_recVer = 0x0;
@@ -24455,54 +24455,54 @@ namespace NumberDuck
 														{
 															OfficeArtFBSERecord* pOfficeArtFBSERecord = (OfficeArtFBSERecord*)(pOfficeArtRecord);
 															OfficeArtBlipRecord* pEmbeddedBlip = pOfficeArtFBSERecord->GetEmbeddedBlip();
-															Picture::Format eFormat = Picture::Format::FORMAT_JPEG;
+															Picture::Format eFormat = Picture::Format::JPEG;
 															switch (pEmbeddedBlip->GetType())
 															{
 																case OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_EMF:
 																{
-																	eFormat = Picture::Format::FORMAT_EMF;
+																	eFormat = Picture::Format::EMF;
 																	break;
 																}
 
 																case OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_WMF:
 																{
-																	eFormat = Picture::Format::FORMAT_WMF;
+																	eFormat = Picture::Format::WMF;
 																	break;
 																}
 
 																case OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_PICT:
 																{
-																	eFormat = Picture::Format::FORMAT_PICT;
+																	eFormat = Picture::Format::PICT;
 																	break;
 																}
 
 																case OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_JPEG:
 																{
-																	eFormat = Picture::Format::FORMAT_JPEG;
+																	eFormat = Picture::Format::JPEG;
 																	break;
 																}
 
 																case OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_PNG:
 																{
-																	eFormat = Picture::Format::FORMAT_PNG;
+																	eFormat = Picture::Format::PNG;
 																	break;
 																}
 
 																case OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_DIB:
 																{
-																	eFormat = Picture::Format::FORMAT_DIB;
+																	eFormat = Picture::Format::DIB;
 																	break;
 																}
 
 																case OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_TIFF:
 																{
-																	eFormat = Picture::Format::FORMAT_TIFF;
+																	eFormat = Picture::Format::TIFF;
 																	break;
 																}
 
 																case OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_JPEG_CMYK:
 																{
-																	eFormat = Picture::Format::FORMAT_JPEG;
+																	eFormat = Picture::Format::JPEG;
 																	break;
 																}
 
@@ -26766,6 +26766,51 @@ namespace NumberDuck
 								if (pOwnedC) delete pOwnedC;
 								if (pOwnedB) delete pOwnedB;
 								if (pOwnedA) delete pOwnedA;
+								return true;
+							}
+						}
+					}
+					break;
+				}
+
+				case Type::TYPE_FUNC_AVERAGE:
+				{
+					if (ppValueVector->GetSize() >= 1)
+					{
+						Value* pValue = ppValueVector->Get(ppValueVector->GetSize() - 1);
+						if (pValue->GetType() == Value::Type::TYPE_AREA)
+						{
+							Value* pOwnedValue = ppValueVector->PopBack();
+							Coordinate* pCoordinate = pValue->m_pImpl->m_pArea->m_pTopLeft->CreateClone();
+							double fSum = 0.0f;
+							int nCount = 0;
+							while (pCoordinate->m_nX <= pValue->m_pImpl->m_pArea->m_pBottomRight->m_nX)
+							{
+								while (pCoordinate->m_nY <= pValue->m_pImpl->m_pArea->m_pBottomRight->m_nY)
+								{
+									Cell* pCell = pWorksheetImplementation->m_pWorksheet->GetCell(pCoordinate->m_nX, pCoordinate->m_nY);
+									if (pCell->GetType() != Value::Type::TYPE_FLOAT)
+									{
+										if (pOwnedValue) delete pOwnedValue;
+										if (pCoordinate) delete pCoordinate;
+										return false;
+									}
+									fSum += pCell->GetFloat();
+									nCount++;
+									pCoordinate->m_nY++;
+								}
+								pCoordinate->m_nX++;
+							}
+							if (nCount == 0)
+							{
+								if (pOwnedValue) delete pOwnedValue;
+								if (pCoordinate) delete pCoordinate;
+								return false;
+							}
+							ppValueVector->PushBack(Secret::ValueImplementation::CreateFloatValue(fSum / (double)(nCount)));
+							{
+								if (pOwnedValue) delete pOwnedValue;
+								if (pCoordinate) delete pCoordinate;
 								return true;
 							}
 						}

@@ -242,7 +242,6 @@ namespace NumberDuck
 			HORIZONTAL_ALIGN_JUSTIFY,
 			HORIZONTAL_ALIGN_CENTER_ACROSS_SELECTION,
 			HORIZONTAL_ALIGN_DISTRIBUTED,
-			NUM_HORIZONTAL_ALIGN,
 		};
 
 		public: Style::HorizontalAlign GetHorizontalAlign();
@@ -254,7 +253,6 @@ namespace NumberDuck
 			VERTICAL_ALIGN_BOTTOM,
 			VERTICAL_ALIGN_JUSTIFY,
 			VERTICAL_ALIGN_DISTRIBUTED,
-			NUM_VERTICAL_ALIGN,
 		};
 
 		public: Style::VerticalAlign GetVerticalAlign();
@@ -491,13 +489,13 @@ namespace NumberDuck
 		public: Secret::PictureImplementation* m_pImplementation = 0;
 		public: enum Format
 		{
-			FORMAT_PNG,
-			FORMAT_JPEG,
-			FORMAT_EMF,
-			FORMAT_WMF,
-			FORMAT_PICT,
-			FORMAT_DIB,
-			FORMAT_TIFF,
+			PNG,
+			JPEG,
+			EMF,
+			WMF,
+			PICT,
+			DIB,
+			TIFF,
 		};
 
 		public: Picture(Blob* pBlob, Picture::Format eFormat);
