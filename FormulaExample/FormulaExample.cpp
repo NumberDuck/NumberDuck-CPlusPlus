@@ -34,6 +34,8 @@ int main(int argc, char **argv)
 		Worksheet* pWorksheetIn = pWorkbookIn->GetWorksheetByIndex(0);
 		Cell* pCellIn = pWorksheetIn->GetCell(2,1);
 		printf("Formula: %s\n", pCellIn->GetFormula());
+		const Value* pResult = pCellIn->EvaulateFormula();
+		printf("Result: %lf\n", pResult->GetFloat());
 	}
 	delete pWorkbookIn;
 
