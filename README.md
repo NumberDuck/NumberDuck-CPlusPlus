@@ -1,5 +1,5 @@
 # Number Duck
-v3.0.2 [J159]
+v3.0.2 [J160]
 Copyright (C) 2012-2025, File Scribe
 https://numberduck.com
 
@@ -14,7 +14,7 @@ Since Number Duck is delivered as source, you can just drop the `NumberDuck.cpp`
 ## 💾 Saving and Loading a Spreadsheet
 Here is a simple example of writing to a spreadsheet, and then reading it back in.
 
-```
+```cpp
 #include "../NumberDuck.hpp"
 
 #include <stdio.h>
