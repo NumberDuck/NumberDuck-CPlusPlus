@@ -1,5 +1,5 @@
 # Number Duck
-v3.0.2 [J158]
+v3.0.2 [J159]
 Copyright (C) 2012-2025, File Scribe
 https://numberduck.com
 
@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 
 More how to code in the example folders above, or at https://numberduck.com/docs
 
-## 🧑‍⚖️ License
+## 👮 License
 Number Duck is dual licensed as Open Source (AGPLv3) and commercial closed source.
 Closed source licenses may be purchased from https://numberduck.com
 
