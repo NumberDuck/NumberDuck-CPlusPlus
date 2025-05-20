@@ -1,6 +1,8 @@
 # Number Duck
-v3.0.2 [J160]
+v3.0.3 [J173]
+
 Copyright (C) 2012-2025, File Scribe
+
 https://numberduck.com
 
 ## 🦆 About
@@ -55,6 +57,7 @@ More how to code in the example folders above, or at https://numberduck.com/docs
 
 ## 👮 License
 Number Duck is dual licensed as Open Source (AGPLv3) and commercial closed source.
+
 Closed source licenses may be purchased from https://numberduck.com
 
 Additional third party libraries (TinyXML2, Miniz) are licensed seperately, see License-ThirdParty.txt for more information.
