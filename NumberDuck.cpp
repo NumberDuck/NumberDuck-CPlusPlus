@@ -206,9 +206,9 @@ namespace NumberDuck
 				OPID_GROUP_SHAPE_BOOLEAN_PROPERTIES = 0x03BF,
 			};
 
-			protected: OfficeArtRecordHeaderStruct* m_pHeader = 0;
+			protected: OfficeArtRecordHeaderStruct* m_pHeader;
 			protected: bool m_bIsContainer;
-			protected: OwnedVector<OfficeArtRecord*>* m_pOfficeArtRecordVector = 0;
+			protected: OwnedVector<OfficeArtRecord*>* m_pOfficeArtRecordVector;
 			public: const char* GetTypeName();
 			public: OfficeArtRecord(OfficeArtRecordHeaderStruct* pHeader, bool bIsContainer, BlobView* pBlobView);
 			public: OfficeArtRecord(Type nType, bool bIsContainer, unsigned int nSize, bool bHax);
@@ -283,6 +283,7 @@ namespace NumberDuck
 		{
 			public: unsigned short m_nType;
 			public: unsigned int m_nSize;
+			public: BiffHeader();
 		};
 		class BiffRecord
 		{
@@ -549,10 +550,10 @@ namespace NumberDuck
 
 			public: const char* GetTypeName();
 			public: static const int SIZEOF_HEADER = 2 + 2;
-			protected: BiffHeader* m_pHeader = 0;
-			protected: Blob* m_pContinueBlob = 0;
-			protected: BlobView* m_pBlobView = 0;
-			protected: OwnedVector<BiffRecord_ContinueInfo*>* m_pContinueInfoVector = 0;
+			protected: BiffHeader* m_pHeader;
+			protected: Blob* m_pContinueBlob;
+			protected: BlobView* m_pBlobView;
+			protected: OwnedVector<BiffRecord_ContinueInfo*>* m_pContinueInfoVector;
 			public: BiffRecord(BiffHeader* pHeader, Stream* pStream);
 			public: BiffRecord(Type nType, unsigned int nSize);
 			public: BiffRecord::Type GetType();
@@ -567,15 +568,16 @@ namespace NumberDuck
 		class BiffWorksheetStreamSize
 		{
 			public: unsigned int m_nSize;
+			public: BiffWorksheetStreamSize();
 		};
 		class WorkbookGlobals
 		{
-			public: SharedStringContainer* m_pSharedStringContainer = 0;
-			public: Vector<Picture*>* m_pSharedPictureVector = 0;
-			public: OwnedVector<WorksheetRange*>* m_pWorksheetRangeVector = 0;
-			public: OwnedVector<BiffWorksheetStreamSize*>* m_pBiffWorksheetStreamSizeVector = 0;
-			public: OwnedVector<Style*>* m_pStyleVector = 0;
-			public: Font* m_pHeaderFont = 0;
+			public: SharedStringContainer* m_pSharedStringContainer;
+			public: Vector<Picture*>* m_pSharedPictureVector;
+			public: OwnedVector<WorksheetRange*>* m_pWorksheetRangeVector;
+			public: OwnedVector<BiffWorksheetStreamSize*>* m_pBiffWorksheetStreamSizeVector;
+			public: OwnedVector<Style*>* m_pStyleVector;
+			public: Font* m_pHeaderFont;
 			public: unsigned short m_Window1_nTabRatio;
 			public: WorkbookGlobals();
 			public: virtual ~WorkbookGlobals();
@@ -607,11 +609,11 @@ namespace NumberDuck
 			public: static const unsigned short PALETTE_INDEX_DEFAULT_FONT_AUTOMATIC = 0x7FFF;
 			public: static const unsigned int DEFAULT_COLOR[NUM_DEFAULT_PALETTE_ENTRY];
 			public: static const unsigned int DEFAULT_CUSTOM_COLOR[NUM_CUSTOM_PALETTE_ENTRY];
-			protected: BiffRecordContainer* m_pBiffRecordContainer = 0;
-			protected: OwnedVector<InternalString*>* m_sWorkheetNameVector = 0;
-			protected: InternalString* m_sTempWorksheetName = 0;
-			protected: MsoDrawingGroupRecord* m_MsoDrawingGroupRecord = 0;
-			protected: PaletteRecord* m_pPaletteRecord = 0;
+			protected: BiffRecordContainer* m_pBiffRecordContainer;
+			protected: OwnedVector<InternalString*>* m_sWorkheetNameVector;
+			protected: InternalString* m_sTempWorksheetName;
+			protected: MsoDrawingGroupRecord* m_MsoDrawingGroupRecord;
+			protected: PaletteRecord* m_pPaletteRecord;
 			public: BiffWorkbookGlobals(BiffRecord* pInitialBiffRecord, Stream* pStream);
 			public: static void Write(WorkbookGlobals* pWorkbookGlobals, OwnedVector<Worksheet*>* pWorksheetVector, Stream* pStream);
 			public: const char* GetNextWorksheetName();
@@ -704,8 +706,8 @@ namespace NumberDuck
 		class SectorChain
 		{
 			protected: int m_nSectorSize;
-			protected: Vector<Sector*>* m_pSectorVector = 0;
-			protected: Blob* m_pBlob = 0;
+			protected: Vector<Sector*>* m_pSectorVector;
+			protected: Blob* m_pBlob;
 			public: SectorChain(int nSectorSize);
 			public: int GetNumSector();
 			public: Sector* GetSectorByIndex(int nIndex);
@@ -740,6 +742,7 @@ namespace NumberDuck
 			public: int m_nSectorId;
 			public: unsigned int m_nStreamSize;
 			public: unsigned char m_pUnused[4];
+			public: StreamDataStruct();
 		};
 		class Stream
 		{
@@ -756,11 +759,11 @@ namespace NumberDuck
 			public: static const int DATA_SIZE = 128;
 			protected: int m_nStreamId;
 			protected: int m_nMinimumStandardStreamSize;
-			protected: StreamDataStruct* m_pDataStruct = 0;
-			protected: BlobView* m_pBlobView = 0;
-			protected: SectorChain* m_pSectorChain = 0;
-			protected: InternalString* m_sNameTemp = 0;
-			protected: CompoundFile* m_pCompoundFile = 0;
+			protected: StreamDataStruct* m_pDataStruct;
+			protected: BlobView* m_pBlobView;
+			protected: SectorChain* m_pSectorChain;
+			protected: InternalString* m_sNameTemp;
+			protected: CompoundFile* m_pCompoundFile;
 			public: Stream(int nStreamId, int nMinimumStandardStreamSize, Blob* pBlob, int nOffset, CompoundFile* pCompoundFile);
 			public: void Allocate(Type eType, int nStreamSize);
 			public: void FillSectorChain();
@@ -795,7 +798,7 @@ namespace NumberDuck
 			protected: static const bool IS_CONTAINER = false;
 			protected: static const OfficeArtRecord::Type TYPE = OfficeArtRecord::Type::TYPE_OFFICE_ART_TERTIARY_FOPT;
 			protected: void SetDefaults();
-			protected: OwnedVector<OfficeArtFOPTEStruct*>* m_pFoptVector = 0;
+			protected: OwnedVector<OfficeArtFOPTEStruct*>* m_pFoptVector;
 			public: OfficeArtTertiaryFOPTRecord();
 			protected: void PostSetDefaults();
 			protected: void PostBlobWrite(BlobView* pBlobView);
@@ -813,10 +816,10 @@ namespace NumberDuck
 			protected: static const bool IS_CONTAINER = false;
 			protected: static const OfficeArtRecord::Type TYPE = OfficeArtRecord::Type::TYPE_OFFICE_ART_SPLIT_MENU_COLOR_CONTAINER;
 			protected: void SetDefaults();
-			protected: MSOCRStruct* m_smca0 = 0;
-			protected: MSOCRStruct* m_smca1 = 0;
-			protected: MSOCRStruct* m_smca2 = 0;
-			protected: MSOCRStruct* m_smca3 = 0;
+			protected: MSOCRStruct* m_smca0;
+			protected: MSOCRStruct* m_smca1;
+			protected: MSOCRStruct* m_smca2;
+			protected: MSOCRStruct* m_smca3;
 			public: OfficeArtSplitMenuColorContainerRecord();
 			public: virtual ~OfficeArtSplitMenuColorContainerRecord();
 		};
@@ -891,7 +894,7 @@ namespace NumberDuck
 			protected: static const bool IS_CONTAINER = false;
 			protected: static const OfficeArtRecord::Type TYPE = OfficeArtRecord::Type::TYPE_OFFICE_ART_FRIT_CONTAINER;
 			protected: void SetDefaults();
-			protected: OwnedVector<OfficeArtFRITStruct*>* m_pRgfritVector = 0;
+			protected: OwnedVector<OfficeArtFRITStruct*>* m_pRgfritVector;
 			protected: void PostSetDefaults();
 			protected: void PostBlobWrite(BlobView* pBlobView);
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -908,7 +911,7 @@ namespace NumberDuck
 			protected: static const bool IS_CONTAINER = false;
 			protected: static const OfficeArtRecord::Type TYPE = OfficeArtRecord::Type::TYPE_OFFICE_ART_FOPT;
 			protected: void SetDefaults();
-			protected: OwnedVector<OfficeArtFOPTEStruct*>* m_pFoptVector = 0;
+			protected: OwnedVector<OfficeArtFOPTEStruct*>* m_pFoptVector;
 			public: OfficeArtFOPTRecord();
 			protected: void PostSetDefaults();
 			protected: void PostBlobWrite(BlobView* pBlobView);
@@ -945,7 +948,7 @@ namespace NumberDuck
 			protected: unsigned int m_cidcl;
 			protected: unsigned int m_cspSaved;
 			protected: unsigned int m_cdgSaved;
-			protected: OwnedVector<OfficeArtIDCLStruct*>* m_pRgidclVector = 0;
+			protected: OwnedVector<OfficeArtIDCLStruct*>* m_pRgidclVector;
 			public: OfficeArtFDGGBlockRecord(unsigned int nNumPicture);
 			protected: void PostSetDefaults();
 			protected: void PostBlobWrite(BlobView* pBlobView);
@@ -963,7 +966,7 @@ namespace NumberDuck
 			protected: void SetDefaults();
 			protected: unsigned char m_btWin32;
 			protected: unsigned char m_btMacOS;
-			protected: MD4DigestStruct* m_rgbUid = 0;
+			protected: MD4DigestStruct* m_rgbUid;
 			protected: unsigned short m_tag;
 			protected: unsigned int m_size;
 			protected: unsigned int m_cRef;
@@ -972,7 +975,7 @@ namespace NumberDuck
 			protected: unsigned char m_cbName;
 			protected: unsigned char m_unused2;
 			protected: unsigned char m_unused3;
-			protected: OfficeArtBlipRecord* m_pEmbeddedBlip = 0;
+			protected: OfficeArtBlipRecord* m_pEmbeddedBlip;
 			public: OfficeArtFBSERecord(Picture* pPicture);
 			protected: void PostSetDefaults();
 			protected: void PostBlobWrite(BlobView* pBlobView);
@@ -1055,11 +1058,11 @@ namespace NumberDuck
 			protected: static const bool IS_CONTAINER = false;
 			protected: static const OfficeArtRecord::Type TYPE = OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_EMF;
 			protected: void SetDefaults();
-			protected: MD4DigestStruct* m_rgbUid1 = 0;
-			protected: MD4DigestStruct* m_rgbUid2 = 0;
+			protected: MD4DigestStruct* m_rgbUid1;
+			protected: MD4DigestStruct* m_rgbUid2;
 			protected: unsigned char m_tag;
-			protected: Blob* m_BLIPFileData_ = 0;
-			protected: Blob* m_OwnedBLIPFileData = 0;
+			protected: Blob* m_BLIPFileData_;
+			protected: Blob* m_OwnedBLIPFileData;
 			public: OfficeArtBlipRecord(Picture* pPicture);
 			protected: void PostSetDefaults();
 			protected: void PostBlobWrite(BlobView* pBlobView);
@@ -1090,7 +1093,7 @@ namespace NumberDuck
 			protected: void SetDefaults();
 			protected: unsigned char m_ptg;
 			protected: unsigned char m_reserved0;
-			protected: ShortXLUnicodeStringStruct* m_string = 0;
+			protected: ShortXLUnicodeStringStruct* m_string;
 			public: PtgStrRecord(const char* szString);
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -1109,7 +1112,7 @@ namespace NumberDuck
 			protected: unsigned char m_ptg;
 			protected: unsigned char m_type;
 			protected: unsigned char m_reserved;
-			protected: RgceLocStruct* m_loc = 0;
+			protected: RgceLocStruct* m_loc;
 			public: PtgRefRecord(Coordinate* pCoordinate);
 			public: virtual Token* GetToken(WorkbookGlobals* pWorkbookGlobals);
 			public: virtual ~PtgRefRecord();
@@ -1126,7 +1129,7 @@ namespace NumberDuck
 			protected: unsigned char m_type;
 			protected: unsigned char m_reserved;
 			protected: unsigned short m_ixti;
-			protected: RgceLocStruct* m_loc = 0;
+			protected: RgceLocStruct* m_loc;
 			public: PtgRef3dRecord(Coordinate3d* pCoordinate3d, WorkbookGlobals* pWorkbookGlobals);
 			public: virtual Token* GetToken(WorkbookGlobals* pWorkbookGlobals);
 			public: virtual ~PtgRef3dRecord();
@@ -1276,7 +1279,7 @@ namespace NumberDuck
 			protected: unsigned char m_reserved2;
 			protected: unsigned char m_bitSpace;
 			protected: unsigned char m_reserved3;
-			protected: PtgAttrSpaceTypeStruct* m_type = 0;
+			protected: PtgAttrSpaceTypeStruct* m_type;
 			public: PtgAttrSpaceRecord(unsigned char nType, unsigned char nCount);
 			public: virtual Token* GetToken(WorkbookGlobals* pWorkbookGlobals);
 			public: virtual ~PtgAttrSpaceRecord();
@@ -1340,7 +1343,7 @@ namespace NumberDuck
 			protected: unsigned char m_ptg;
 			protected: unsigned char m_type;
 			protected: unsigned char m_reserved;
-			protected: RgceAreaStruct* m_area = 0;
+			protected: RgceAreaStruct* m_area;
 			public: PtgAreaRecord(Area* pArea);
 			public: virtual Token* GetToken(WorkbookGlobals* pWorkbookGlobals);
 			public: virtual ~PtgAreaRecord();
@@ -1357,7 +1360,7 @@ namespace NumberDuck
 			protected: unsigned char m_type;
 			protected: unsigned char m_reserved;
 			protected: unsigned short m_ixti;
-			protected: RgceAreaStruct* m_area = 0;
+			protected: RgceAreaStruct* m_area;
 			public: PtgArea3dRecord(Area3d* pArea3d, WorkbookGlobals* pWorkbookGlobals);
 			public: virtual Token* GetToken(WorkbookGlobals* pWorkbookGlobals);
 			public: virtual ~PtgArea3dRecord();
@@ -1369,9 +1372,10 @@ namespace NumberDuck
 			public: double m_fL;
 			public: void ToColor(Color* pColor);
 			public: void Set(const Color* pColor);
-			protected: double max(double a, double b);
-			protected: double min(double a, double b);
+			protected: double haxmax(double a, double b);
+			protected: double haxmin(double a, double b);
 			protected: double hue2rgb(double p, double q, double t);
+			public: Hsl();
 		};
 		class XFExt : public BiffRecord
 		{
@@ -1381,13 +1385,13 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 20;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_XF_EXT;
 			protected: void SetDefaults();
-			protected: FrtHeaderStruct* m_frtHeader = 0;
+			protected: FrtHeaderStruct* m_frtHeader;
 			protected: unsigned short m_reserved1;
 			protected: unsigned short m_ixfe;
 			protected: unsigned short m_reserved2;
 			protected: unsigned short m_cexts;
-			protected: Color* m_pTempColor = 0;
-			protected: OwnedVector<ExtPropStruct*>* m_pExtPropVector = 0;
+			protected: Color* m_pTempColor;
+			protected: OwnedVector<ExtPropStruct*>* m_pExtPropVector;
 			public: XFExt(unsigned short nXFIndex, const Color* pForegroundColor, const Color* pBackgroundColor, const Color* pTextColor);
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -1407,7 +1411,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 20;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_XF_CRC;
 			protected: void SetDefaults();
-			protected: FrtHeaderStruct* m_frtHeader = 0;
+			protected: FrtHeaderStruct* m_frtHeader;
 			protected: unsigned short m_reserved;
 			protected: unsigned short m_cxfs;
 			protected: unsigned int m_crc;
@@ -1505,7 +1509,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 3;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_WRITE_ACCESS;
 			protected: void SetDefaults();
-			protected: XLUnicodeStringStruct* m_userName = 0;
+			protected: XLUnicodeStringStruct* m_userName;
 			protected: static const unsigned int FORCE_SIZE = 112;
 			public: WriteAccess();
 			protected: void PostBlobWrite(BlobView* pBlobView);
@@ -1673,9 +1677,9 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 16;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_THEME;
 			protected: void SetDefaults();
-			protected: FrtHeaderStruct* m_frtHeader = 0;
+			protected: FrtHeaderStruct* m_frtHeader;
 			protected: unsigned int m_dwThemeVersion;
-			public: Vector<unsigned int>* m_nColorVector = 0;
+			public: Vector<unsigned int>* m_nColorVector;
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
 			protected: void PostBlobWrite(BlobView* pBlobView);
@@ -1742,8 +1746,8 @@ namespace NumberDuck
 			protected: unsigned short m_ixfe;
 			protected: unsigned short m_unused;
 			protected: unsigned short m_fBuiltIn;
-			protected: BuiltInStyleStruct* m_builtInData = 0;
-			protected: XLUnicodeStringStruct* m_user = 0;
+			protected: BuiltInStyleStruct* m_builtInData;
+			protected: XLUnicodeStringStruct* m_user;
 			public: StyleRecord(unsigned short nXFIndex, const char* szName);
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -1758,7 +1762,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 12;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_StartBlock;
 			protected: void SetDefaults();
-			protected: FrtHeaderOldStruct* m_frtHeaderOld = 0;
+			protected: FrtHeaderOldStruct* m_frtHeaderOld;
 			protected: unsigned short m_iObjectKind;
 			protected: unsigned short m_iObjectContext;
 			protected: unsigned short m_iObjectInstance1;
@@ -1777,8 +1781,8 @@ namespace NumberDuck
 			protected: void SetDefaults();
 			protected: int m_cstTotal;
 			protected: int m_cstUnique;
-			protected: Blob* m_pHaxBlob = 0;
-			protected: OwnedVector<XLUnicodeRichExtendedString*>* m_pRgb = 0;
+			protected: Blob* m_pHaxBlob;
+			protected: OwnedVector<XLUnicodeRichExtendedString*>* m_pRgb;
 			public: SstRecord(SharedStringContainer* pSharedStringContainer);
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -1813,12 +1817,12 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 24;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_ShapePropsStream;
 			protected: void SetDefaults();
-			protected: FrtHeaderStruct* m_frtHeader = 0;
+			protected: FrtHeaderStruct* m_frtHeader;
 			protected: unsigned short m_wObjContext;
 			protected: unsigned short m_unused;
 			protected: unsigned int m_dwChecksum;
 			protected: unsigned int m_cb;
-			protected: InternalString* m_rgb = 0;
+			protected: InternalString* m_rgb;
 			public: ShapePropsStreamRecord(unsigned short wObjContext, unsigned short unused, unsigned int dwChecksum);
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -1866,7 +1870,7 @@ namespace NumberDuck
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_SeriesText;
 			protected: void SetDefaults();
 			protected: unsigned short m_reserved;
-			protected: ShortXLUnicodeStringStruct* m_stText = 0;
+			protected: ShortXLUnicodeStringStruct* m_stText;
 			public: SeriesTextRecord(const char* szText);
 			public: virtual ~SeriesTextRecord();
 		};
@@ -1964,7 +1968,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 16;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_ROW;
 			protected: void SetDefaults();
-			protected: RwStruct* m_rw = 0;
+			protected: RwStruct* m_rw;
 			protected: unsigned short m_colMic;
 			protected: unsigned short m_colMac;
 			protected: unsigned short m_miyRw;
@@ -2219,9 +2223,9 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 22;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_OBJ;
 			protected: void SetDefaults();
-			protected: FtCmoStruct* m_cmo = 0;
-			protected: FtCfStruct* m_pictFormat = 0;
-			protected: FtPioGrbitStruct* m_pictFlags = 0;
+			protected: FtCmoStruct* m_cmo;
+			protected: FtCfStruct* m_pictFormat;
+			protected: FtPioGrbitStruct* m_pictFlags;
 			public: ObjRecord(unsigned short nIndex, FtCmoStruct::ObjType eType);
 			protected: void PostBlobRead(BlobView* pBlobView);
 			protected: void PostBlobWrite(BlobView* pBlobView);
@@ -2237,7 +2241,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 14;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_NUMBER;
 			protected: void SetDefaults();
-			protected: CellStruct* m_cell = 0;
+			protected: CellStruct* m_cell;
 			protected: double m_num;
 			public: NumberRecord(unsigned short nX, unsigned short nY, unsigned short nXfIndex, double fNumber);
 			public: unsigned short GetX();
@@ -2254,9 +2258,9 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 4;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_MULRK;
 			protected: void SetDefaults();
-			protected: RwStruct* m_rw = 0;
-			protected: ColStruct* m_col = 0;
-			protected: OwnedVector<RkRecStruct*>* m_pRkRecVector = 0;
+			protected: RwStruct* m_rw;
+			protected: ColStruct* m_col;
+			protected: OwnedVector<RkRecStruct*>* m_pRkRecVector;
 			protected: unsigned short m_colLast;
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -2276,9 +2280,9 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 4;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_MULBLANK;
 			protected: void SetDefaults();
-			protected: RwStruct* m_rw = 0;
-			protected: ColStruct* m_col = 0;
-			protected: OwnedVector<IXFCellStruct*>* m_pIXFCellVector = 0;
+			protected: RwStruct* m_rw;
+			protected: ColStruct* m_col;
+			protected: OwnedVector<IXFCellStruct*>* m_pIXFCellVector;
 			protected: unsigned short m_colLast;
 			public: MulBlank(unsigned short nX, unsigned short nY, Vector<int>* pXfIndexVector);
 			protected: void PostSetDefaults();
@@ -2300,6 +2304,7 @@ namespace NumberDuck
 			public: unsigned short m_nSubCellX2;
 			public: unsigned short m_nCellY2;
 			public: unsigned short m_nSubCellY2;
+			public: MsoDrawingRecord_Position();
 		};
 		class MsoDrawingRecord : public BiffRecord
 		{
@@ -2309,9 +2314,9 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 0;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_MSO_DRAWING;
 			protected: void SetDefaults();
-			protected: OfficeArtRecord* m_pOfficeArtRecord = 0;
-			protected: MsoDrawingRecord_Position* m_pPosition = 0;
-			protected: Blob* m_pBlob = 0;
+			protected: OfficeArtRecord* m_pOfficeArtRecord;
+			protected: MsoDrawingRecord_Position* m_pPosition;
+			protected: Blob* m_pBlob;
 			public: MsoDrawingRecord(OfficeArtDgContainerRecord* pOfficeArtDgContainerRecord, unsigned int nWriteSize);
 			public: MsoDrawingRecord(OfficeArtSpContainerRecord* pOfficeArtSpContainerRecord);
 			protected: void PostSetDefaults();
@@ -2329,7 +2334,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 0;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_MSO_DRAWING_GROUP;
 			protected: void SetDefaults();
-			protected: OfficeArtDggContainerRecord* m_pOfficeArtDggContainerRecord = 0;
+			protected: OfficeArtDggContainerRecord* m_pOfficeArtDggContainerRecord;
 			public: MsoDrawingGroupRecord(Vector<Picture*>* pPictureVector);
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -2358,7 +2363,7 @@ namespace NumberDuck
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_MergeCells;
 			protected: void SetDefaults();
 			protected: unsigned short m_cmcs;
-			protected: OwnedVector<Ref8Struct*>* m_pRef8Vector = 0;
+			protected: OwnedVector<Ref8Struct*>* m_pRef8Vector;
 			public: MergeCellsRecord(OwnedVector<MergedCell*>* pMergedCellVector, int nOffset, int nSize);
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -2520,7 +2525,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 38;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_HeaderFooter;
 			protected: void SetDefaults();
-			protected: FrtHeaderStruct* m_frtHeader = 0;
+			protected: FrtHeaderStruct* m_frtHeader;
 			protected: unsigned char m_guidSView_0;
 			protected: unsigned char m_guidSView_1;
 			protected: unsigned char m_guidSView_2;
@@ -2568,8 +2573,8 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 0;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_GelFrame;
 			protected: void SetDefaults();
-			protected: OfficeArtFOPTRecord* m_OPT1 = 0;
-			protected: OfficeArtTertiaryFOPTRecord* m_OPT2 = 0;
+			protected: OfficeArtFOPTRecord* m_OPT1;
+			protected: OfficeArtTertiaryFOPTRecord* m_OPT2;
 			public: GelFrameRecord(Fill* pFill, WorkbookGlobals* pWorkbookGlobals);
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -2603,8 +2608,8 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 20;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_FORMULA;
 			protected: void SetDefaults();
-			protected: CellStruct* m_cell = 0;
-			protected: FormulaValueStruct* m_val = 0;
+			protected: CellStruct* m_cell;
+			protected: FormulaValueStruct* m_val;
 			protected: unsigned short m_fAlwaysCalc;
 			protected: unsigned short m_reserved1;
 			protected: unsigned short m_fFill;
@@ -2613,7 +2618,7 @@ namespace NumberDuck
 			protected: unsigned short m_fClearErrors;
 			protected: unsigned short m_reserved3;
 			protected: unsigned int m_chn;
-			protected: CellParsedFormulaStruct* m_formula = 0;
+			protected: CellParsedFormulaStruct* m_formula;
 			public: FormulaRecord(unsigned short nX, unsigned short nY, unsigned short nXfIndex, Formula* pFormula, WorkbookGlobals* pWorkbookGlobals);
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -2633,7 +2638,7 @@ namespace NumberDuck
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_FORMAT;
 			protected: void SetDefaults();
 			protected: unsigned short m_ifmt;
-			protected: XLUnicodeStringStruct* m_stFormat = 0;
+			protected: XLUnicodeStringStruct* m_stFormat;
 			public: Format(unsigned short ifmt, const char* szFormat);
 			public: unsigned short GetFormatIndex();
 			public: const char* GetFormat();
@@ -2668,14 +2673,14 @@ namespace NumberDuck
 			protected: unsigned short m_fCondense;
 			protected: unsigned short m_fExtend;
 			protected: unsigned short m_reserved;
-			protected: IcvFontStruct* m_icv = 0;
+			protected: IcvFontStruct* m_icv;
 			protected: unsigned short m_bls;
 			protected: unsigned short m_sss;
 			protected: unsigned char m_uls;
 			protected: unsigned char m_bFamily;
 			protected: unsigned char m_bCharSet;
 			protected: unsigned char m_unused3;
-			protected: ShortXLUnicodeStringStruct* m_fontName = 0;
+			protected: ShortXLUnicodeStringStruct* m_fontName;
 			public: FontRecord(const char* szFontName, unsigned short nSizeTwips, unsigned short nColourIndex, bool bBold, bool bItalic, Font::Underline eUnderline, unsigned char unused1 = 0, unsigned char unused3 = 181);
 			public: unsigned short GetColourIndex();
 			public: const char* GetName();
@@ -2694,7 +2699,7 @@ namespace NumberDuck
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_EXTERN_SHEET;
 			protected: void SetDefaults();
 			protected: unsigned short m_cXTI;
-			protected: OwnedVector<XTIStruct*>* m_pXTIVector = 0;
+			protected: OwnedVector<XTIStruct*>* m_pXTIVector;
 			public: ExternSheetRecord(OwnedVector<WorksheetRange*>* pWorksheetRangeVector);
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -2721,7 +2726,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 12;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_EndBlock;
 			protected: void SetDefaults();
-			protected: FrtHeaderOldStruct* m_frtHeaderOld = 0;
+			protected: FrtHeaderOldStruct* m_frtHeaderOld;
 			protected: unsigned short m_iObjectKind;
 			protected: unsigned short m_unused1;
 			protected: unsigned short m_unused2;
@@ -2832,7 +2837,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 16;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_CrtMlFrt;
 			protected: void SetDefaults();
-			protected: FrtHeaderStruct* m_frtHeader = 0;
+			protected: FrtHeaderStruct* m_frtHeader;
 			protected: unsigned int m_cb;
 			protected: void PostSetDefaults();
 			public: virtual ~CrtMlFrtRecord();
@@ -2861,7 +2866,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 68;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_CrtLayout12A;
 			protected: void SetDefaults();
-			protected: FrtHeaderStruct* m_frtHeader = 0;
+			protected: FrtHeaderStruct* m_frtHeader;
 			protected: unsigned int m_dwCheckSum;
 			protected: unsigned short m_fLayoutTargetInner;
 			protected: unsigned short m_reserved1;
@@ -2947,7 +2952,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 24;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_ChartFrtInfo;
 			protected: void SetDefaults();
-			protected: FrtHeaderOldStruct* m_frtHeaderOld = 0;
+			protected: FrtHeaderOldStruct* m_frtHeaderOld;
 			protected: unsigned char m_verOriginator;
 			protected: unsigned char m_verWriter;
 			protected: unsigned short m_cCFRTID;
@@ -3017,7 +3022,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 12;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_CatLab;
 			protected: void SetDefaults();
-			protected: FrtHeaderOldStruct* m_frtHeaderOld = 0;
+			protected: FrtHeaderOldStruct* m_frtHeaderOld;
 			protected: unsigned short m_wOffset;
 			protected: unsigned short m_at;
 			protected: unsigned short m_cAutoCatLabelReal;
@@ -3072,7 +3077,7 @@ namespace NumberDuck
 			protected: unsigned short m_fUnlinkedIfmt;
 			protected: unsigned short m_reserved;
 			protected: unsigned short m_ifmt;
-			protected: CellParsedFormulaStruct* m_formula = 0;
+			protected: CellParsedFormulaStruct* m_formula;
 			public: BraiRecord(unsigned char id, unsigned char rt, bool fUnlinkedIfmt, unsigned short ifmt, Formula* pFormula, WorkbookGlobals* pWorkbookGlobals);
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -3094,7 +3099,7 @@ namespace NumberDuck
 			protected: unsigned char m_hsState;
 			protected: unsigned char m_reserved;
 			protected: unsigned char m_dt;
-			protected: ShortXLUnicodeStringStruct* m_stName = 0;
+			protected: ShortXLUnicodeStringStruct* m_stName;
 			public: BoundSheet8Record(const char* sxName);
 			public: const char* GetName();
 			public: void SetStreamOffset(unsigned int nStreamOffset);
@@ -3119,7 +3124,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 8;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_BOOLERR;
 			protected: void SetDefaults();
-			protected: CellStruct* m_cell = 0;
+			protected: CellStruct* m_cell;
 			protected: unsigned char m_bBoolErr;
 			protected: unsigned char m_fError;
 			public: BoolErrRecord(unsigned short nX, unsigned short nY, unsigned short nXfIndex, bool bBoolean);
@@ -3138,7 +3143,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 20;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_BOOK_EXT;
 			protected: void SetDefaults();
-			protected: FrtHeaderStruct* m_frtHeader = 0;
+			protected: FrtHeaderStruct* m_frtHeader;
 			protected: unsigned int m_cb;
 			protected: unsigned int m_fDontAutoRecover;
 			protected: unsigned int m_fHidePivotList;
@@ -3210,7 +3215,7 @@ namespace NumberDuck
 			protected: static const unsigned short SIZE = 6;
 			protected: static const BiffRecord::Type TYPE = BiffRecord::Type::TYPE_BLANK;
 			protected: void SetDefaults();
-			protected: CellStruct* m_cell = 0;
+			protected: CellStruct* m_cell;
 			public: Blank(unsigned short nX, unsigned short nY, unsigned short nXfIndex);
 			public: unsigned short GetX();
 			public: unsigned short GetY();
@@ -3400,7 +3405,7 @@ namespace NumberDuck
 			public: unsigned short m_cch;
 			public: unsigned char m_fHighByte;
 			public: unsigned char m_reserved;
-			public: InternalString* m_rgb = 0;
+			public: InternalString* m_rgb;
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
 			protected: void PreBlobWrite(BlobView* pBlobView);
@@ -3412,6 +3417,7 @@ namespace NumberDuck
 		{
 			public: int m_nOffset;
 			public: unsigned char m_fHighByte;
+			public: XLUnicodeRichExtendedString_ContinueInfo();
 		};
 		class XLUnicodeRichExtendedString : public BiffStruct
 		{
@@ -3428,8 +3434,8 @@ namespace NumberDuck
 			public: unsigned char m_reserved2;
 			public: unsigned short m_cRun;
 			public: int m_cbExtRst;
-			public: InternalString* m_rgb = 0;
-			public: OwnedVector<XLUnicodeRichExtendedString_ContinueInfo*>* m_pContinueInfoVector = 0;
+			public: InternalString* m_rgb;
+			public: OwnedVector<XLUnicodeRichExtendedString_ContinueInfo*>* m_pContinueInfoVector;
 			public: XLUnicodeRichExtendedString(const char* szString);
 			protected: void PostSetDefaults();
 			public: void ContinueAwareBlobRead(BlobView* pBlobView, OwnedVector<BiffRecord_ContinueInfo*>* pContinueInfoVector);
@@ -3449,7 +3455,7 @@ namespace NumberDuck
 			public: unsigned char m_cch;
 			public: unsigned char m_fHighByte;
 			public: unsigned char m_reserved;
-			public: InternalString* m_rgb = 0;
+			public: InternalString* m_rgb;
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
 			protected: void PreBlobWrite(BlobView* pBlobView);
@@ -3492,7 +3498,7 @@ namespace NumberDuck
 			public: virtual void BlobWrite(BlobView* pBlobView);
 			public: static const unsigned short SIZE = 0;
 			public: void SetDefaults();
-			public: OwnedVector<ParsedExpressionRecord*>* m_pParsedExpressionRecordVector = 0;
+			public: OwnedVector<ParsedExpressionRecord*>* m_pParsedExpressionRecordVector;
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
 			protected: void PreBlobWrite(BlobView* pBlobView);
@@ -3507,8 +3513,8 @@ namespace NumberDuck
 			public: virtual void BlobWrite(BlobView* pBlobView);
 			public: static const unsigned short SIZE = 4;
 			public: void SetDefaults();
-			public: RwUStruct* m_row = 0;
-			public: ColRelUStruct* m_column = 0;
+			public: RwUStruct* m_row;
+			public: ColRelUStruct* m_column;
 			public: virtual ~RgceLocStruct();
 		};
 		class RgceAreaStruct : public BiffStruct
@@ -3518,10 +3524,10 @@ namespace NumberDuck
 			public: virtual void BlobWrite(BlobView* pBlobView);
 			public: static const unsigned short SIZE = 8;
 			public: void SetDefaults();
-			public: RwUStruct* m_rowFirst = 0;
-			public: RwUStruct* m_rowLast = 0;
-			public: ColRelUStruct* m_columnFirst = 0;
-			public: ColRelUStruct* m_columnLast = 0;
+			public: RwUStruct* m_rowFirst;
+			public: RwUStruct* m_rowLast;
+			public: ColRelUStruct* m_columnFirst;
+			public: ColRelUStruct* m_columnLast;
 			public: virtual ~RgceAreaStruct();
 		};
 		class Ref8Struct : public BiffStruct
@@ -3585,9 +3591,9 @@ namespace NumberDuck
 			public: virtual void BlobWrite(BlobView* pBlobView);
 			public: static const unsigned short SIZE = 6;
 			public: void SetDefaults();
-			public: OfficeArtFOPTEOPIDStruct* m_opid = 0;
+			public: OfficeArtFOPTEOPIDStruct* m_opid;
 			public: int m_op;
-			public: Blob* m_pComplexData = 0;
+			public: Blob* m_pComplexData;
 			protected: void PostSetDefaults();
 			public: virtual ~OfficeArtFOPTEStruct();
 		};
@@ -3681,7 +3687,7 @@ namespace NumberDuck
 			public: unsigned char m_CLSID_StdHlink_13;
 			public: unsigned char m_CLSID_StdHlink_14;
 			public: unsigned char m_CLSID_StdHlink_15;
-			public: HyperlinkObjectStruct* m_hyperlink = 0;
+			public: HyperlinkObjectStruct* m_hyperlink;
 			public: virtual ~IHlinkStruct();
 		};
 		class HyperlinkStringStruct : public BiffStruct
@@ -3692,7 +3698,7 @@ namespace NumberDuck
 			public: static const unsigned short SIZE = 4;
 			public: void SetDefaults();
 			public: unsigned int m_length;
-			protected: InternalString* m_string = 0;
+			protected: InternalString* m_string;
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
 			protected: void PreBlobWrite(BlobView* pBlobView);
@@ -3718,10 +3724,10 @@ namespace NumberDuck
 			public: unsigned int m_hlstmfMonikerSavedAsStr;
 			public: unsigned int m_hlstmfAbsFromGetdataRel;
 			public: unsigned int m_reserved;
-			protected: HyperlinkStringStruct* m_displayName = 0;
-			protected: HyperlinkStringStruct* m_targetFrameName = 0;
-			protected: HyperlinkStringStruct* m_moniker = 0;
-			public: InternalString* m_haxUrl = 0;
+			protected: HyperlinkStringStruct* m_displayName;
+			protected: HyperlinkStringStruct* m_targetFrameName;
+			protected: HyperlinkStringStruct* m_moniker;
+			public: InternalString* m_haxUrl;
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
 			protected: void PostBlobWrite(BlobView* pBlobView);
@@ -3786,7 +3792,7 @@ namespace NumberDuck
 			public: static const unsigned short SIZE = 12;
 			public: void SetDefaults();
 			public: unsigned short m_rt;
-			public: FrtFlagsStruct* m_grbitFrt = 0;
+			public: FrtFlagsStruct* m_grbitFrt;
 			public: unsigned int m_reservedA;
 			public: unsigned int m_reservedB;
 			public: virtual ~FrtHeaderStruct();
@@ -3799,7 +3805,7 @@ namespace NumberDuck
 			public: static const unsigned short SIZE = 4;
 			public: void SetDefaults();
 			public: unsigned short m_rt;
-			public: FrtFlagsStruct* m_grbitFrt = 0;
+			public: FrtFlagsStruct* m_grbitFrt;
 			public: virtual ~FrtHeaderOldStruct();
 		};
 		class FrtFlagsStruct : public BiffStruct
@@ -3837,7 +3843,7 @@ namespace NumberDuck
 			public: void SetDefaults();
 			public: unsigned short m_extType;
 			public: unsigned short m_cb;
-			public: FullColorExtStruct* m_pFullColorExt = 0;
+			public: FullColorExtStruct* m_pFullColorExt;
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
 			protected: void PreBlobWrite(BlobView* pBlobView);
@@ -3871,9 +3877,9 @@ namespace NumberDuck
 			public: virtual void BlobWrite(BlobView* pBlobView);
 			public: static const unsigned short SIZE = 6;
 			public: void SetDefaults();
-			public: RwStruct* m_rw = 0;
-			public: ColStruct* m_col = 0;
-			public: IXFCellStruct* m_ixfe = 0;
+			public: RwStruct* m_rw;
+			public: ColStruct* m_col;
+			public: IXFCellStruct* m_ixfe;
 			public: virtual ~CellStruct();
 		};
 		class CellParsedFormulaStruct : public BiffStruct
@@ -3884,7 +3890,7 @@ namespace NumberDuck
 			public: static const unsigned short SIZE = 2;
 			public: void SetDefaults();
 			public: unsigned short m_cce;
-			public: RgceStruct* m_rgce = 0;
+			public: RgceStruct* m_rgce;
 			public: CellParsedFormulaStruct(Formula* pFormula, WorkbookGlobals* pWorkbookGlobals);
 			protected: void PostSetDefaults();
 			protected: void PostBlobRead(BlobView* pBlobView);
@@ -3913,10 +3919,11 @@ namespace NumberDuck
 			public: unsigned short m_nSubCellX2;
 			public: unsigned short m_nCellY2;
 			public: unsigned short m_nSubCellY2;
+			public: OfficeArtDimensions();
 		};
 		class BiffWorksheet : public Worksheet
 		{
-			protected: BiffRecordContainer* m_pBiffRecordContainer = 0;
+			protected: BiffRecordContainer* m_pBiffRecordContainer;
 			public: BiffWorksheet(Workbook* pWorkbook);
 			public: BiffWorksheet(Workbook* pWorkbook, BiffWorkbookGlobals* pBiffWorkbookGlobals, BiffRecord* pInitialBiffRecord, Stream* pStream);
 			public: static void Write(Worksheet* pWorksheet, WorkbookGlobals* pWorkbookGlobals, unsigned short nWorksheetIndex, BiffRecordContainer* pBiffRecordContainer);
@@ -3930,7 +3937,7 @@ namespace NumberDuck
 		};
 		class BiffRecordContainer : public WorkbookGlobals
 		{
-			public: OwnedVector<BiffRecord*>* m_pBiffRecordVector = 0;
+			public: OwnedVector<BiffRecord*>* m_pBiffRecordVector;
 			public: BiffRecordContainer();
 			public: BiffRecordContainer(BiffRecord* pInitialBiffRecord, Stream* pStream);
 			public: void AddBiffRecord(BiffRecord* pBiffRecord);
@@ -3941,16 +3948,17 @@ namespace NumberDuck
 		class StreamDirectoryImplementation
 		{
 			public: unsigned int m_nMinimumStandardStreamSize;
-			public: OwnedVector<Stream*>* m_pStreamVector = 0;
-			public: CompoundFile* m_pCompoundFile = 0;
+			public: OwnedVector<Stream*>* m_pStreamVector;
+			public: CompoundFile* m_pCompoundFile;
 			public: void AppendStream(Stream* pStream);
 			public: static int RedBlackTreeComparisonCallback(const void* pObjectA, const void* pObjectB);
 			public: void RedBlackTreeWalk(RedBlackNode* pNode, Stream* pStorage);
+			public: StreamDirectoryImplementation();
 			public: virtual ~StreamDirectoryImplementation();
 		};
 		class StreamDirectory : public SectorChain
 		{
-			protected: StreamDirectoryImplementation* m_pImpl = 0;
+			protected: StreamDirectoryImplementation* m_pImpl;
 			public: StreamDirectory(int nSectorSize, unsigned int nMinimumStandardStreamSize, CompoundFile* pCompoundFile);
 			public: int GetNumStream();
 			public: Stream* GetStreamByIndex(int nStreamDirectoryId);
@@ -3976,14 +3984,15 @@ namespace NumberDuck
 		class SectorImplementation
 		{
 			public: int m_nSectorId;
-			public: BlobView* m_pBlobView = 0;
+			public: BlobView* m_pBlobView;
+			public: SectorImplementation();
 			public: virtual ~SectorImplementation();
 		};
 		class Sector
 		{
 			public: static const int MINIMUM_SECTOR_SIZE = 128;
 			public: static const int MINIMUM_SECTOR_SIZE_SHIFT = 7;
-			protected: SectorImplementation* m_pImpl = 0;
+			protected: SectorImplementation* m_pImpl;
 			public: enum SectorId
 			{
 				FREE_SECTOR_SECTOR_ID = -1,
@@ -4001,7 +4010,7 @@ namespace NumberDuck
 		class MasterSectorAllocationTable : public SectorAllocationTable
 		{
 			public: static const int INITIAL_SECTOR_ID_ARRAY_SIZE = 109;
-			protected: CompoundFileHeader* m_pHeader = 0;
+			protected: CompoundFileHeader* m_pHeader;
 			public: MasterSectorAllocationTable(CompoundFileHeader* pHeader);
 			public: virtual int GetNumSectorId();
 			public: int GetNumInternalSectorId();
@@ -4048,14 +4057,14 @@ namespace NumberDuck
 		class CompoundFile
 		{
 			public: static const int HEADER_SIZE = 512;
-			protected: CompoundFileHeader* m_pHeader = 0;
-			protected: Blob* m_pBlob = 0;
-			protected: MasterSectorAllocationTable* m_pMasterSectorAllocationTable = 0;
-			protected: SectorAllocationTable* m_pSectorAllocationTable = 0;
-			protected: SectorAllocationTable* m_pShortSectorAllocationTable = 0;
-			protected: StreamDirectory* m_pStreamDirectory = 0;
-			protected: OwnedVector<Sector*>* m_pSectorVector = 0;
-			protected: OwnedVector<Sector*>* m_pShortSectorVector = 0;
+			protected: CompoundFileHeader* m_pHeader;
+			protected: Blob* m_pBlob;
+			protected: MasterSectorAllocationTable* m_pMasterSectorAllocationTable;
+			protected: SectorAllocationTable* m_pSectorAllocationTable;
+			protected: SectorAllocationTable* m_pShortSectorAllocationTable;
+			protected: StreamDirectory* m_pStreamDirectory;
+			protected: OwnedVector<Sector*>* m_pSectorVector;
+			protected: OwnedVector<Sector*>* m_pShortSectorVector;
 			public: CompoundFile(unsigned int nSectorSize = 512, unsigned int nShortSectorSize = 64, unsigned int nMinimumStandardStreamSize = 4096);
 			public: virtual ~CompoundFile();
 			public: bool Load(const char* sxFileName);
@@ -4501,7 +4510,7 @@ namespace NumberDuck
 		};
 		class StringToken : public Token
 		{
-			protected: InternalString* m_sString = 0;
+			protected: InternalString* m_sString;
 			public: StringToken(const char* sxString);
 			public: virtual void ToString(WorksheetImplementation* pWorksheetImplementation, InternalString* sOut);
 			public: virtual ParsedExpressionRecord* ToParsedExpression(WorkbookGlobals* pWorkbookGlobals);
@@ -4531,7 +4540,7 @@ namespace NumberDuck
 		};
 		class OperatorToken : public Token
 		{
-			protected: InternalString* m_sOperator = 0;
+			protected: InternalString* m_sOperator;
 			public: OperatorToken(const char* szOperator);
 			public: virtual void ToString(WorksheetImplementation* pWorksheetImplementation, InternalString* sOut);
 			public: virtual ParsedExpressionRecord* ToParsedExpression(WorkbookGlobals* pWorkbookGlobals);
@@ -4564,6 +4573,7 @@ namespace NumberDuck
 		class ParseFunctionData
 		{
 			public: int m_nCount;
+			public: ParseFunctionData();
 		};
 		class ParseSpaceData
 		{
@@ -4574,9 +4584,9 @@ namespace NumberDuck
 		};
 		class Formula
 		{
-			protected: OwnedVector<Token*>* m_pTokenVector = 0;
-			protected: Value* m_pValue = 0;
-			protected: InternalString* m_sTemp = 0;
+			protected: OwnedVector<Token*>* m_pTokenVector;
+			protected: Value* m_pValue;
+			protected: InternalString* m_sTemp;
 			public: Formula(const char* szFormula, WorksheetImplementation* pWorksheetImplementation);
 			public: Formula(Vector<ParsedExpressionRecord*>* pParsedExpressionRecordVector, WorkbookGlobals* pWorkbookGlobals);
 			public: Formula(OwnedVector<ParsedExpressionRecord*>* pParsedExpressionRecordVector, WorkbookGlobals* pWorkbookGlobals);
@@ -4605,7 +4615,7 @@ namespace NumberDuck
 		};
 		class CoordinateToken : public Token
 		{
-			protected: Coordinate* m_pCoordinate = 0;
+			protected: Coordinate* m_pCoordinate;
 			public: CoordinateToken(Coordinate* pCoordinate);
 			public: Coordinate* GetCoordinate();
 			public: virtual void ToString(WorksheetImplementation* pWorksheetImplementation, InternalString* sOut);
@@ -4615,7 +4625,7 @@ namespace NumberDuck
 		};
 		class Coordinate3dToken : public Token
 		{
-			protected: Coordinate3d* m_pCoordinate3d = 0;
+			protected: Coordinate3d* m_pCoordinate3d;
 			public: Coordinate3dToken(Coordinate3d* pCoordinate3d);
 			public: Coordinate3d* GetCoordinate3d();
 			public: virtual void ToString(WorksheetImplementation* pWorksheetImplementation, InternalString* sOut);
@@ -4637,7 +4647,7 @@ namespace NumberDuck
 		};
 		class AreaToken : public Token
 		{
-			protected: Area* m_pArea = 0;
+			protected: Area* m_pArea;
 			public: AreaToken(Area* pArea);
 			public: Area* GetArea();
 			public: virtual void ToString(WorksheetImplementation* pWorksheetImplementation, InternalString* sOut);
@@ -4647,7 +4657,7 @@ namespace NumberDuck
 		};
 		class Area3dToken : public Token
 		{
-			protected: Area3d* m_pArea3d = 0;
+			protected: Area3d* m_pArea3d;
 			public: Area3dToken(Area3d* pArea3d);
 			public: Area3d* GetArea3d();
 			public: virtual void ToString(WorksheetImplementation* pWorksheetImplementation, InternalString* sOut);
@@ -4672,12 +4682,12 @@ namespace NumberDuck
 			public: virtual RedBlackNode* GetLeftChild() const;
 			public: virtual RedBlackNode* GetRightChild() const;
 			public: virtual RedBlackNode* GetChild(int nDirection) const;
-			public: virtual void* GetObject() const;
+			public: virtual void* GetStoredObject() const;
 		};
 		class RedBlackNodeImplementation : public RedBlackNode
 		{
 			public: NodeColor m_eColor;
-			public: RedBlackNodeImplementation* m_pParent = 0;
+			public: RedBlackNodeImplementation* m_pParent;
 			public: RedBlackNodeImplementation* m_pChild[2];
 			public: void* m_pObject;
 			public: RedBlackNodeImplementation(void* pObject);
@@ -4688,13 +4698,13 @@ namespace NumberDuck
 			public: virtual RedBlackNode* GetLeftChild() const;
 			public: virtual RedBlackNode* GetRightChild() const;
 			public: virtual RedBlackNode* GetChild(int nDirection) const;
-			public: virtual void* GetObject() const;
+			public: virtual void* GetStoredObject() const;
 			public: virtual ~RedBlackNodeImplementation();
 		};
 		class RedBlackTree
 		{
 			public: typedef int (ComparisonCallback)(const void* pObjectA, const void* pObjectB);
-			protected: RedBlackTreeImplementation* m_pImpl = 0;
+			protected: RedBlackTreeImplementation* m_pImpl;
 			public: RedBlackTree(ComparisonCallback* pComparisonCallback);
 			public: virtual ~RedBlackTree();
 			public: bool AddObject(void* pObject);
@@ -4704,10 +4714,11 @@ namespace NumberDuck
 		};
 		class RedBlackTreeImplementation
 		{
-			public: RedBlackNodeImplementation* m_pRootNode = 0;
+			public: RedBlackNodeImplementation* m_pRootNode;
 			public: RedBlackTree::ComparisonCallback* m_pComparisonCallback;
 			public: void RecursiveDelete(RedBlackNodeImplementation* pNode);
 			public: void Rotate(RedBlackNodeImplementation* pNode, int nDirection);
+			public: RedBlackTreeImplementation();
 			public: virtual ~RedBlackTreeImplementation();
 		};
 		template <class T>
@@ -4715,7 +4726,7 @@ namespace NumberDuck
 		{
 			public: int m_nColumn;
 			public: int m_nRow;
-			public: T m_xObject = 0;
+			public: T m_xObject;
 			public: virtual ~TableElement()
 			{
 				if (m_xObject != 0)
@@ -4725,13 +4736,21 @@ namespace NumberDuck
 					}
 			}
 
+			public: TableElement()
+			{
+				m_nColumn = 0;
+				m_nRow = 0;
+				m_xObject = 0;
+			}
+
 		};
 		template <class T>
 		class Table
 		{
-			protected: OwnedVector<TableElement<T>*>* m_pElementVector = 0;
+			protected: OwnedVector<TableElement<T>*>* m_pElementVector;
 			public: Table()
 			{
+				m_pElementVector = 0;
 				m_pElementVector = new OwnedVector<TableElement<T>*>();
 			}
 
@@ -4838,22 +4857,26 @@ namespace NumberDuck
 		{
 			public: int m_nWidth;
 			public: int m_nHeight;
+			public: PngImageInfo();
 		};
 		class PngLoader
 		{
-			protected: PngImageInfo* m_pImageInfo = 0;
+			protected: PngImageInfo* m_pImageInfo;
 			public: PngImageInfo* Load(Blob* pBlob);
+			public: PngLoader();
 			public: virtual ~PngLoader();
 		};
 		class JpegImageInfo
 		{
 			public: int m_nWidth;
 			public: int m_nHeight;
+			public: JpegImageInfo();
 		};
 		class JpegLoader
 		{
-			protected: JpegImageInfo* m_pImageInfo = 0;
+			protected: JpegImageInfo* m_pImageInfo;
 			public: JpegImageInfo* Load(Blob* pBlob);
+			public: JpegLoader();
 			public: virtual ~JpegLoader();
 		};
 		class XlsxWorksheet : public Worksheet
@@ -4877,10 +4900,12 @@ namespace NumberDuck
 		{
 			public: unsigned short m_nWidth;
 			public: bool m_bHidden;
+			public: ColumnInfo();
 		};
 		class RowInfo
 		{
 			public: unsigned short m_nHeight;
+			public: RowInfo();
 		};
 		class Coordinate
 		{
@@ -4903,7 +4928,7 @@ namespace NumberDuck
 		{
 			public: unsigned short m_nWorksheetFirst;
 			public: unsigned short m_nWorksheetLast;
-			public: Coordinate* m_pCoordinate = 0;
+			public: Coordinate* m_pCoordinate;
 			public: Coordinate3d(unsigned short nWorksheetFirst, unsigned short nWorksheetLast, Coordinate* pCoordinate);
 			public: Coordinate3d* CreateClone();
 			public: void ToString(WorksheetImplementation* pWorksheetImplementation, InternalString* sOut);
@@ -4911,35 +4936,35 @@ namespace NumberDuck
 		};
 		class Area
 		{
-			public: Coordinate* m_pTopLeft = 0;
-			public: Coordinate* m_pBottomRight = 0;
+			public: Coordinate* m_pTopLeft;
+			public: Coordinate* m_pBottomRight;
 			public: Area(Coordinate* pTopLeft, Coordinate* pBottomRight);
 			public: Area* CreateClone();
 			public: virtual ~Area();
 		};
 		class Area3d
 		{
-			public: WorksheetRange* m_pWorksheetRange = 0;
-			public: Area* m_pArea = 0;
+			public: WorksheetRange* m_pWorksheetRange;
+			public: Area* m_pArea;
 			public: Area3d(unsigned short nWorksheetFirst, unsigned short nWorksheetLast, Area* pArea);
 			public: Area3d* CreateClone();
 			public: virtual ~Area3d();
 		};
 		class WorksheetImplementation
 		{
-			public: Workbook* m_pWorkbook = 0;
-			public: InternalString* m_sName = 0;
+			public: Workbook* m_pWorkbook;
+			public: InternalString* m_sName;
 			public: Worksheet::Orientation m_eOrientation;
 			public: bool m_bShowGridlines;
 			public: bool m_bPrintGridlines;
-			public: Table<Cell*>* m_pCellTable = 0;
-			public: Table<ColumnInfo*>* m_pColumnInfoTable = 0;
-			public: Table<RowInfo*>* m_pRowInfoTable = 0;
+			public: Table<Cell*>* m_pCellTable;
+			public: Table<ColumnInfo*>* m_pColumnInfoTable;
+			public: Table<RowInfo*>* m_pRowInfoTable;
 			public: unsigned short m_nDefaultRowHeight;
-			public: OwnedVector<Picture*>* m_pPictureVector = 0;
-			public: OwnedVector<Chart*>* m_pChartVector = 0;
-			public: OwnedVector<MergedCell*>* m_pMergedCellVector = 0;
-			public: Worksheet* m_pWorksheet = 0;
+			public: OwnedVector<Picture*>* m_pPictureVector;
+			public: OwnedVector<Chart*>* m_pChartVector;
+			public: OwnedVector<MergedCell*>* m_pMergedCellVector;
+			public: Worksheet* m_pWorksheet;
 			public: WorksheetImplementation(Workbook* pWorkbook, Worksheet* pWorksheet);
 			public: virtual ~WorksheetImplementation();
 			public: static unsigned short TwipsToPixels(unsigned short nTwips);
@@ -4961,21 +4986,22 @@ namespace NumberDuck
 		};
 		class WorkbookImplementation
 		{
-			public: WorkbookGlobals* m_pWorkbookGlobals = 0;
-			public: OwnedVector<Worksheet*>* m_pWorksheetVector = 0;
+			public: WorkbookGlobals* m_pWorkbookGlobals;
+			public: OwnedVector<Worksheet*>* m_pWorksheetVector;
 			public: virtual ~WorkbookImplementation();
+			public: WorkbookImplementation();
 		};
 		class ValueImplementation
 		{
 			public: Value::Type m_eType;
-			public: InternalString* m_sString = 0;
+			public: InternalString* m_sString;
 			public: double m_fFloat;
 			public: bool m_bBoolean;
-			public: Formula* m_pFormula = 0;
-			public: Worksheet* m_pWorksheet = 0;
-			public: Area* m_pArea = 0;
-			public: Area3d* m_pArea3d = 0;
-			public: Value* m_pValue = 0;
+			public: Formula* m_pFormula;
+			public: Worksheet* m_pWorksheet;
+			public: Area* m_pArea;
+			public: Area3d* m_pArea3d;
+			public: Value* m_pValue;
 			public: ValueImplementation();
 			public: static Value* CreateFloatValue(double fFloat);
 			public: static Value* CreateStringValue(const char* szString);
@@ -4994,32 +5020,33 @@ namespace NumberDuck
 		};
 		class StyleImplementation
 		{
-			public: Font* m_pFont = 0;
+			public: Font* m_pFont;
 			public: Style::HorizontalAlign m_eHorizontalAlign;
 			public: Style::VerticalAlign m_eVerticalAlign;
-			public: Color* m_pBackgroundColor = 0;
+			public: Color* m_pBackgroundColor;
 			public: Style::FillPattern m_eFillPattern;
-			public: Color* m_pFillPatternColor = 0;
-			public: Line* m_pTopBorderLine = 0;
-			public: Line* m_pRightBorderLine = 0;
-			public: Line* m_pBottomBorderLine = 0;
-			public: Line* m_pLeftBorderLine = 0;
-			public: InternalString* m_sFormat = 0;
+			public: Color* m_pFillPatternColor;
+			public: Line* m_pTopBorderLine;
+			public: Line* m_pRightBorderLine;
+			public: Line* m_pBottomBorderLine;
+			public: Line* m_pLeftBorderLine;
+			public: InternalString* m_sFormat;
 			public: unsigned int m_nFormatIndex;
 			public: StyleImplementation();
 			public: virtual ~StyleImplementation();
 		};
 		class SharedString
 		{
-			public: InternalString* m_sString = 0;
+			public: InternalString* m_sString;
 			public: int m_nChecksum;
 			public: int m_nIndex;
+			public: SharedString();
 			public: virtual ~SharedString();
 		};
 		class SharedStringContainer
 		{
-			protected: OwnedVector<SharedString*>* m_pSharedStringVector = 0;
-			protected: Vector<SharedString*>* m_pSharedStringSortedVector = 0;
+			protected: OwnedVector<SharedString*>* m_pSharedStringVector;
+			protected: Vector<SharedString*>* m_pSharedStringSortedVector;
 			public: SharedStringContainer();
 			public: virtual ~SharedStringContainer();
 			public: void Clear();
@@ -5030,12 +5057,12 @@ namespace NumberDuck
 		};
 		class SeriesImplementation
 		{
-			public: Worksheet* m_pWorksheet = 0;
-			public: Formula* m_pNameFormula = 0;
-			public: Formula* m_pValuesFormula = 0;
-			public: Line* m_pLine = 0;
-			public: Fill* m_pFill = 0;
-			public: Marker* m_pMarker = 0;
+			public: Worksheet* m_pWorksheet;
+			public: Formula* m_pNameFormula;
+			public: Formula* m_pValuesFormula;
+			public: Line* m_pLine;
+			public: Fill* m_pFill;
+			public: Marker* m_pMarker;
 			public: SeriesImplementation(Worksheet* pWorksheet, Formula* pValuesFormula);
 			public: void SetNameFormula(Formula* pFormula);
 			public: void SetValuesFormula(Formula* pFormula);
@@ -5050,8 +5077,8 @@ namespace NumberDuck
 			public: unsigned int m_nSubY;
 			public: unsigned int m_nWidth;
 			public: unsigned int m_nHeight;
-			public: InternalString* m_sUrl = 0;
-			public: Blob* m_pBlob = 0;
+			public: InternalString* m_sUrl;
+			public: Blob* m_pBlob;
 			public: Picture::Format m_eFormat;
 			public: PictureImplementation(Blob* pBlob, Picture::Format eFormat);
 			public: virtual ~PictureImplementation();
@@ -5062,12 +5089,13 @@ namespace NumberDuck
 			public: unsigned int m_nY;
 			public: unsigned int m_nWidth;
 			public: unsigned int m_nHeight;
+			public: MergedCellImplementation();
 		};
 		class MarkerImplementation
 		{
 			public: Marker::Type m_eType;
-			public: Color* m_pFillColor = 0;
-			public: Color* m_pBorderColor = 0;
+			public: Color* m_pFillColor;
+			public: Color* m_pBorderColor;
 			public: int m_nSize;
 			public: MarkerImplementation();
 			public: bool Equals(const MarkerImplementation* pMarkerImplementation) const;
@@ -5086,7 +5114,7 @@ namespace NumberDuck
 		class LineImplementation
 		{
 			public: Line::Type m_eType;
-			public: Color* m_pColor = 0;
+			public: Color* m_pColor;
 			public: LineImplementation();
 			public: bool Equals(const LineImplementation* pLineImplementation) const;
 			public: Line::Type GetType() const;
@@ -5096,16 +5124,16 @@ namespace NumberDuck
 		class LegendImplementation
 		{
 			public: bool m_bHidden;
-			public: Line* m_pBorderLine = 0;
-			public: Fill* m_pFill = 0;
+			public: Line* m_pBorderLine;
+			public: Fill* m_pFill;
 			public: LegendImplementation();
 			public: virtual ~LegendImplementation();
 		};
 		class FontImplementation
 		{
-			public: InternalString* m_sName = 0;
+			public: InternalString* m_sName;
 			public: int m_nSizeTwips;
-			public: Color* m_pColor = 0;
+			public: Color* m_pColor;
 			public: bool m_bBold;
 			public: bool m_bItalic;
 			public: Font::Underline m_eUnderline;
@@ -5115,8 +5143,8 @@ namespace NumberDuck
 		class FillImplementation
 		{
 			public: Fill::Type m_eType;
-			public: Color* m_pForegroundColor = 0;
-			public: Color* m_pBackgroundColor = 0;
+			public: Color* m_pForegroundColor;
+			public: Color* m_pBackgroundColor;
 			public: FillImplementation();
 			public: bool Equals(const FillImplementation* pFillImplementation) const;
 			public: Fill::Type GetType() const;
@@ -5125,7 +5153,7 @@ namespace NumberDuck
 		};
 		class ChartImplementation
 		{
-			public: Worksheet* m_pWorksheet = 0;
+			public: Worksheet* m_pWorksheet;
 			public: unsigned int m_nX;
 			public: unsigned int m_nY;
 			public: unsigned int m_nSubX;
@@ -5133,20 +5161,20 @@ namespace NumberDuck
 			public: unsigned int m_nWidth;
 			public: unsigned int m_nHeight;
 			public: Chart::Type m_eType;
-			public: Formula* m_pCategoriesFormula = 0;
-			public: InternalString* m_sTitle = 0;
-			public: InternalString* m_sHorizontalAxisLabel = 0;
-			public: InternalString* m_sVerticalAxisLabel = 0;
-			public: Legend* m_pLegend = 0;
-			public: Line* m_pFrameBorderLine = 0;
-			public: Fill* m_pFrameFill = 0;
-			public: Line* m_pPlotBorderLine = 0;
-			public: Fill* m_pPlotFill = 0;
-			public: Line* m_pHorizontalAxisLine = 0;
-			public: Line* m_pHorizontalGridLine = 0;
-			public: Line* m_pVerticalAxisLine = 0;
-			public: Line* m_pVerticalGridLine = 0;
-			public: OwnedVector<Series*>* m_pSeriesVector = 0;
+			public: Formula* m_pCategoriesFormula;
+			public: InternalString* m_sTitle;
+			public: InternalString* m_sHorizontalAxisLabel;
+			public: InternalString* m_sVerticalAxisLabel;
+			public: Legend* m_pLegend;
+			public: Line* m_pFrameBorderLine;
+			public: Fill* m_pFrameFill;
+			public: Line* m_pPlotBorderLine;
+			public: Fill* m_pPlotFill;
+			public: Line* m_pHorizontalAxisLine;
+			public: Line* m_pHorizontalGridLine;
+			public: Line* m_pVerticalAxisLine;
+			public: Line* m_pVerticalGridLine;
+			public: OwnedVector<Series*>* m_pSeriesVector;
 			public: ChartImplementation(Worksheet* pWorksheet, Chart::Type eType);
 			public: Series* CreateSeries(Formula* pValuesFormula);
 			public: void PurgeSeries(int nIndex);
@@ -5160,19 +5188,21 @@ namespace NumberDuck
 		};
 		class CellImplementation
 		{
-			public: Worksheet* m_pWorksheet = 0;
-			public: Value* m_pValue = 0;
-			public: Style* m_pStyle = 0;
+			public: Worksheet* m_pWorksheet;
+			public: Value* m_pValue;
+			public: Style* m_pStyle;
 			public: Workbook* GetWorkbook();
 			public: void SetFormula(Formula* pFormula);
+			public: CellImplementation();
 			public: virtual ~CellImplementation();
 		};
 		template <class T>
 		class OwnedVector
 		{
-			protected: Vector<T>* m_pVector = 0;
+			protected: Vector<T>* m_pVector;
 			public: OwnedVector()
 			{
+				m_pVector = 0;
 				m_pVector = new Vector<T>();
 			}
 
@@ -9424,6 +9454,7 @@ namespace NumberDuck
 {
 	Value::Value()
 	{
+		m_pImpl = 0;
 		m_pImpl = new Secret::ValueImplementation();
 		m_pImpl->m_eType = Type::TYPE_EMPTY;
 	}
@@ -9528,6 +9559,7 @@ namespace NumberDuck
 
 	Cell::Cell(Worksheet* pWorksheet)
 	{
+		m_pImpl = 0;
 		m_pImpl = new Secret::CellImplementation();
 		m_pImpl->m_pValue = new Value();
 		m_pImpl->m_pWorksheet = pWorksheet;
@@ -9625,6 +9657,7 @@ namespace NumberDuck
 
 	Style::Style()
 	{
+		m_pImplementation = 0;
 		m_pImplementation = new Secret::StyleImplementation();
 	}
 
@@ -9742,6 +9775,7 @@ namespace NumberDuck
 
 	Line::Line()
 	{
+		m_pImpl = 0;
 		m_pImpl = new Secret::LineImplementation();
 	}
 
@@ -9774,6 +9808,7 @@ namespace NumberDuck
 
 	Marker::Marker()
 	{
+		m_pImpl = 0;
 		m_pImpl = new Secret::MarkerImplementation();
 	}
 
@@ -9841,6 +9876,7 @@ namespace NumberDuck
 
 	Fill::Fill()
 	{
+		m_pImpl = 0;
 		m_pImpl = new Secret::FillImplementation();
 	}
 
@@ -9878,6 +9914,7 @@ namespace NumberDuck
 
 	Font::Font()
 	{
+		m_pImpl = 0;
 		m_pImpl = new Secret::FontImplementation();
 	}
 
@@ -9959,6 +9996,7 @@ namespace NumberDuck
 
 	Chart::Chart(Worksheet* pWorksheet, Type eType)
 	{
+		m_pImpl = 0;
 		m_pImpl = new Secret::ChartImplementation(pWorksheet, eType);
 	}
 
@@ -10187,6 +10225,7 @@ namespace NumberDuck
 
 	Picture::Picture(Blob* pBlob, Picture::Format eFormat)
 	{
+		m_pImplementation = 0;
 		m_pImplementation = new Secret::PictureImplementation(pBlob, eFormat);
 	}
 
@@ -10279,6 +10318,7 @@ namespace NumberDuck
 
 	Worksheet::Worksheet(Workbook* pWorkbook)
 	{
+		m_pImpl = 0;
 		m_pImpl = new Secret::WorksheetImplementation(pWorkbook, this);
 	}
 
@@ -11156,8 +11196,13 @@ namespace NumberDuck
 		return t << s | t >> (32 - s);
 	}
 
+	MD4::MD4()
+	{
+	}
+
 	Workbook::Workbook(License eLicense)
 	{
+		m_pImpl = 0;
 		m_pImpl = new Secret::WorkbookImplementation();
 		m_pImpl->m_pWorkbookGlobals = 0;
 		m_pImpl->m_pWorksheetVector = new Secret::OwnedVector<Worksheet*>();
@@ -11670,6 +11715,7 @@ namespace NumberDuck
 
 	Series::Series(Worksheet* pWorksheet, Secret::Formula* pValuesFormula)
 	{
+		m_pImpl = 0;
 		m_pImpl = new Secret::SeriesImplementation(pWorksheet, pValuesFormula);
 	}
 
@@ -11765,6 +11811,7 @@ namespace NumberDuck
 
 	MergedCell::MergedCell(unsigned int nX, unsigned int nY, unsigned int nWidth, unsigned int nHeight)
 	{
+		m_pImpl = 0;
 		m_pImpl = new Secret::MergedCellImplementation();
 		SetX(nX);
 		SetY(nY);
@@ -11831,6 +11878,7 @@ namespace NumberDuck
 
 	Legend::Legend()
 	{
+		m_pImpl = 0;
 		m_pImpl = new Secret::LegendImplementation();
 	}
 
@@ -11861,6 +11909,9 @@ namespace NumberDuck
 
 	Color::Color(unsigned char nRed, unsigned char nGreen, unsigned char nBlue)
 	{
+		m_nRed = 0;
+		m_nGreen = 0;
+		m_nBlue = 0;
 		m_nRed = nRed;
 		m_nGreen = nGreen;
 		m_nBlue = nBlue;
@@ -24560,6 +24611,9 @@ namespace NumberDuck
 
 		OfficeArtRecord::OfficeArtRecord(OfficeArtRecordHeaderStruct* pHeader, bool bIsContainer, BlobView* pBlobView)
 		{
+			m_pHeader = 0;
+			m_bIsContainer = false;
+			m_pOfficeArtRecordVector = 0;
 			m_pHeader = pHeader;
 			m_bIsContainer = bIsContainer;
 			m_pOfficeArtRecordVector = new OwnedVector<OfficeArtRecord*>();
@@ -24581,6 +24635,9 @@ namespace NumberDuck
 
 		OfficeArtRecord::OfficeArtRecord(Type nType, bool bIsContainer, unsigned int nSize, bool bHax)
 		{
+			m_pHeader = 0;
+			m_bIsContainer = false;
+			m_pOfficeArtRecordVector = 0;
 			m_pHeader = new OfficeArtRecordHeaderStruct();
 			m_pHeader->m_recType = (unsigned short)(nType);
 			m_pHeader->m_recLen = nSize;
@@ -24945,6 +25002,10 @@ namespace NumberDuck
 
 		ParsedExpressionRecord::ParsedExpressionRecord(Type eType, unsigned short nSize, bool bHax)
 		{
+			m_eType = Type::TYPE_PtgExp;
+			m_nSize = 0;
+			m_nFirstByte = 0;
+			m_nSecondByte = 0;
 			m_eType = eType;
 			m_nSize = nSize;
 			m_nFirstByte = 0;
@@ -25311,6 +25372,12 @@ namespace NumberDuck
 				pParsedExpressionRecord = 0;
 				return __3596419756;
 			}
+		}
+
+		BiffHeader::BiffHeader()
+		{
+			m_nType = 0;
+			m_nSize = 0;
 		}
 
 		const char* BiffRecord::GetTypeName()
@@ -26603,6 +26670,10 @@ namespace NumberDuck
 
 		BiffRecord::BiffRecord(BiffHeader* pHeader, Stream* pStream)
 		{
+			m_pHeader = 0;
+			m_pContinueBlob = 0;
+			m_pBlobView = 0;
+			m_pContinueInfoVector = 0;
 			m_pHeader = pHeader;
 			m_pContinueBlob = 0;
 			BlobView* pBlobView = pStream->GetSectorChain()->GetBlobView();
@@ -26667,6 +26738,10 @@ namespace NumberDuck
 
 		BiffRecord::BiffRecord(Type nType, unsigned int nSize)
 		{
+			m_pHeader = 0;
+			m_pContinueBlob = 0;
+			m_pBlobView = 0;
+			m_pContinueInfoVector = 0;
 			m_pHeader = new BiffHeader();
 			m_pHeader->m_nType = (unsigned short)(nType);
 			m_pHeader->m_nSize = nSize;
@@ -28162,8 +28237,20 @@ namespace NumberDuck
 			if (m_pContinueInfoVector) delete m_pContinueInfoVector;
 		}
 
+		BiffWorksheetStreamSize::BiffWorksheetStreamSize()
+		{
+			m_nSize = 0;
+		}
+
 		WorkbookGlobals::WorkbookGlobals()
 		{
+			m_pSharedStringContainer = 0;
+			m_pSharedPictureVector = 0;
+			m_pWorksheetRangeVector = 0;
+			m_pBiffWorksheetStreamSizeVector = 0;
+			m_pStyleVector = 0;
+			m_pHeaderFont = 0;
+			m_Window1_nTabRatio = 0;
 			m_pSharedStringContainer = new SharedStringContainer();
 			m_pSharedPictureVector = new Vector<Picture*>();
 			m_pWorksheetRangeVector = new OwnedVector<WorksheetRange*>();
@@ -28338,6 +28425,11 @@ namespace NumberDuck
 		const unsigned int BiffWorkbookGlobals::DEFAULT_CUSTOM_COLOR[NUM_CUSTOM_PALETTE_ENTRY] = {((unsigned int)(0)) << 0 | ((unsigned int)(0)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(255)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(0)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(255)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(0)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(255)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(0)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(255)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(128)) << 0 | ((unsigned int)(0)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(128)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(0)) << 8 | ((unsigned int)(128)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(128)) << 0 | ((unsigned int)(128)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(128)) << 0 | ((unsigned int)(0)) << 8 | ((unsigned int)(128)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(128)) << 8 | ((unsigned int)(128)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(192)) << 0 | ((unsigned int)(192)) << 8 | ((unsigned int)(192)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(128)) << 0 | ((unsigned int)(128)) << 8 | ((unsigned int)(128)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(153)) << 0 | ((unsigned int)(153)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(153)) << 0 | ((unsigned int)(51)) << 8 | ((unsigned int)(102)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(255)) << 8 | ((unsigned int)(204)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(204)) << 0 | ((unsigned int)(255)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(102)) << 0 | ((unsigned int)(0)) << 8 | ((unsigned int)(102)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(128)) << 8 | ((unsigned int)(128)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(102)) << 8 | ((unsigned int)(204)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(204)) << 0 | ((unsigned int)(204)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(0)) << 8 | ((unsigned int)(128)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(0)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(255)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(255)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(128)) << 0 | ((unsigned int)(0)) << 8 | ((unsigned int)(128)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(128)) << 0 | ((unsigned int)(0)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(128)) << 8 | ((unsigned int)(128)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(0)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(204)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(204)) << 0 | ((unsigned int)(255)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(204)) << 0 | ((unsigned int)(255)) << 8 | ((unsigned int)(204)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(255)) << 8 | ((unsigned int)(153)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(153)) << 0 | ((unsigned int)(204)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(153)) << 8 | ((unsigned int)(204)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(204)) << 0 | ((unsigned int)(153)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(204)) << 8 | ((unsigned int)(153)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(51)) << 0 | ((unsigned int)(102)) << 8 | ((unsigned int)(255)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(51)) << 0 | ((unsigned int)(204)) << 8 | ((unsigned int)(204)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(153)) << 0 | ((unsigned int)(204)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(204)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(153)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(255)) << 0 | ((unsigned int)(102)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(102)) << 0 | ((unsigned int)(102)) << 8 | ((unsigned int)(153)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(150)) << 0 | ((unsigned int)(150)) << 8 | ((unsigned int)(150)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(51)) << 8 | ((unsigned int)(102)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(51)) << 0 | ((unsigned int)(153)) << 8 | ((unsigned int)(102)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(0)) << 0 | ((unsigned int)(51)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(51)) << 0 | ((unsigned int)(51)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(153)) << 0 | ((unsigned int)(51)) << 8 | ((unsigned int)(0)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(153)) << 0 | ((unsigned int)(51)) << 8 | ((unsigned int)(102)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(51)) << 0 | ((unsigned int)(51)) << 8 | ((unsigned int)(153)) << 16 | ((unsigned int)(255)) << 24, ((unsigned int)(51)) << 0 | ((unsigned int)(51)) << 8 | ((unsigned int)(51)) << 16 | ((unsigned int)(255)) << 24};
 		BiffWorkbookGlobals::BiffWorkbookGlobals(BiffRecord* pInitialBiffRecord, Stream* pStream)
 		{
+			m_pBiffRecordContainer = 0;
+			m_sWorkheetNameVector = 0;
+			m_sTempWorksheetName = 0;
+			m_MsoDrawingGroupRecord = 0;
+			m_pPaletteRecord = 0;
 			m_pBiffRecordContainer = new BiffRecordContainer(pInitialBiffRecord, pStream);
 			m_sWorkheetNameVector = new OwnedVector<InternalString*>();
 			m_sTempWorksheetName = 0;
@@ -28949,6 +29041,29 @@ namespace NumberDuck
 
 		FtCmoStruct::FtCmoStruct()
 		{
+			m_ft = 0;
+			m_cb = 0;
+			m_ot = 0;
+			m_id = 0;
+			m_fLocked = 0;
+			m_reserved = 0;
+			m_fDefaultSize = 0;
+			m_fPublished = 0;
+			m_fPrint = 0;
+			m_unused1 = 0;
+			m_unused2 = 0;
+			m_fDisabled = 0;
+			m_fUIObj = 0;
+			m_fRecalcObj = 0;
+			m_unused3 = 0;
+			m_unused4 = 0;
+			m_fRecalcObjAlways = 0;
+			m_unused5 = 0;
+			m_unused6 = 0;
+			m_unused7 = 0;
+			m_unused8 = 0;
+			m_unused9 = 0;
+			m_unused10 = 0;
 			SetDefaults();
 		}
 
@@ -29038,6 +29153,9 @@ namespace NumberDuck
 
 		SectorChain::SectorChain(int nSectorSize)
 		{
+			m_nSectorSize = 0;
+			m_pSectorVector = 0;
+			m_pBlob = 0;
 			nbAssert::Assert((nSectorSize & (nSectorSize - 1)) == 0);
 			m_nSectorSize = nSectorSize;
 			m_pBlob = new Blob(false);
@@ -29129,8 +29247,27 @@ namespace NumberDuck
 			if (m_pBlob) delete m_pBlob;
 		}
 
+		StreamDataStruct::StreamDataStruct()
+		{
+			m_nNameDataSize = 0;
+			m_nType = 0;
+			m_nNodeColour = 0;
+			m_nLeftChildNodeStreamId = 0;
+			m_nRightChildNodeStreamId = 0;
+			m_nRootNodeStreamId = 0;
+			m_nSectorId = 0;
+			m_nStreamSize = 0;
+		}
+
 		Stream::Stream(int nStreamId, int nMinimumStandardStreamSize, Blob* pBlob, int nOffset, CompoundFile* pCompoundFile)
 		{
+			m_nStreamId = 0;
+			m_nMinimumStandardStreamSize = 0;
+			m_pDataStruct = 0;
+			m_pBlobView = 0;
+			m_pSectorChain = 0;
+			m_sNameTemp = 0;
+			m_pCompoundFile = 0;
 			int i;
 			nbAssert::Assert(pCompoundFile != 0);
 			m_pDataStruct = new StreamDataStruct();
@@ -29391,6 +29528,7 @@ namespace NumberDuck
 
 		OfficeArtTertiaryFOPTRecord::OfficeArtTertiaryFOPTRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
+			m_pFoptVector = 0;
 			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_TERTIARY_FOPT);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -29413,6 +29551,7 @@ namespace NumberDuck
 
 		OfficeArtTertiaryFOPTRecord::OfficeArtTertiaryFOPTRecord() : OfficeArtRecord(TYPE, IS_CONTAINER, SIZE, true)
 		{
+			m_pFoptVector = 0;
 			SetDefaults();
 			m_pHeader->m_recVer = 0x3;
 		}
@@ -29503,6 +29642,10 @@ namespace NumberDuck
 
 		OfficeArtSplitMenuColorContainerRecord::OfficeArtSplitMenuColorContainerRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
+			m_smca0 = 0;
+			m_smca1 = 0;
+			m_smca2 = 0;
+			m_smca3 = 0;
 			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_SPLIT_MENU_COLOR_CONTAINER);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -29534,6 +29677,10 @@ namespace NumberDuck
 
 		OfficeArtSplitMenuColorContainerRecord::OfficeArtSplitMenuColorContainerRecord() : OfficeArtRecord(TYPE, IS_CONTAINER, SIZE, true)
 		{
+			m_smca0 = 0;
+			m_smca1 = 0;
+			m_smca2 = 0;
+			m_smca3 = 0;
 			SetDefaults();
 			m_pHeader->m_recVer = 0x0;
 			m_pHeader->m_recInstance = 4;
@@ -29615,6 +29762,20 @@ namespace NumberDuck
 
 		OfficeArtFSPRecord::OfficeArtFSPRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
+			m_spid = 0;
+			m_fGroup = 0;
+			m_fChild = 0;
+			m_fPatriarch = 0;
+			m_fDeleted = 0;
+			m_fOleShape = 0;
+			m_fHaveMaster = 0;
+			m_fFlipH = 0;
+			m_fFlipV = 0;
+			m_fConnector = 0;
+			m_fHaveAnchor = 0;
+			m_fBackground = 0;
+			m_fHaveSpt = 0;
+			m_unused1 = 0;
 			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FSP);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -29679,6 +29840,20 @@ namespace NumberDuck
 
 		OfficeArtFSPRecord::OfficeArtFSPRecord(unsigned short recInstance, unsigned int spid, unsigned char fGroup, unsigned char fPatriarch, unsigned char fHaveAnchor, unsigned char fHaveSpt) : OfficeArtRecord(TYPE, IS_CONTAINER, SIZE, true)
 		{
+			m_spid = 0;
+			m_fGroup = 0;
+			m_fChild = 0;
+			m_fPatriarch = 0;
+			m_fDeleted = 0;
+			m_fOleShape = 0;
+			m_fHaveMaster = 0;
+			m_fFlipH = 0;
+			m_fFlipV = 0;
+			m_fConnector = 0;
+			m_fHaveAnchor = 0;
+			m_fBackground = 0;
+			m_fHaveSpt = 0;
+			m_unused1 = 0;
 			SetDefaults();
 			m_pHeader->m_recVer = 0x2;
 			m_pHeader->m_recInstance = recInstance;
@@ -29690,6 +29865,10 @@ namespace NumberDuck
 
 		OfficeArtFSPGRRecord::OfficeArtFSPGRRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
+			m_xLeft = 0;
+			m_yTop = 0;
+			m_xRight = 0;
+			m_yBottom = 0;
 			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FSPGR);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -29721,6 +29900,10 @@ namespace NumberDuck
 
 		OfficeArtFSPGRRecord::OfficeArtFSPGRRecord() : OfficeArtRecord(TYPE, IS_CONTAINER, SIZE, true)
 		{
+			m_xLeft = 0;
+			m_yTop = 0;
+			m_xRight = 0;
+			m_yBottom = 0;
 			SetDefaults();
 			m_pHeader->m_recVer = 0x1;
 			m_pHeader->m_recInstance = 0x0000;
@@ -29728,6 +29911,7 @@ namespace NumberDuck
 
 		OfficeArtFRITContainerRecord::OfficeArtFRITContainerRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
+			m_pRgfritVector = 0;
 			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FRIT_CONTAINER);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -29797,6 +29981,7 @@ namespace NumberDuck
 
 		OfficeArtFOPTRecord::OfficeArtFOPTRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
+			m_pFoptVector = 0;
 			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FOPT);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -29819,6 +30004,7 @@ namespace NumberDuck
 
 		OfficeArtFOPTRecord::OfficeArtFOPTRecord() : OfficeArtRecord(TYPE, IS_CONTAINER, SIZE, true)
 		{
+			m_pFoptVector = 0;
 			SetDefaults();
 			m_pHeader->m_recVer = 0x3;
 		}
@@ -29945,6 +30131,8 @@ namespace NumberDuck
 
 		OfficeArtFDGRecord::OfficeArtFDGRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
+			m_csp = 0;
+			m_spidCur = 0;
 			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FDG);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -29970,6 +30158,8 @@ namespace NumberDuck
 
 		OfficeArtFDGRecord::OfficeArtFDGRecord(unsigned short recInstance, unsigned int csp, unsigned int spidCur) : OfficeArtRecord(TYPE, IS_CONTAINER, SIZE, true)
 		{
+			m_csp = 0;
+			m_spidCur = 0;
 			SetDefaults();
 			m_pHeader->m_recVer = 0x0;
 			m_pHeader->m_recInstance = recInstance;
@@ -29979,6 +30169,11 @@ namespace NumberDuck
 
 		OfficeArtFDGGBlockRecord::OfficeArtFDGGBlockRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
+			m_spidMax = 0;
+			m_cidcl = 0;
+			m_cspSaved = 0;
+			m_cdgSaved = 0;
+			m_pRgidclVector = 0;
 			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FDGG_BLOCK);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -30013,6 +30208,11 @@ namespace NumberDuck
 
 		OfficeArtFDGGBlockRecord::OfficeArtFDGGBlockRecord(unsigned int nNumPicture) : OfficeArtRecord(TYPE, IS_CONTAINER, SIZE + OfficeArtIDCLStruct::SIZE, true)
 		{
+			m_spidMax = 0;
+			m_cidcl = 0;
+			m_cspSaved = 0;
+			m_cdgSaved = 0;
+			m_pRgidclVector = 0;
 			SetDefaults();
 			m_spidMax = 2049;
 			m_cidcl = 2;
@@ -30066,6 +30266,18 @@ namespace NumberDuck
 
 		OfficeArtFBSERecord::OfficeArtFBSERecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
+			m_btWin32 = 0;
+			m_btMacOS = 0;
+			m_rgbUid = 0;
+			m_tag = 0;
+			m_size = 0;
+			m_cRef = 0;
+			m_foDelay = 0;
+			m_unused1 = 0;
+			m_cbName = 0;
+			m_unused2 = 0;
+			m_unused3 = 0;
+			m_pEmbeddedBlip = 0;
 			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FBSE);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -30121,6 +30333,18 @@ namespace NumberDuck
 
 		OfficeArtFBSERecord::OfficeArtFBSERecord(Picture* pPicture) : OfficeArtRecord(TYPE, IS_CONTAINER, SIZE, true)
 		{
+			m_btWin32 = 0;
+			m_btMacOS = 0;
+			m_rgbUid = 0;
+			m_tag = 0;
+			m_size = 0;
+			m_cRef = 0;
+			m_foDelay = 0;
+			m_unused1 = 0;
+			m_cbName = 0;
+			m_unused2 = 0;
+			m_unused3 = 0;
+			m_pEmbeddedBlip = 0;
 			SetDefaults();
 			m_pEmbeddedBlip = new OfficeArtBlipRecord(pPicture);
 			unsigned int nBlipSize = m_pEmbeddedBlip->GetRecursiveSize();
@@ -30280,6 +30504,20 @@ namespace NumberDuck
 
 		OfficeArtClientAnchorSheetRecord::OfficeArtClientAnchorSheetRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
+			m_fMove = 0;
+			m_fSize = 0;
+			m_reserved1 = 0;
+			m_reserved2 = 0;
+			m_reserved3 = 0;
+			m_unused = 0;
+			m_colL = 0;
+			m_dxL = 0;
+			m_rwT = 0;
+			m_dyT = 0;
+			m_colR = 0;
+			m_dxR = 0;
+			m_rwB = 0;
+			m_dyB = 0;
 			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_CLIENT_ANCHOR_SHEET);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -30344,6 +30582,20 @@ namespace NumberDuck
 
 		OfficeArtClientAnchorSheetRecord::OfficeArtClientAnchorSheetRecord(unsigned short colL, unsigned short dxL, unsigned short rwT, unsigned short dyT, unsigned short colR, unsigned short dxR, unsigned short rwB, unsigned short dyB) : OfficeArtRecord(TYPE, IS_CONTAINER, SIZE, true)
 		{
+			m_fMove = 0;
+			m_fSize = 0;
+			m_reserved1 = 0;
+			m_reserved2 = 0;
+			m_reserved3 = 0;
+			m_unused = 0;
+			m_colL = 0;
+			m_dxL = 0;
+			m_rwT = 0;
+			m_dyT = 0;
+			m_colR = 0;
+			m_dxR = 0;
+			m_rwB = 0;
+			m_dyB = 0;
 			SetDefaults();
 			m_pHeader->m_recVer = 0x0;
 			m_pHeader->m_recInstance = 0x0000;
@@ -30399,6 +30651,11 @@ namespace NumberDuck
 
 		OfficeArtBlipRecord::OfficeArtBlipRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
+			m_rgbUid1 = 0;
+			m_rgbUid2 = 0;
+			m_tag = 0;
+			m_BLIPFileData_ = 0;
+			m_OwnedBLIPFileData = 0;
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -30423,6 +30680,11 @@ namespace NumberDuck
 
 		OfficeArtBlipRecord::OfficeArtBlipRecord(Picture* pPicture) : OfficeArtRecord(TYPE, IS_CONTAINER, (unsigned int)(SIZE + 1 + pPicture->GetBlob()->GetSize()), true)
 		{
+			m_rgbUid1 = 0;
+			m_rgbUid2 = 0;
+			m_tag = 0;
+			m_BLIPFileData_ = 0;
+			m_OwnedBLIPFileData = 0;
 			SetDefaults();
 			if (pPicture->GetFormat() == Picture::Format::PNG)
 			{
@@ -30560,6 +30822,9 @@ namespace NumberDuck
 
 		PtgStrRecord::PtgStrRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_string = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgStr);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -30591,6 +30856,9 @@ namespace NumberDuck
 
 		PtgStrRecord::PtgStrRecord(const char* szString) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_string = 0;
 			SetDefaults();
 			m_string->m_rgb->Set(szString);
 			m_nSize = (unsigned short)(m_nSize + ShortXLUnicodeStringStruct::SIZE + m_string->GetDynamicSize());
@@ -30623,6 +30891,10 @@ namespace NumberDuck
 
 		PtgRefRecord::PtgRefRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_type = 0;
+			m_reserved = 0;
+			m_loc = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgRef);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -30657,6 +30929,10 @@ namespace NumberDuck
 
 		PtgRefRecord::PtgRefRecord(Coordinate* pCoordinate) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_type = 0;
+			m_reserved = 0;
+			m_loc = 0;
 			SetDefaults();
 			m_loc->m_column->m_col = pCoordinate->m_nX;
 			if (pCoordinate->m_bXRelative)
@@ -30686,6 +30962,11 @@ namespace NumberDuck
 
 		PtgRef3dRecord::PtgRef3dRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_type = 0;
+			m_reserved = 0;
+			m_ixti = 0;
+			m_loc = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgRef3d);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -30723,6 +31004,11 @@ namespace NumberDuck
 
 		PtgRef3dRecord::PtgRef3dRecord(Coordinate3d* pCoordinate3d, WorkbookGlobals* pWorkbookGlobals) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_type = 0;
+			m_reserved = 0;
+			m_ixti = 0;
+			m_loc = 0;
 			SetDefaults();
 			m_type = 0x2;
 			if (pCoordinate3d->m_nWorksheetFirst != pCoordinate3d->m_nWorksheetLast)
@@ -30770,11 +31056,15 @@ namespace NumberDuck
 
 		PtgParenRecord::PtgParenRecord() : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
 			SetDefaults();
 		}
 
 		PtgParenRecord::PtgParenRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgParen);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -30803,6 +31093,8 @@ namespace NumberDuck
 
 		PtgParenRecord::PtgParenRecord(unsigned char ptg) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
 			SetDefaults();
 			switch (ptg)
 			{
@@ -30980,6 +31272,8 @@ namespace NumberDuck
 
 		PtgOperatorRecord::PtgOperatorRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -31008,6 +31302,8 @@ namespace NumberDuck
 
 		PtgOperatorRecord::PtgOperatorRecord(unsigned char ptg) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
 			SetDefaults();
 			switch (ptg)
 			{
@@ -31254,6 +31550,9 @@ namespace NumberDuck
 
 		PtgNumRecord::PtgNumRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_value = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgNum);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -31285,6 +31584,9 @@ namespace NumberDuck
 
 		PtgNumRecord::PtgNumRecord(double value) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_value = 0;
 			SetDefaults();
 			m_value = value;
 		}
@@ -31296,11 +31598,15 @@ namespace NumberDuck
 
 		PtgMissArgRecord::PtgMissArgRecord() : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
 			SetDefaults();
 		}
 
 		PtgMissArgRecord::PtgMissArgRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgMissArg);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -31334,6 +31640,9 @@ namespace NumberDuck
 
 		PtgIntRecord::PtgIntRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_integer = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgInt);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -31365,6 +31674,9 @@ namespace NumberDuck
 
 		PtgIntRecord::PtgIntRecord(unsigned short nInt) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_integer = 0;
 			SetDefaults();
 			m_integer = nInt;
 		}
@@ -31376,6 +31688,12 @@ namespace NumberDuck
 
 		PtgFuncVarRecord::PtgFuncVarRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_type = 0;
+			m_reserved0 = 0;
+			m_cparams = 0;
+			m_tab = 0;
+			m_fCeFunc = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgFuncVar);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -31419,6 +31737,12 @@ namespace NumberDuck
 
 		PtgFuncVarRecord::PtgFuncVarRecord(unsigned short iftab, unsigned char cparams) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_type = 0;
+			m_reserved0 = 0;
+			m_cparams = 0;
+			m_tab = 0;
+			m_fCeFunc = 0;
 			SetDefaults();
 			m_tab = iftab;
 			m_cparams = cparams;
@@ -31449,6 +31773,10 @@ namespace NumberDuck
 
 		PtgFuncRecord::PtgFuncRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_type = 0;
+			m_reserved0 = 0;
+			m_iftab = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgFunc);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -31532,6 +31860,9 @@ namespace NumberDuck
 
 		PtgBoolRecord::PtgBoolRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_boolean = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgBool);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -31563,6 +31894,9 @@ namespace NumberDuck
 
 		PtgBoolRecord::PtgBoolRecord(bool bBool) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_boolean = 0;
 			SetDefaults();
 			m_boolean = bBool ? (unsigned char)(0x1) : (unsigned char)(0x0);
 		}
@@ -31574,11 +31908,23 @@ namespace NumberDuck
 
 		PtgAttrSumRecord::PtgAttrSumRecord() : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_reserved2 = 0;
+			m_bitIf = 0;
+			m_reserved3 = 0;
+			m_unused = 0;
 			SetDefaults();
 		}
 
 		PtgAttrSumRecord::PtgAttrSumRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_reserved2 = 0;
+			m_bitIf = 0;
+			m_reserved3 = 0;
+			m_unused = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrSum);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -31627,6 +31973,12 @@ namespace NumberDuck
 
 		PtgAttrSpaceRecord::PtgAttrSpaceRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_reserved2 = 0;
+			m_bitSpace = 0;
+			m_reserved3 = 0;
+			m_type = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrSpace);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -31670,6 +32022,12 @@ namespace NumberDuck
 
 		PtgAttrSpaceRecord::PtgAttrSpaceRecord(unsigned char nType, unsigned char nCount) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_reserved2 = 0;
+			m_bitSpace = 0;
+			m_reserved3 = 0;
+			m_type = 0;
 			SetDefaults();
 			m_type->m_type = nType;
 			m_type->m_cch = nCount;
@@ -31687,11 +32045,21 @@ namespace NumberDuck
 
 		PtgAttrSemiRecord::PtgAttrSemiRecord() : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_bitSemi = 0;
+			m_reserved2 = 0;
+			m_unused = 0;
 			SetDefaults();
 		}
 
 		PtgAttrSemiRecord::PtgAttrSemiRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_bitSemi = 0;
+			m_reserved2 = 0;
+			m_unused = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrSemi);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -31732,11 +32100,23 @@ namespace NumberDuck
 
 		PtgAttrIfRecord::PtgAttrIfRecord() : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_reserved2 = 0;
+			m_bitIf = 0;
+			m_reserved3 = 0;
+			m_offset = 0;
 			SetDefaults();
 		}
 
 		PtgAttrIfRecord::PtgAttrIfRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_reserved2 = 0;
+			m_bitIf = 0;
+			m_reserved3 = 0;
+			m_offset = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrIf);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -31785,11 +32165,23 @@ namespace NumberDuck
 
 		PtgAttrGotoRecord::PtgAttrGotoRecord() : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_reserved2 = 0;
+			m_bitGoto = 0;
+			m_reserved3 = 0;
+			m_unused = 0;
 			SetDefaults();
 		}
 
 		PtgAttrGotoRecord::PtgAttrGotoRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_reserved0 = 0;
+			m_reserved2 = 0;
+			m_bitGoto = 0;
+			m_reserved3 = 0;
+			m_unused = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrGoto);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -31833,6 +32225,10 @@ namespace NumberDuck
 
 		PtgAreaRecord::PtgAreaRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_type = 0;
+			m_reserved = 0;
+			m_area = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgArea);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -31867,6 +32263,10 @@ namespace NumberDuck
 
 		PtgAreaRecord::PtgAreaRecord(Area* pArea) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_type = 0;
+			m_reserved = 0;
+			m_area = 0;
 			SetDefaults();
 			m_area->m_columnFirst->m_col = pArea->m_pTopLeft->m_nX;
 			if (pArea->m_pTopLeft->m_bXRelative)
@@ -31915,6 +32315,11 @@ namespace NumberDuck
 
 		PtgArea3dRecord::PtgArea3dRecord(BlobView* pBlobView) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_type = 0;
+			m_reserved = 0;
+			m_ixti = 0;
+			m_area = 0;
 			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgArea3d);
 			SetDefaults();
 			BlobRead(pBlobView);
@@ -31952,6 +32357,11 @@ namespace NumberDuck
 
 		PtgArea3dRecord::PtgArea3dRecord(Area3d* pArea3d, WorkbookGlobals* pWorkbookGlobals) : ParsedExpressionRecord(TYPE, SIZE, true)
 		{
+			m_ptg = 0;
+			m_type = 0;
+			m_reserved = 0;
+			m_ixti = 0;
+			m_area = 0;
 			SetDefaults();
 			Area* pArea = pArea3d->m_pArea;
 			m_area->m_columnFirst->m_col = pArea->m_pTopLeft->m_nX;
@@ -32035,8 +32445,8 @@ namespace NumberDuck
 			double fR = pColor->GetRed() / 255.0;
 			double fG = pColor->GetGreen() / 255.0;
 			double fB = pColor->GetBlue() / 255.0;
-			double fMin = min(fR, min(fG, fB));
-			double fMax = max(fR, max(fG, fB));
+			double fMin = haxmin(fR, haxmin(fG, fB));
+			double fMax = haxmax(fR, haxmax(fG, fB));
 			m_fH = (fMin + fMax) / 2.0;
 			m_fS = m_fH;
 			m_fL = m_fH;
@@ -32059,12 +32469,12 @@ namespace NumberDuck
 			}
 		}
 
-		double Hsl::max(double a, double b)
+		double Hsl::haxmax(double a, double b)
 		{
 			return a > b ? a : b;
 		}
 
-		double Hsl::min(double a, double b)
+		double Hsl::haxmin(double a, double b)
 		{
 			return a < b ? a : b;
 		}
@@ -32084,8 +32494,22 @@ namespace NumberDuck
 			return p;
 		}
 
+		Hsl::Hsl()
+		{
+			m_fH = 0;
+			m_fS = 0;
+			m_fL = 0;
+		}
+
 		XFExt::XFExt(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_frtHeader = 0;
+			m_reserved1 = 0;
+			m_ixfe = 0;
+			m_reserved2 = 0;
+			m_cexts = 0;
+			m_pTempColor = 0;
+			m_pExtPropVector = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_XF_EXT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -32123,6 +32547,13 @@ namespace NumberDuck
 
 		XFExt::XFExt(unsigned short nXFIndex, const Color* pForegroundColor, const Color* pBackgroundColor, const Color* pTextColor) : BiffRecord(TYPE, SIZE + 3 * (ExtPropStruct::SIZE + FullColorExtStruct::SIZE))
 		{
+			m_frtHeader = 0;
+			m_reserved1 = 0;
+			m_ixfe = 0;
+			m_reserved2 = 0;
+			m_cexts = 0;
+			m_pTempColor = 0;
+			m_pExtPropVector = 0;
 			SetDefaults();
 			m_frtHeader->m_rt = (unsigned short)(BiffRecord::Type::TYPE_XF_EXT);
 			m_ixfe = nXFIndex;
@@ -32322,6 +32753,10 @@ namespace NumberDuck
 
 		XFCRC::XFCRC(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_frtHeader = 0;
+			m_reserved = 0;
+			m_cxfs = 0;
+			m_crc = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_XF_CRC);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -32353,6 +32788,10 @@ namespace NumberDuck
 
 		XFCRC::XFCRC(OwnedVector<XF*>* pXFVector) : BiffRecord(TYPE, SIZE)
 		{
+			m_frtHeader = 0;
+			m_reserved = 0;
+			m_cxfs = 0;
+			m_crc = 0;
 			SetDefaults();
 			m_frtHeader->m_rt = (unsigned short)(BiffRecord::Type::TYPE_XF_CRC);
 			m_reserved = 0;
@@ -32428,6 +32867,46 @@ namespace NumberDuck
 
 		XF::XF(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_ifnt = 0;
+			m_ifmt = 0;
+			m_fLocked = 0;
+			m_fHidden = 0;
+			m_fStyle = 0;
+			m_f123Prefix = 0;
+			m_ixfParent = 0;
+			m_alc = 0;
+			m_fWrap = 0;
+			m_alcV = 0;
+			m_fJustLast = 0;
+			m_trot = 0;
+			m_cIndent = 0;
+			m_fShrinkToFit = 0;
+			m_reserved1 = 0;
+			m_iReadOrder = 0;
+			m_reserved2 = 0;
+			m_fAtrNum = 0;
+			m_fAtrFnt = 0;
+			m_fAtrAlc = 0;
+			m_fAtrBdr = 0;
+			m_fAtrPat = 0;
+			m_fAtrProt = 0;
+			m_dgLeft = 0;
+			m_dgRight = 0;
+			m_dgTop = 0;
+			m_dgBottom = 0;
+			m_icvLeft = 0;
+			m_icvRight = 0;
+			m_grbitDiag = 0;
+			m_icvTop = 0;
+			m_icvBottom = 0;
+			m_icvDiag = 0;
+			m_dgDiag = 0;
+			m_fHasXFExt = 0;
+			m_fls = 0;
+			m_icvFore = 0;
+			m_icvBack = 0;
+			m_fsxButton = 0;
+			m_reserved3 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_XF);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -32588,6 +33067,46 @@ namespace NumberDuck
 
 		XF::XF(unsigned short ifnt, unsigned short ifmt, unsigned char fStyle, unsigned short ixfParent, unsigned char fAtrNum, unsigned char fAtrFnt, unsigned char fAtrAlc, unsigned char fAtrBdr, unsigned char fAtrPat, unsigned char fAtrProt, unsigned char dgLeft, unsigned char dgRight, unsigned char dgTop, unsigned char dgBottom, unsigned char icvLeft, unsigned char icvRight, unsigned char icvTop, unsigned char icvBottom, unsigned char fHasXFExt, unsigned char fls, unsigned char icvFore, unsigned char icvBack) : BiffRecord(TYPE, SIZE)
 		{
+			m_ifnt = 0;
+			m_ifmt = 0;
+			m_fLocked = 0;
+			m_fHidden = 0;
+			m_fStyle = 0;
+			m_f123Prefix = 0;
+			m_ixfParent = 0;
+			m_alc = 0;
+			m_fWrap = 0;
+			m_alcV = 0;
+			m_fJustLast = 0;
+			m_trot = 0;
+			m_cIndent = 0;
+			m_fShrinkToFit = 0;
+			m_reserved1 = 0;
+			m_iReadOrder = 0;
+			m_reserved2 = 0;
+			m_fAtrNum = 0;
+			m_fAtrFnt = 0;
+			m_fAtrAlc = 0;
+			m_fAtrBdr = 0;
+			m_fAtrPat = 0;
+			m_fAtrProt = 0;
+			m_dgLeft = 0;
+			m_dgRight = 0;
+			m_dgTop = 0;
+			m_dgBottom = 0;
+			m_icvLeft = 0;
+			m_icvRight = 0;
+			m_grbitDiag = 0;
+			m_icvTop = 0;
+			m_icvBottom = 0;
+			m_icvDiag = 0;
+			m_dgDiag = 0;
+			m_fHasXFExt = 0;
+			m_fls = 0;
+			m_icvFore = 0;
+			m_icvBack = 0;
+			m_fsxButton = 0;
+			m_reserved3 = 0;
 			SetDefaults();
 			m_ifnt = ifnt;
 			m_ifmt = ifmt;
@@ -32618,6 +33137,46 @@ namespace NumberDuck
 
 		XF::XF(unsigned short nFontIndex, unsigned short nFormatIndex, Style* pStyle, bool bHasXFExt) : BiffRecord(TYPE, SIZE)
 		{
+			m_ifnt = 0;
+			m_ifmt = 0;
+			m_fLocked = 0;
+			m_fHidden = 0;
+			m_fStyle = 0;
+			m_f123Prefix = 0;
+			m_ixfParent = 0;
+			m_alc = 0;
+			m_fWrap = 0;
+			m_alcV = 0;
+			m_fJustLast = 0;
+			m_trot = 0;
+			m_cIndent = 0;
+			m_fShrinkToFit = 0;
+			m_reserved1 = 0;
+			m_iReadOrder = 0;
+			m_reserved2 = 0;
+			m_fAtrNum = 0;
+			m_fAtrFnt = 0;
+			m_fAtrAlc = 0;
+			m_fAtrBdr = 0;
+			m_fAtrPat = 0;
+			m_fAtrProt = 0;
+			m_dgLeft = 0;
+			m_dgRight = 0;
+			m_dgTop = 0;
+			m_dgBottom = 0;
+			m_icvLeft = 0;
+			m_icvRight = 0;
+			m_grbitDiag = 0;
+			m_icvTop = 0;
+			m_icvBottom = 0;
+			m_icvDiag = 0;
+			m_dgDiag = 0;
+			m_fHasXFExt = 0;
+			m_fls = 0;
+			m_icvFore = 0;
+			m_icvBack = 0;
+			m_fsxButton = 0;
+			m_reserved3 = 0;
 			SetDefaults();
 			if (nFontIndex >= 4)
 				nFontIndex++;
@@ -33106,11 +33665,13 @@ namespace NumberDuck
 
 		WsBoolRecord::WsBoolRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_haxFlags = 0;
 			SetDefaults();
 		}
 
 		WsBoolRecord::WsBoolRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_haxFlags = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WSBOOL);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33133,6 +33694,7 @@ namespace NumberDuck
 
 		WriteAccess::WriteAccess(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_userName = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WRITE_ACCESS);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33156,6 +33718,7 @@ namespace NumberDuck
 
 		WriteAccess::WriteAccess() : BiffRecord(TYPE, SIZE)
 		{
+			m_userName = 0;
 			SetDefaults();
 			m_userName->m_rgb->Set("Number Duck");
 			m_pHeader->m_nSize = FORCE_SIZE;
@@ -33176,6 +33739,27 @@ namespace NumberDuck
 
 		Window2Record::Window2Record(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_fDspFmlaRt = 0;
+			m_fDspGridRt = 0;
+			m_fDspRwColRt = 0;
+			m_fFrozenRt = 0;
+			m_fDspZerosRt = 0;
+			m_fDefaultHdr = 0;
+			m_fRightToLeft = 0;
+			m_fDspGuts = 0;
+			m_fFrozenNoSplit = 0;
+			m_fSelected = 0;
+			m_fPaged = 0;
+			m_fSLV = 0;
+			m_reserved1 = 0;
+			m_rwTop = 0;
+			m_colLeft = 0;
+			m_icvHdr = 0;
+			m_reserved2 = 0;
+			m_wScaleSLV = 0;
+			m_wScaleNormal = 0;
+			m_unused = 0;
+			m_reserved3 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WINDOW2);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33261,6 +33845,27 @@ namespace NumberDuck
 
 		Window2Record::Window2Record(bool fSelected, bool fPaged, bool bShowGridlines) : BiffRecord(TYPE, SIZE)
 		{
+			m_fDspFmlaRt = 0;
+			m_fDspGridRt = 0;
+			m_fDspRwColRt = 0;
+			m_fFrozenRt = 0;
+			m_fDspZerosRt = 0;
+			m_fDefaultHdr = 0;
+			m_fRightToLeft = 0;
+			m_fDspGuts = 0;
+			m_fFrozenNoSplit = 0;
+			m_fSelected = 0;
+			m_fPaged = 0;
+			m_fSLV = 0;
+			m_reserved1 = 0;
+			m_rwTop = 0;
+			m_colLeft = 0;
+			m_icvHdr = 0;
+			m_reserved2 = 0;
+			m_wScaleSLV = 0;
+			m_wScaleNormal = 0;
+			m_unused = 0;
+			m_reserved3 = 0;
 			SetDefaults();
 			m_fSelected = fSelected ? (unsigned short)(0x1) : (unsigned short)(0x0);
 			m_fPaged = fPaged ? (unsigned short)(0x1) : (unsigned short)(0x0);
@@ -33274,6 +33879,22 @@ namespace NumberDuck
 
 		Window1::Window1(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_xWn = 0;
+			m_yWn = 0;
+			m_dxWn = 0;
+			m_dyWn = 0;
+			m_fHidden = 0;
+			m_fIconic = 0;
+			m_fVeryHidden = 0;
+			m_fDspHScroll = 0;
+			m_fDspVScroll = 0;
+			m_fBotAdornment = 0;
+			m_fNoAFDateGroup = 0;
+			m_reserved = 0;
+			m_itabCur = 0;
+			m_itabFirst = 0;
+			m_ctabSel = 0;
+			m_wTabRatio = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WINDOW1);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33344,6 +33965,22 @@ namespace NumberDuck
 
 		Window1::Window1(unsigned short nTabRatio) : BiffRecord(TYPE, SIZE)
 		{
+			m_xWn = 0;
+			m_yWn = 0;
+			m_dxWn = 0;
+			m_dyWn = 0;
+			m_fHidden = 0;
+			m_fIconic = 0;
+			m_fVeryHidden = 0;
+			m_fDspHScroll = 0;
+			m_fDspVScroll = 0;
+			m_fBotAdornment = 0;
+			m_fNoAFDateGroup = 0;
+			m_reserved = 0;
+			m_itabCur = 0;
+			m_itabFirst = 0;
+			m_ctabSel = 0;
+			m_wTabRatio = 0;
 			SetDefaults();
 			m_xWn = 480;
 			m_yWn = 105;
@@ -33363,11 +34000,13 @@ namespace NumberDuck
 
 		WinProtect::WinProtect() : BiffRecord(TYPE, SIZE)
 		{
+			m_fLockWn = 0;
 			SetDefaults();
 		}
 
 		WinProtect::WinProtect(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_fLockWn = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WIN_PROTECT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33390,11 +34029,39 @@ namespace NumberDuck
 
 		ValueRangeRecord::ValueRangeRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_numMin = 0;
+			m_numMax = 0;
+			m_numMajor = 0;
+			m_numMinor = 0;
+			m_numCross = 0;
+			m_fAutoMin = 0;
+			m_fAutoMax = 0;
+			m_fAutoMajor = 0;
+			m_fAutoMinor = 0;
+			m_fAutoCross = 0;
+			m_fLog = 0;
+			m_fReversed = 0;
+			m_fMaxCross = 0;
+			m_unused = 0;
 			SetDefaults();
 		}
 
 		ValueRangeRecord::ValueRangeRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_numMin = 0;
+			m_numMax = 0;
+			m_numMajor = 0;
+			m_numMinor = 0;
+			m_numCross = 0;
+			m_fAutoMin = 0;
+			m_fAutoMax = 0;
+			m_fAutoMajor = 0;
+			m_fAutoMinor = 0;
+			m_fAutoCross = 0;
+			m_fLog = 0;
+			m_fReversed = 0;
+			m_fMaxCross = 0;
+			m_unused = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ValueRange);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33459,6 +34126,7 @@ namespace NumberDuck
 
 		VCenterRecord::VCenterRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_vcenter = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_VCENTER);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33481,17 +34149,20 @@ namespace NumberDuck
 
 		VCenterRecord::VCenterRecord(bool bCenter) : BiffRecord(TYPE, SIZE)
 		{
+			m_vcenter = 0;
 			SetDefaults();
 			m_vcenter = bCenter ? (unsigned short)(0x1) : (unsigned short)(0x0);
 		}
 
 		UnitsRecord::UnitsRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_unused = 0;
 			SetDefaults();
 		}
 
 		UnitsRecord::UnitsRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_unused = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Units);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33514,6 +34185,7 @@ namespace NumberDuck
 
 		TopMarginRecord::TopMarginRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_num = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_TOP_MARGIN);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33536,12 +34208,30 @@ namespace NumberDuck
 
 		TopMarginRecord::TopMarginRecord(double num) : BiffRecord(TYPE, SIZE)
 		{
+			m_num = 0;
 			SetDefaults();
 			m_num = num;
 		}
 
 		TickRecord::TickRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_tktMajor = 0;
+			m_tktMinor = 0;
+			m_tlt = 0;
+			m_wBkgMode = 0;
+			m_rgb = 0;
+			m_reserved1 = 0;
+			m_reserved2 = 0;
+			m_reserved3 = 0;
+			m_reserved4 = 0;
+			m_fAutoCo = 0;
+			m_fAutoMode = 0;
+			m_rot = 0;
+			m_fAutoRot = 0;
+			m_unused = 0;
+			m_iReadingOrder = 0;
+			m_icv = 0;
+			m_trot = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Tick);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33615,6 +34305,23 @@ namespace NumberDuck
 
 		TickRecord::TickRecord(bool fAutoRot) : BiffRecord(TYPE, SIZE)
 		{
+			m_tktMajor = 0;
+			m_tktMinor = 0;
+			m_tlt = 0;
+			m_wBkgMode = 0;
+			m_rgb = 0;
+			m_reserved1 = 0;
+			m_reserved2 = 0;
+			m_reserved3 = 0;
+			m_reserved4 = 0;
+			m_fAutoCo = 0;
+			m_fAutoMode = 0;
+			m_rot = 0;
+			m_fAutoRot = 0;
+			m_unused = 0;
+			m_iReadingOrder = 0;
+			m_icv = 0;
+			m_trot = 0;
 			SetDefaults();
 			m_tktMajor = 0x0002;
 			m_tlt = 0x0003;
@@ -33626,6 +34333,9 @@ namespace NumberDuck
 
 		Theme::Theme(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_frtHeader = 0;
+			m_dwThemeVersion = 0;
+			m_nColorVector = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_THEME);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33760,6 +34470,33 @@ namespace NumberDuck
 
 		TextRecord::TextRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_at = 0;
+			m_vat = 0;
+			m_wBkgMode = 0;
+			m_rgbText = 0;
+			m_x = 0;
+			m_y = 0;
+			m_dx = 0;
+			m_dy = 0;
+			m_fAutoColor = 0;
+			m_fShowKey = 0;
+			m_fShowValue = 0;
+			m_unused1 = 0;
+			m_fAutoText = 0;
+			m_fGenerated = 0;
+			m_fDeleted = 0;
+			m_fAutoMode = 0;
+			m_unused2 = 0;
+			m_fShowLabelAndPerc = 0;
+			m_fShowPercent = 0;
+			m_fShowBubbleSizes = 0;
+			m_fShowLabel = 0;
+			m_reserved = 0;
+			m_icvText = 0;
+			m_dlp = 0;
+			m_unused3 = 0;
+			m_iReadingOrder = 0;
+			m_trot = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Text);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33866,6 +34603,33 @@ namespace NumberDuck
 
 		TextRecord::TextRecord(int x, int y, unsigned int rgbText, bool fAutoColor, bool fAutoText, bool fGenerated, bool fAutoMode, unsigned short icvText, unsigned short trot) : BiffRecord(TYPE, SIZE)
 		{
+			m_at = 0;
+			m_vat = 0;
+			m_wBkgMode = 0;
+			m_rgbText = 0;
+			m_x = 0;
+			m_y = 0;
+			m_dx = 0;
+			m_dy = 0;
+			m_fAutoColor = 0;
+			m_fShowKey = 0;
+			m_fShowValue = 0;
+			m_unused1 = 0;
+			m_fAutoText = 0;
+			m_fGenerated = 0;
+			m_fDeleted = 0;
+			m_fAutoMode = 0;
+			m_unused2 = 0;
+			m_fShowLabelAndPerc = 0;
+			m_fShowPercent = 0;
+			m_fShowBubbleSizes = 0;
+			m_fShowLabel = 0;
+			m_reserved = 0;
+			m_icvText = 0;
+			m_dlp = 0;
+			m_unused3 = 0;
+			m_iReadingOrder = 0;
+			m_trot = 0;
 			SetDefaults();
 			m_at = 0x02;
 			m_vat = 0x02;
@@ -33887,6 +34651,8 @@ namespace NumberDuck
 
 		SupBookRecord::SupBookRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_ctab = 0;
+			m_cch = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SUP_BOOK);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33912,6 +34678,8 @@ namespace NumberDuck
 
 		SupBookRecord::SupBookRecord(unsigned short nNumWorksheet) : BiffRecord(TYPE, SIZE)
 		{
+			m_ctab = 0;
+			m_cch = 0;
 			SetDefaults();
 			m_ctab = nNumWorksheet;
 			m_cch = 0x0401;
@@ -33919,6 +34687,11 @@ namespace NumberDuck
 
 		StyleRecord::StyleRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_ixfe = 0;
+			m_unused = 0;
+			m_fBuiltIn = 0;
+			m_builtInData = 0;
+			m_user = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_STYLE);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -33953,6 +34726,11 @@ namespace NumberDuck
 
 		StyleRecord::StyleRecord(unsigned short nXFIndex, const char* szName) : BiffRecord(TYPE, SIZE)
 		{
+			m_ixfe = 0;
+			m_unused = 0;
+			m_fBuiltIn = 0;
+			m_builtInData = 0;
+			m_user = 0;
 			SetDefaults();
 			m_ixfe = nXFIndex;
 			m_user->m_rgb->Set(szName);
@@ -34000,6 +34778,11 @@ namespace NumberDuck
 
 		StartBlockRecord::StartBlockRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_frtHeaderOld = 0;
+			m_iObjectKind = 0;
+			m_iObjectContext = 0;
+			m_iObjectInstance1 = 0;
+			m_iObjectInstance2 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_StartBlock);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34035,6 +34818,11 @@ namespace NumberDuck
 
 		StartBlockRecord::StartBlockRecord(unsigned short iObjectKind, unsigned short iObjectContext, unsigned short iObjectInstance1, unsigned short iObjectInstance2) : BiffRecord(TYPE, SIZE)
 		{
+			m_frtHeaderOld = 0;
+			m_iObjectKind = 0;
+			m_iObjectContext = 0;
+			m_iObjectInstance1 = 0;
+			m_iObjectInstance2 = 0;
 			SetDefaults();
 			m_iObjectKind = iObjectKind;
 			m_iObjectContext = iObjectContext;
@@ -34054,6 +34842,10 @@ namespace NumberDuck
 
 		SstRecord::SstRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_cstTotal = 0;
+			m_cstUnique = 0;
+			m_pHaxBlob = 0;
+			m_pRgb = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SST);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34082,6 +34874,10 @@ namespace NumberDuck
 
 		SstRecord::SstRecord(SharedStringContainer* pSharedStringContainer) : BiffRecord(TYPE, SIZE)
 		{
+			m_cstTotal = 0;
+			m_cstUnique = 0;
+			m_pHaxBlob = 0;
+			m_pRgb = 0;
 			SetDefaults();
 			m_cstTotal = pSharedStringContainer->GetSize();
 			m_cstUnique = pSharedStringContainer->GetSize();
@@ -34146,11 +34942,27 @@ namespace NumberDuck
 
 		ShtPropsRecord::ShtPropsRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_fManSerAlloc = 0;
+			m_fPlotVisOnly = 0;
+			m_fNotSizeWith = 0;
+			m_fManPlotArea = 0;
+			m_fAlwaysAutoPlotArea = 0;
+			m_reserved1 = 0;
+			m_mdBlank = 0;
+			m_reserved2 = 0;
 			SetDefaults();
 		}
 
 		ShtPropsRecord::ShtPropsRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_fManSerAlloc = 0;
+			m_fPlotVisOnly = 0;
+			m_fNotSizeWith = 0;
+			m_fManPlotArea = 0;
+			m_fAlwaysAutoPlotArea = 0;
+			m_reserved1 = 0;
+			m_mdBlank = 0;
+			m_reserved2 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ShtProps);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34197,6 +35009,12 @@ namespace NumberDuck
 
 		ShapePropsStreamRecord::ShapePropsStreamRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_frtHeader = 0;
+			m_wObjContext = 0;
+			m_unused = 0;
+			m_dwChecksum = 0;
+			m_cb = 0;
+			m_rgb = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ShapePropsStream);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34233,6 +35051,12 @@ namespace NumberDuck
 
 		ShapePropsStreamRecord::ShapePropsStreamRecord(unsigned short wObjContext, unsigned short unused, unsigned int dwChecksum) : BiffRecord(TYPE, SIZE)
 		{
+			m_frtHeader = 0;
+			m_wObjContext = 0;
+			m_unused = 0;
+			m_dwChecksum = 0;
+			m_cb = 0;
+			m_rgb = 0;
 			SetDefaults();
 			m_wObjContext = wObjContext;
 			m_unused = unused;
@@ -34260,6 +35084,28 @@ namespace NumberDuck
 
 		SetupRecord::SetupRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_iPaperSize = 0;
+			m_iScale = 0;
+			m_iPageStart = 0;
+			m_iFitWidth = 0;
+			m_iFitHeight = 0;
+			m_fLeftToRight = 0;
+			m_fPortrait = 0;
+			m_fNoPls = 0;
+			m_fNoColor = 0;
+			m_fDraft = 0;
+			m_fNotes = 0;
+			m_fNoOrient = 0;
+			m_fUsePage = 0;
+			m_unused1 = 0;
+			m_fEndNotes = 0;
+			m_iErrors = 0;
+			m_reserved = 0;
+			m_iRes = 0;
+			m_iVRes = 0;
+			m_numHdr = 0;
+			m_numFtr = 0;
+			m_iCopies = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SETUP);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34348,6 +35194,28 @@ namespace NumberDuck
 
 		SetupRecord::SetupRecord(bool bPortrait) : BiffRecord(TYPE, SIZE)
 		{
+			m_iPaperSize = 0;
+			m_iScale = 0;
+			m_iPageStart = 0;
+			m_iFitWidth = 0;
+			m_iFitHeight = 0;
+			m_fLeftToRight = 0;
+			m_fPortrait = 0;
+			m_fNoPls = 0;
+			m_fNoColor = 0;
+			m_fDraft = 0;
+			m_fNotes = 0;
+			m_fNoOrient = 0;
+			m_fUsePage = 0;
+			m_unused1 = 0;
+			m_fEndNotes = 0;
+			m_iErrors = 0;
+			m_reserved = 0;
+			m_iRes = 0;
+			m_iVRes = 0;
+			m_numHdr = 0;
+			m_numFtr = 0;
+			m_iCopies = 0;
 			SetDefaults();
 			if (bPortrait)
 				m_fPortrait = 0x1;
@@ -34360,6 +35228,8 @@ namespace NumberDuck
 
 		SeriesTextRecord::SeriesTextRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_reserved = 0;
+			m_stText = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SeriesText);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34385,6 +35255,8 @@ namespace NumberDuck
 
 		SeriesTextRecord::SeriesTextRecord(const char* szText) : BiffRecord(TYPE, SIZE)
 		{
+			m_reserved = 0;
+			m_stText = 0;
 			SetDefaults();
 			m_stText->m_rgb->Set(szText);
 			m_pHeader->m_nSize += (unsigned int)(m_stText->GetDynamicSize());
@@ -34397,11 +35269,23 @@ namespace NumberDuck
 
 		SeriesRecord::SeriesRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_sdtX = 0;
+			m_sdtY = 0;
+			m_cValx = 0;
+			m_cValy = 0;
+			m_sdtBSize = 0;
+			m_cValBSize = 0;
 			SetDefaults();
 		}
 
 		SeriesRecord::SeriesRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_sdtX = 0;
+			m_sdtY = 0;
+			m_cValx = 0;
+			m_cValy = 0;
+			m_sdtBSize = 0;
+			m_cValBSize = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Series);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34439,6 +35323,7 @@ namespace NumberDuck
 
 		SerToCrtRecord::SerToCrtRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_id = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SerToCrt);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34461,17 +35346,36 @@ namespace NumberDuck
 
 		SerToCrtRecord::SerToCrtRecord(unsigned short id) : BiffRecord(TYPE, SIZE)
 		{
+			m_id = 0;
 			SetDefaults();
 			m_id = id;
 		}
 
 		SelectionRecord::SelectionRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_pnn = 0;
+			m_rwAct = 0;
+			m_colAct = 0;
+			m_irefAct = 0;
+			m_cref = 0;
+			m_rwFirst = 0;
+			m_rwLast = 0;
+			m_colFirst = 0;
+			m_colLast = 0;
 			SetDefaults();
 		}
 
 		SelectionRecord::SelectionRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_pnn = 0;
+			m_rwAct = 0;
+			m_colAct = 0;
+			m_irefAct = 0;
+			m_cref = 0;
+			m_rwFirst = 0;
+			m_rwLast = 0;
+			m_colFirst = 0;
+			m_colLast = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SELECTION);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34518,11 +35422,15 @@ namespace NumberDuck
 
 		SclRecord::SclRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_nscl = 0;
+			m_dscl = 0;
 			SetDefaults();
 		}
 
 		SclRecord::SclRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_nscl = 0;
+			m_dscl = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SCL);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34548,6 +35456,12 @@ namespace NumberDuck
 
 		ScatterRecord::ScatterRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_pcBubbleSizeRatio = 0;
+			m_wBubbleSize = 0;
+			m_fBubbles = 0;
+			m_fShowNegBubbles = 0;
+			m_fHasShadow = 0;
+			m_reserved = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Scatter);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34588,6 +35502,12 @@ namespace NumberDuck
 
 		ScatterRecord::ScatterRecord(Chart::Type eType) : BiffRecord(TYPE, SIZE)
 		{
+			m_pcBubbleSizeRatio = 0;
+			m_wBubbleSize = 0;
+			m_fBubbles = 0;
+			m_fShowNegBubbles = 0;
+			m_fHasShadow = 0;
+			m_reserved = 0;
 			SetDefaults();
 			nbAssert::Assert(eType == Chart::Type::TYPE_SCATTER);
 		}
@@ -34599,6 +35519,7 @@ namespace NumberDuck
 
 		SIIndexRecord::SIIndexRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_numIndex = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SIIndex);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34621,12 +35542,35 @@ namespace NumberDuck
 
 		SIIndexRecord::SIIndexRecord(unsigned short numIndex) : BiffRecord(TYPE, SIZE)
 		{
+			m_numIndex = 0;
 			SetDefaults();
 			m_numIndex = numIndex;
 		}
 
 		RowRecord::RowRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_rw = 0;
+			m_colMic = 0;
+			m_colMac = 0;
+			m_miyRw = 0;
+			m_reserved1 = 0;
+			m_unused1 = 0;
+			m_iOutLevel = 0;
+			m_reserved2 = 0;
+			m_fCollapsed = 0;
+			m_fDyZero = 0;
+			m_fUnsynced = 0;
+			m_fGhostDirty = 0;
+			m_reserved3 = 0;
+			m_ixfe_val = 0;
+			m_fExAsc = 0;
+			m_fExDes = 0;
+			m_fPhonetic = 0;
+			m_unused2 = 0;
+			m_bTopMedium = false;
+			m_bTopThick = false;
+			m_bBottomMedium = false;
+			m_bBottomThick = false;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ROW);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34707,6 +35651,28 @@ namespace NumberDuck
 
 		RowRecord::RowRecord(unsigned short nRow, unsigned short nHeight) : BiffRecord(TYPE, SIZE)
 		{
+			m_rw = 0;
+			m_colMic = 0;
+			m_colMac = 0;
+			m_miyRw = 0;
+			m_reserved1 = 0;
+			m_unused1 = 0;
+			m_iOutLevel = 0;
+			m_reserved2 = 0;
+			m_fCollapsed = 0;
+			m_fDyZero = 0;
+			m_fUnsynced = 0;
+			m_fGhostDirty = 0;
+			m_reserved3 = 0;
+			m_ixfe_val = 0;
+			m_fExAsc = 0;
+			m_fExDes = 0;
+			m_fPhonetic = 0;
+			m_unused2 = 0;
+			m_bTopMedium = false;
+			m_bTopThick = false;
+			m_bBottomMedium = false;
+			m_bBottomThick = false;
 			SetDefaults();
 			m_rw->m_rw = nRow;
 			m_miyRw = nHeight;
@@ -34770,6 +35736,10 @@ namespace NumberDuck
 
 		RkRecord::RkRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_nRowIndex = 0;
+			m_nColumnIndex = 0;
+			m_nXfIndex = 0;
+			m_nRkValue = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_RK);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34821,6 +35791,7 @@ namespace NumberDuck
 
 		RightMarginRecord::RightMarginRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_num = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_RIGHT_MARGIN);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34843,16 +35814,19 @@ namespace NumberDuck
 
 		RightMarginRecord::RightMarginRecord(double num) : BiffRecord(TYPE, SIZE)
 		{
+			m_num = 0;
 			m_num = num;
 		}
 
 		RefreshAllRecord::RefreshAllRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_refreshAll = 0;
 			SetDefaults();
 		}
 
 		RefreshAllRecord::RefreshAllRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_refreshAll = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_REFRESH_ALL);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34875,6 +35849,7 @@ namespace NumberDuck
 
 		RRTabId::RRTabId(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_nNumWorksheet = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_RR_TAB_ID);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34896,6 +35871,7 @@ namespace NumberDuck
 
 		RRTabId::RRTabId(unsigned short nNumWorksheet) : BiffRecord(TYPE, (unsigned short)(SIZE + 2 * nNumWorksheet))
 		{
+			m_nNumWorksheet = 0;
 			SetDefaults();
 			m_nNumWorksheet = nNumWorksheet;
 		}
@@ -34914,11 +35890,13 @@ namespace NumberDuck
 
 		ProtectRecord::ProtectRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_fLock = 0;
 			SetDefaults();
 		}
 
 		ProtectRecord::ProtectRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_fLock = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PROTECT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34941,11 +35919,13 @@ namespace NumberDuck
 
 		Prot4RevRecord::Prot4RevRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_fRevLock = 0;
 			SetDefaults();
 		}
 
 		Prot4RevRecord::Prot4RevRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_fRevLock = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PROT_4_REV);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34968,11 +35948,13 @@ namespace NumberDuck
 
 		Prot4RevPassRecord::Prot4RevPassRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_protPwdRev = 0;
 			SetDefaults();
 		}
 
 		Prot4RevPassRecord::Prot4RevPassRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_protPwdRev = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PROT_4_REV_PASS);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -34995,11 +35977,13 @@ namespace NumberDuck
 
 		PrintSizeRecord::PrintSizeRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_printSize = 0;
 			SetDefaults();
 		}
 
 		PrintSizeRecord::PrintSizeRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_printSize = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PRINT_SIZE);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35022,11 +36006,13 @@ namespace NumberDuck
 
 		PrintRowColRecord::PrintRowColRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_printRwCol = 0;
 			SetDefaults();
 		}
 
 		PrintRowColRecord::PrintRowColRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_printRwCol = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PrintRowCol);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35049,6 +36035,8 @@ namespace NumberDuck
 
 		PrintGridRecord::PrintGridRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_fPrintGrid = 0;
+			m_unused = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PrintGrid);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35077,6 +36065,8 @@ namespace NumberDuck
 
 		PrintGridRecord::PrintGridRecord(bool bPrintGridlines) : BiffRecord(TYPE, SIZE)
 		{
+			m_fPrintGrid = 0;
+			m_unused = 0;
 			SetDefaults();
 			if (bPrintGridlines)
 				m_fPrintGrid = 0x1;
@@ -35089,6 +36079,16 @@ namespace NumberDuck
 
 		PosRecord::PosRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_mdTopLt = 0;
+			m_mdBotRt = 0;
+			m_x1 = 0;
+			m_unused1 = 0;
+			m_y1 = 0;
+			m_unused2 = 0;
+			m_x2 = 0;
+			m_unused3 = 0;
+			m_y2 = 0;
+			m_unused4 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Pos);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35138,6 +36138,16 @@ namespace NumberDuck
 
 		PosRecord::PosRecord(short x1, short y1, unsigned short unused2, short x2, short y2) : BiffRecord(TYPE, SIZE)
 		{
+			m_mdTopLt = 0;
+			m_mdBotRt = 0;
+			m_x1 = 0;
+			m_unused1 = 0;
+			m_y1 = 0;
+			m_unused2 = 0;
+			m_x2 = 0;
+			m_unused3 = 0;
+			m_y2 = 0;
+			m_unused4 = 0;
 			SetDefaults();
 			m_x1 = x1;
 			m_y1 = y1;
@@ -35148,11 +36158,15 @@ namespace NumberDuck
 
 		PlotGrowthRecord::PlotGrowthRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_dxPlotGrowth = 0;
+			m_dyPlotGrowth = 0;
 			SetDefaults();
 		}
 
 		PlotGrowthRecord::PlotGrowthRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_dxPlotGrowth = 0;
+			m_dyPlotGrowth = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PlotGrowth);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35202,11 +36216,13 @@ namespace NumberDuck
 
 		PieFormatRecord::PieFormatRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_pcExplode = 0;
 			SetDefaults();
 		}
 
 		PieFormatRecord::PieFormatRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_pcExplode = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PieFormat);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35229,11 +36245,13 @@ namespace NumberDuck
 
 		PasswordRecord::PasswordRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_wPassword = 0;
 			SetDefaults();
 		}
 
 		PasswordRecord::PasswordRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_wPassword = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PASSWORD);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35256,6 +36274,7 @@ namespace NumberDuck
 
 		PaletteRecord::PaletteRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_ccv = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PALETTE);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35281,6 +36300,7 @@ namespace NumberDuck
 
 		PaletteRecord::PaletteRecord() : BiffRecord(TYPE, SIZE + BiffWorkbookGlobals::NUM_CUSTOM_PALETTE_ENTRY * 4)
 		{
+			m_ccv = 0;
 			SetDefaults();
 		}
 
@@ -35311,6 +36331,9 @@ namespace NumberDuck
 
 		ObjectLinkRecord::ObjectLinkRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_wLinkObj = 0;
+			m_wLinkVar1 = 0;
+			m_wLinkVar2 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ObjectLink);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35339,6 +36362,9 @@ namespace NumberDuck
 
 		ObjectLinkRecord::ObjectLinkRecord(unsigned short nLinkObject, unsigned short nSeriesIndex, unsigned short nCategoryIndex) : BiffRecord(TYPE, SIZE)
 		{
+			m_wLinkObj = 0;
+			m_wLinkVar1 = 0;
+			m_wLinkVar2 = 0;
 			SetDefaults();
 			m_wLinkObj = nLinkObject;
 			m_wLinkVar1 = nSeriesIndex;
@@ -35347,6 +36373,9 @@ namespace NumberDuck
 
 		ObjRecord::ObjRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_cmo = 0;
+			m_pictFormat = 0;
+			m_pictFlags = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_OBJ);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35372,6 +36401,9 @@ namespace NumberDuck
 
 		ObjRecord::ObjRecord(unsigned short nIndex, FtCmoStruct::ObjType eType) : BiffRecord(TYPE, (unsigned short)(SIZE + (eType == (FtCmoStruct::ObjType::OBJ_TYPE_PICTURE) ? (FtCfStruct::SIZE + FtPioGrbitStruct::SIZE) : 0) + 4))
 		{
+			m_cmo = 0;
+			m_pictFormat = 0;
+			m_pictFlags = 0;
 			SetDefaults();
 			nbAssert::Assert(eType == FtCmoStruct::ObjType::OBJ_TYPE_PICTURE || eType == FtCmoStruct::ObjType::OBJ_TYPE_CHART);
 			m_cmo->m_ft = 0x15;
@@ -35431,6 +36463,8 @@ namespace NumberDuck
 
 		NumberRecord::NumberRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_cell = 0;
+			m_num = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_NUMBER);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35456,6 +36490,8 @@ namespace NumberDuck
 
 		NumberRecord::NumberRecord(unsigned short nX, unsigned short nY, unsigned short nXfIndex, double fNumber) : BiffRecord(TYPE, SIZE)
 		{
+			m_cell = 0;
+			m_num = 0;
 			SetDefaults();
 			m_cell->m_rw->m_rw = nY;
 			m_cell->m_col->m_col = nX;
@@ -35490,6 +36526,10 @@ namespace NumberDuck
 
 		MulRkRecord::MulRkRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_rw = 0;
+			m_col = 0;
+			m_pRkRecVector = 0;
+			m_colLast = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MULRK);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35580,6 +36620,10 @@ namespace NumberDuck
 
 		MulBlank::MulBlank(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_rw = 0;
+			m_col = 0;
+			m_pIXFCellVector = 0;
+			m_colLast = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MULBLANK);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35608,6 +36652,10 @@ namespace NumberDuck
 
 		MulBlank::MulBlank(unsigned short nX, unsigned short nY, Vector<int>* pXfIndexVector) : BiffRecord(TYPE, SIZE + IXFCellStruct::SIZE * (unsigned int)(pXfIndexVector->GetSize()) + 2)
 		{
+			m_rw = 0;
+			m_col = 0;
+			m_pIXFCellVector = 0;
+			m_colLast = 0;
 			SetDefaults();
 			nbAssert::Assert(pXfIndexVector->GetSize() > 1);
 			m_rw->m_rw = nY;
@@ -35684,8 +36732,23 @@ namespace NumberDuck
 			if (m_pIXFCellVector) delete m_pIXFCellVector;
 		}
 
+		MsoDrawingRecord_Position::MsoDrawingRecord_Position()
+		{
+			m_nCellX1 = 0;
+			m_nSubCellX1 = 0;
+			m_nCellY1 = 0;
+			m_nSubCellY1 = 0;
+			m_nCellX2 = 0;
+			m_nSubCellX2 = 0;
+			m_nCellY2 = 0;
+			m_nSubCellY2 = 0;
+		}
+
 		MsoDrawingRecord::MsoDrawingRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_pOfficeArtRecord = 0;
+			m_pPosition = 0;
+			m_pBlob = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MSO_DRAWING);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35708,6 +36771,9 @@ namespace NumberDuck
 
 		MsoDrawingRecord::MsoDrawingRecord(OfficeArtDgContainerRecord* pOfficeArtDgContainerRecord, unsigned int nWriteSize) : BiffRecord(TYPE, SIZE)
 		{
+			m_pOfficeArtRecord = 0;
+			m_pPosition = 0;
+			m_pBlob = 0;
 			SetDefaults();
 			m_pBlob = new Blob(true);
 			pOfficeArtDgContainerRecord->RecursiveWrite(m_pBlob->GetBlobView());
@@ -35718,6 +36784,9 @@ namespace NumberDuck
 
 		MsoDrawingRecord::MsoDrawingRecord(OfficeArtSpContainerRecord* pOfficeArtSpContainerRecord) : BiffRecord(TYPE, SIZE)
 		{
+			m_pOfficeArtRecord = 0;
+			m_pPosition = 0;
+			m_pBlob = 0;
 			SetDefaults();
 			m_pBlob = new Blob(true);
 			pOfficeArtSpContainerRecord->RecursiveWrite(m_pBlob->GetBlobView());
@@ -35787,6 +36856,7 @@ namespace NumberDuck
 
 		MsoDrawingGroupRecord::MsoDrawingGroupRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_pOfficeArtDggContainerRecord = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MSO_DRAWING_GROUP);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35809,6 +36879,7 @@ namespace NumberDuck
 
 		MsoDrawingGroupRecord::MsoDrawingGroupRecord(Vector<Picture*>* pPictureVector) : BiffRecord(TYPE, SIZE)
 		{
+			m_pOfficeArtDggContainerRecord = 0;
 			SetDefaults();
 			m_pOfficeArtDggContainerRecord = new OfficeArtDggContainerRecord();
 			m_pOfficeArtDggContainerRecord->AddOfficeArtRecord(new OfficeArtFDGGBlockRecord((unsigned int)(pPictureVector->GetSize())));
@@ -35876,11 +36947,15 @@ namespace NumberDuck
 
 		Mms::Mms() : BiffRecord(TYPE, SIZE)
 		{
+			m_reserved1 = 0;
+			m_reserved2 = 0;
 			SetDefaults();
 		}
 
 		Mms::Mms(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_reserved1 = 0;
+			m_reserved2 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MMS);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35906,6 +36981,8 @@ namespace NumberDuck
 
 		MergeCellsRecord::MergeCellsRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_cmcs = 0;
+			m_pRef8Vector = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MergeCells);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -35931,6 +37008,8 @@ namespace NumberDuck
 
 		MergeCellsRecord::MergeCellsRecord(OwnedVector<MergedCell*>* pMergedCellVector, int nOffset, int nSize) : BiffRecord(TYPE, SIZE + Ref8Struct::SIZE * (unsigned int)(nSize))
 		{
+			m_cmcs = 0;
+			m_pRef8Vector = 0;
 			SetDefaults();
 			m_cmcs = (unsigned short)(nSize);
 			for (unsigned short i = 0; i < m_cmcs; i++)
@@ -36000,6 +37079,17 @@ namespace NumberDuck
 
 		MarkerFormatRecord::MarkerFormatRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_rgbFore = 0;
+			m_rgbBack = 0;
+			m_imk = 0;
+			m_fAuto = 0;
+			m_reserved1 = 0;
+			m_fNotShowInt = 0;
+			m_fNotShowBrd = 0;
+			m_reserved2 = 0;
+			m_icvFore = 0;
+			m_icvBack = 0;
+			m_miSize = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MarkerFormat);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -36055,6 +37145,17 @@ namespace NumberDuck
 
 		MarkerFormatRecord::MarkerFormatRecord(Marker* pMarker) : BiffRecord(TYPE, SIZE)
 		{
+			m_rgbFore = 0;
+			m_rgbBack = 0;
+			m_imk = 0;
+			m_fAuto = 0;
+			m_reserved1 = 0;
+			m_fNotShowInt = 0;
+			m_fNotShowBrd = 0;
+			m_reserved2 = 0;
+			m_icvFore = 0;
+			m_icvBack = 0;
+			m_miSize = 0;
 			SetDefaults();
 			Color* pColor = 0;
 			switch (pMarker->GetType())
@@ -36231,6 +37332,10 @@ namespace NumberDuck
 
 		LineRecord::LineRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_fStacked = 0;
+			m_f100 = 0;
+			m_fHasShadow = 0;
+			m_reserved = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Line);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -36265,6 +37370,10 @@ namespace NumberDuck
 
 		LineRecord::LineRecord(Chart::Type eType) : BiffRecord(TYPE, SIZE)
 		{
+			m_fStacked = 0;
+			m_f100 = 0;
+			m_fHasShadow = 0;
+			m_reserved = 0;
 			SetDefaults();
 			nbAssert::Assert(eType == Chart::Type::TYPE_LINE || eType == Chart::Type::TYPE_LINE_STACKED || eType == Chart::Type::TYPE_LINE_STACKED_100);
 			if (eType == Chart::Type::TYPE_LINE_STACKED || eType == Chart::Type::TYPE_LINE_STACKED_100)
@@ -36285,6 +37394,15 @@ namespace NumberDuck
 
 		LineFormatRecord::LineFormatRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_rgb = 0;
+			m_lns = 0;
+			m_we = 0;
+			m_fAuto = 0;
+			m_reserved1 = 0;
+			m_fAxisOn = 0;
+			m_fAutoCo = 0;
+			m_reserved2 = 0;
+			m_icv = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_LineFormat);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -36334,6 +37452,15 @@ namespace NumberDuck
 
 		LineFormatRecord::LineFormatRecord(unsigned int rgb, unsigned short lns, short we, bool fAuto, bool fAxisOn, bool fAutoCo, unsigned short icv) : BiffRecord(TYPE, SIZE)
 		{
+			m_rgb = 0;
+			m_lns = 0;
+			m_we = 0;
+			m_fAuto = 0;
+			m_reserved1 = 0;
+			m_fAxisOn = 0;
+			m_fAutoCo = 0;
+			m_reserved2 = 0;
+			m_icv = 0;
 			SetDefaults();
 			m_rgb = rgb;
 			m_lns = lns;
@@ -36346,6 +37473,15 @@ namespace NumberDuck
 
 		LineFormatRecord::LineFormatRecord(Line* pLine, bool bAxis) : BiffRecord(TYPE, SIZE)
 		{
+			m_rgb = 0;
+			m_lns = 0;
+			m_we = 0;
+			m_fAuto = 0;
+			m_reserved1 = 0;
+			m_fAxisOn = 0;
+			m_fAutoCo = 0;
+			m_reserved2 = 0;
+			m_icv = 0;
 			SetDefaults();
 			m_icv = BiffWorkbookGlobals::SnapToPalette(pLine->GetColor());
 			m_rgb = BiffWorkbookGlobals::GetDefaultPaletteColorByIndex(m_icv) & 0xFFFFFF;
@@ -36558,6 +37694,19 @@ namespace NumberDuck
 
 		LegendRecord::LegendRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_x = 0;
+			m_y = 0;
+			m_dx = 0;
+			m_dy = 0;
+			m_unused = 0;
+			m_wSpace = 0;
+			m_fAutoPosition = 0;
+			m_reserved1 = 0;
+			m_fAutoPosX = 0;
+			m_fAutoPosY = 0;
+			m_fVert = 0;
+			m_fWasDataTable = 0;
+			m_reserved2 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Legend);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -36619,6 +37768,19 @@ namespace NumberDuck
 
 		LegendRecord::LegendRecord(const Legend* pLegend) : BiffRecord(TYPE, SIZE)
 		{
+			m_x = 0;
+			m_y = 0;
+			m_dx = 0;
+			m_dy = 0;
+			m_unused = 0;
+			m_wSpace = 0;
+			m_fAutoPosition = 0;
+			m_reserved1 = 0;
+			m_fAutoPosX = 0;
+			m_fAutoPosY = 0;
+			m_fVert = 0;
+			m_fWasDataTable = 0;
+			m_reserved2 = 0;
 			SetDefaults();
 			nbAssert::Assert(!pLegend->GetHidden());
 		}
@@ -36630,6 +37792,7 @@ namespace NumberDuck
 
 		LeftMarginRecord::LeftMarginRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_num = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_LEFT_MARGIN);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -36652,12 +37815,17 @@ namespace NumberDuck
 
 		LeftMarginRecord::LeftMarginRecord(double num) : BiffRecord(TYPE, SIZE)
 		{
+			m_num = 0;
 			SetDefaults();
 			m_num = num;
 		}
 
 		LabelSstRecord::LabelSstRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_nRowIndex = 0;
+			m_nColumnIndex = 0;
+			m_nXfIndex = 0;
+			m_nSstIndex = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_LABELSST);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -36689,6 +37857,10 @@ namespace NumberDuck
 
 		LabelSstRecord::LabelSstRecord(unsigned short nX, unsigned short nY, unsigned short nXfIndex, unsigned int nSstIndex) : BiffRecord(TYPE, SIZE)
 		{
+			m_nRowIndex = 0;
+			m_nColumnIndex = 0;
+			m_nXfIndex = 0;
+			m_nSstIndex = 0;
 			SetDefaults();
 			m_nRowIndex = nY;
 			m_nColumnIndex = nX;
@@ -36718,11 +37890,13 @@ namespace NumberDuck
 
 		InterfaceHdr::InterfaceHdr() : BiffRecord(TYPE, SIZE)
 		{
+			m_codePage = 0;
 			SetDefaults();
 		}
 
 		InterfaceHdr::InterfaceHdr(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_codePage = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_INTERFACE_HDR);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -36769,11 +37943,13 @@ namespace NumberDuck
 
 		HideObj::HideObj() : BiffRecord(TYPE, SIZE)
 		{
+			m_hideObj = 0;
 			SetDefaults();
 		}
 
 		HideObj::HideObj(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_hideObj = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_HIDE_OBJ);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -36796,11 +37972,63 @@ namespace NumberDuck
 
 		HeaderFooterRecord::HeaderFooterRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_frtHeader = 0;
+			m_guidSView_0 = 0;
+			m_guidSView_1 = 0;
+			m_guidSView_2 = 0;
+			m_guidSView_3 = 0;
+			m_guidSView_4 = 0;
+			m_guidSView_5 = 0;
+			m_guidSView_6 = 0;
+			m_guidSView_7 = 0;
+			m_guidSView_8 = 0;
+			m_guidSView_9 = 0;
+			m_guidSView_10 = 0;
+			m_guidSView_11 = 0;
+			m_guidSView_12 = 0;
+			m_guidSView_13 = 0;
+			m_guidSView_14 = 0;
+			m_guidSView_15 = 0;
+			m_fHFDiffOddEven = 0;
+			m_fHFDiffFirst = 0;
+			m_fHFScaleWithDoc = 0;
+			m_fHFAlignMargins = 0;
+			m_unused = 0;
+			m_cchHeaderEven = 0;
+			m_cchFooterEven = 0;
+			m_cchHeaderFirst = 0;
+			m_cchFooterFirst = 0;
 			SetDefaults();
 		}
 
 		HeaderFooterRecord::HeaderFooterRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_frtHeader = 0;
+			m_guidSView_0 = 0;
+			m_guidSView_1 = 0;
+			m_guidSView_2 = 0;
+			m_guidSView_3 = 0;
+			m_guidSView_4 = 0;
+			m_guidSView_5 = 0;
+			m_guidSView_6 = 0;
+			m_guidSView_7 = 0;
+			m_guidSView_8 = 0;
+			m_guidSView_9 = 0;
+			m_guidSView_10 = 0;
+			m_guidSView_11 = 0;
+			m_guidSView_12 = 0;
+			m_guidSView_13 = 0;
+			m_guidSView_14 = 0;
+			m_guidSView_15 = 0;
+			m_fHFDiffOddEven = 0;
+			m_fHFDiffFirst = 0;
+			m_fHFScaleWithDoc = 0;
+			m_fHFAlignMargins = 0;
+			m_unused = 0;
+			m_cchHeaderEven = 0;
+			m_cchFooterEven = 0;
+			m_cchHeaderFirst = 0;
+			m_cchFooterFirst = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_HeaderFooter);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -36912,6 +38140,7 @@ namespace NumberDuck
 
 		HCenterRecord::HCenterRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_hcenter = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_HCENTER);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -36934,6 +38163,7 @@ namespace NumberDuck
 
 		HCenterRecord::HCenterRecord(bool bCenter) : BiffRecord(TYPE, SIZE)
 		{
+			m_hcenter = 0;
 			SetDefaults();
 			if (bCenter)
 				m_hcenter = 0x1;
@@ -36941,6 +38171,8 @@ namespace NumberDuck
 
 		GelFrameRecord::GelFrameRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_OPT1 = 0;
+			m_OPT2 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_GelFrame);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -36963,6 +38195,8 @@ namespace NumberDuck
 
 		GelFrameRecord::GelFrameRecord(Fill* pFill, WorkbookGlobals* pWorkbookGlobals) : BiffRecord(TYPE, SIZE)
 		{
+			m_OPT1 = 0;
+			m_OPT2 = 0;
 			SetDefaults();
 			nbAssert::Assert(pFill != 0);
 			nbAssert::Assert(pWorkbookGlobals != 0);
@@ -37046,6 +38280,10 @@ namespace NumberDuck
 
 		FrameRecord::FrameRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_frt = 0;
+			m_fAutoSize = 0;
+			m_fAutoPosition = 0;
+			m_reserved = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Frame);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37080,6 +38318,10 @@ namespace NumberDuck
 
 		FrameRecord::FrameRecord(bool fAutoSize) : BiffRecord(TYPE, SIZE)
 		{
+			m_frt = 0;
+			m_fAutoSize = 0;
+			m_fAutoPosition = 0;
+			m_reserved = 0;
 			SetDefaults();
 			if (fAutoSize)
 				m_fAutoSize = 0x1;
@@ -37103,6 +38345,17 @@ namespace NumberDuck
 
 		FormulaRecord::FormulaRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_cell = 0;
+			m_val = 0;
+			m_fAlwaysCalc = 0;
+			m_reserved1 = 0;
+			m_fFill = 0;
+			m_fShrFmla = 0;
+			m_reserved2 = 0;
+			m_fClearErrors = 0;
+			m_reserved3 = 0;
+			m_chn = 0;
+			m_formula = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_FORMULA);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37158,6 +38411,17 @@ namespace NumberDuck
 
 		FormulaRecord::FormulaRecord(unsigned short nX, unsigned short nY, unsigned short nXfIndex, Formula* pFormula, WorkbookGlobals* pWorkbookGlobals) : BiffRecord(TYPE, SIZE)
 		{
+			m_cell = 0;
+			m_val = 0;
+			m_fAlwaysCalc = 0;
+			m_reserved1 = 0;
+			m_fFill = 0;
+			m_fShrFmla = 0;
+			m_reserved2 = 0;
+			m_fClearErrors = 0;
+			m_reserved3 = 0;
+			m_chn = 0;
+			m_formula = 0;
 			SetDefaults();
 			m_cell->m_col->m_col = nX;
 			m_cell->m_rw->m_rw = nY;
@@ -37214,6 +38478,8 @@ namespace NumberDuck
 
 		Format::Format(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_ifmt = 0;
+			m_stFormat = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_FORMAT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37239,6 +38505,8 @@ namespace NumberDuck
 
 		Format::Format(unsigned short ifmt, const char* szFormat) : BiffRecord(TYPE, SIZE)
 		{
+			m_ifmt = 0;
+			m_stFormat = 0;
 			SetDefaults();
 			nbAssert::Assert(ifmt >= 5 && ifmt <= 8 || ifmt >= 23 && ifmt <= 26 || ifmt >= 41 && ifmt <= 44 || ifmt >= 63 && ifmt <= 66 || ifmt >= 164 && ifmt <= 382 || ifmt >= 383 && ifmt <= 392);
 			m_ifmt = ifmt;
@@ -37263,11 +38531,13 @@ namespace NumberDuck
 
 		FontXRecord::FontXRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_iFont = 0;
 			SetDefaults();
 		}
 
 		FontXRecord::FontXRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_iFont = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_FontX);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37290,6 +38560,24 @@ namespace NumberDuck
 
 		FontRecord::FontRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_dyHeight = 0;
+			m_unused1 = 0;
+			m_fItalic = 0;
+			m_unused2 = 0;
+			m_fStrikeOut = 0;
+			m_fOutline = 0;
+			m_fShadow = 0;
+			m_fCondense = 0;
+			m_fExtend = 0;
+			m_reserved = 0;
+			m_icv = 0;
+			m_bls = 0;
+			m_sss = 0;
+			m_uls = 0;
+			m_bFamily = 0;
+			m_bCharSet = 0;
+			m_unused3 = 0;
+			m_fontName = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_FONT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37366,6 +38654,24 @@ namespace NumberDuck
 
 		FontRecord::FontRecord(const char* szFontName, unsigned short nSizeTwips, unsigned short nColourIndex, bool bBold, bool bItalic, Font::Underline eUnderline, unsigned char unused1, unsigned char unused3) : BiffRecord(TYPE, SIZE)
 		{
+			m_dyHeight = 0;
+			m_unused1 = 0;
+			m_fItalic = 0;
+			m_unused2 = 0;
+			m_fStrikeOut = 0;
+			m_fOutline = 0;
+			m_fShadow = 0;
+			m_fCondense = 0;
+			m_fExtend = 0;
+			m_reserved = 0;
+			m_icv = 0;
+			m_bls = 0;
+			m_sss = 0;
+			m_uls = 0;
+			m_bFamily = 0;
+			m_bCharSet = 0;
+			m_unused3 = 0;
+			m_fontName = 0;
 			SetDefaults();
 			m_dyHeight = nSizeTwips;
 			m_unused1 = unused1;
@@ -37478,6 +38784,8 @@ namespace NumberDuck
 
 		ExternSheetRecord::ExternSheetRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_cXTI = 0;
+			m_pXTIVector = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_EXTERN_SHEET);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37503,6 +38811,8 @@ namespace NumberDuck
 
 		ExternSheetRecord::ExternSheetRecord(OwnedVector<WorksheetRange*>* pWorksheetRangeVector) : BiffRecord(TYPE, (unsigned int)(SIZE + XTIStruct::SIZE * pWorksheetRangeVector->GetSize()))
 		{
+			m_cXTI = 0;
+			m_pXTIVector = 0;
 			SetDefaults();
 			m_cXTI = (unsigned short)(pWorksheetRangeVector->GetSize());
 			nbAssert::Assert(m_pXTIVector == 0);
@@ -37593,6 +38903,11 @@ namespace NumberDuck
 
 		EndBlockRecord::EndBlockRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_frtHeaderOld = 0;
+			m_iObjectKind = 0;
+			m_unused1 = 0;
+			m_unused2 = 0;
+			m_unused3 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_EndBlock);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37627,6 +38942,11 @@ namespace NumberDuck
 
 		EndBlockRecord::EndBlockRecord(unsigned short iObjectKind) : BiffRecord(TYPE, SIZE)
 		{
+			m_frtHeaderOld = 0;
+			m_iObjectKind = 0;
+			m_unused1 = 0;
+			m_unused2 = 0;
+			m_unused3 = 0;
 			SetDefaults();
 			m_frtHeaderOld->m_rt = 0x0853;
 			m_iObjectKind = iObjectKind;
@@ -37639,6 +38959,11 @@ namespace NumberDuck
 
 		DimensionRecord::DimensionRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_nFirstUsedRow = 0;
+			m_nLastUsedRow = 0;
+			m_nFirstUsedColumn = 0;
+			m_nLastUsedColumn = 0;
+			m_nUnused = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DIMENSION);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37673,6 +38998,11 @@ namespace NumberDuck
 
 		DimensionRecord::DimensionRecord(unsigned int nFirstUsedRow, unsigned int nLastUsedRow, unsigned short nFirstUsedColumn, unsigned short nLastUsedColumn, unsigned short nUnused) : BiffRecord(TYPE, SIZE)
 		{
+			m_nFirstUsedRow = 0;
+			m_nLastUsedRow = 0;
+			m_nFirstUsedColumn = 0;
+			m_nLastUsedColumn = 0;
+			m_nUnused = 0;
 			SetDefaults();
 			m_nFirstUsedRow = nFirstUsedRow;
 			m_nLastUsedRow = nLastUsedRow;
@@ -37683,6 +39013,7 @@ namespace NumberDuck
 
 		DefaultTextRecord::DefaultTextRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_id = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DefaultText);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37705,12 +39036,20 @@ namespace NumberDuck
 
 		DefaultTextRecord::DefaultTextRecord(unsigned short id) : BiffRecord(TYPE, SIZE)
 		{
+			m_id = 0;
 			SetDefaults();
 			m_id = id;
 		}
 
 		DefaultRowHeight::DefaultRowHeight(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_fUnsynced = 0;
+			m_fDyZero = 0;
+			m_fExAsc = 0;
+			m_fExDsc = 0;
+			m_reserved = 0;
+			m_miyRw = 0;
+			m_miyRwHidden = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DEFAULTROWHEIGHT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37750,6 +39089,13 @@ namespace NumberDuck
 
 		DefaultRowHeight::DefaultRowHeight(short nRowHeight) : BiffRecord(TYPE, SIZE + 2)
 		{
+			m_fUnsynced = 0;
+			m_fDyZero = 0;
+			m_fExAsc = 0;
+			m_fExDsc = 0;
+			m_reserved = 0;
+			m_miyRw = 0;
+			m_miyRwHidden = 0;
 			nbAssert::Assert(nRowHeight > 0);
 			SetDefaults();
 			m_fUnsynced = 1;
@@ -37781,6 +39127,7 @@ namespace NumberDuck
 
 		DefColWidthRecord::DefColWidthRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_cchdefColWidth = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DEFCOLWIDTH);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37803,6 +39150,7 @@ namespace NumberDuck
 
 		DefColWidthRecord::DefColWidthRecord(unsigned short cchdefColWidth) : BiffRecord(TYPE, SIZE)
 		{
+			m_cchdefColWidth = 0;
 			SetDefaults();
 			m_cchdefColWidth = cchdefColWidth;
 		}
@@ -37814,11 +39162,13 @@ namespace NumberDuck
 
 		Date1904::Date1904() : BiffRecord(TYPE, SIZE)
 		{
+			m_f1904DateSystem = 0;
 			SetDefaults();
 		}
 
 		Date1904::Date1904(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_f1904DateSystem = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DATE_1904);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37841,6 +39191,11 @@ namespace NumberDuck
 
 		DataFormatRecord::DataFormatRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_xi = 0;
+			m_yi = 0;
+			m_iss = 0;
+			m_fXL4iss = 0;
+			m_reserved = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DataFormat);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37878,6 +39233,11 @@ namespace NumberDuck
 
 		DataFormatRecord::DataFormatRecord(unsigned short nIndex) : BiffRecord(TYPE, SIZE)
 		{
+			m_xi = 0;
+			m_yi = 0;
+			m_iss = 0;
+			m_fXL4iss = 0;
+			m_reserved = 0;
 			SetDefaults();
 			m_yi = nIndex;
 			m_iss = nIndex;
@@ -37885,11 +39245,13 @@ namespace NumberDuck
 
 		DSF::DSF() : BiffRecord(TYPE, SIZE)
 		{
+			m_reserved = 0;
 			SetDefaults();
 		}
 
 		DSF::DSF(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_reserved = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DSF);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37912,6 +39274,8 @@ namespace NumberDuck
 
 		CrtMlFrtRecord::CrtMlFrtRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_frtHeader = 0;
+			m_cb = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CrtMlFrt);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37948,11 +39312,21 @@ namespace NumberDuck
 
 		CrtLinkRecord::CrtLinkRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_unused0 = 0;
+			m_unused1 = 0;
+			m_unused2 = 0;
+			m_unused3 = 0;
+			m_unused4 = 0;
 			SetDefaults();
 		}
 
 		CrtLinkRecord::CrtLinkRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_unused0 = 0;
+			m_unused1 = 0;
+			m_unused2 = 0;
+			m_unused3 = 0;
+			m_unused4 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CrtLink);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -37987,11 +39361,45 @@ namespace NumberDuck
 
 		CrtLayout12ARecord::CrtLayout12ARecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_frtHeader = 0;
+			m_dwCheckSum = 0;
+			m_fLayoutTargetInner = 0;
+			m_reserved1 = 0;
+			m_xTL = 0;
+			m_yTL = 0;
+			m_xBR = 0;
+			m_yBR = 0;
+			m_wXMode = 0;
+			m_wYMode = 0;
+			m_wWidthMode = 0;
+			m_wHeightMode = 0;
+			m_x = 0;
+			m_y = 0;
+			m_dx = 0;
+			m_dy = 0;
+			m_reserved2 = 0;
 			SetDefaults();
 		}
 
 		CrtLayout12ARecord::CrtLayout12ARecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_frtHeader = 0;
+			m_dwCheckSum = 0;
+			m_fLayoutTargetInner = 0;
+			m_reserved1 = 0;
+			m_xTL = 0;
+			m_yTL = 0;
+			m_xBR = 0;
+			m_yBR = 0;
+			m_wXMode = 0;
+			m_wYMode = 0;
+			m_wWidthMode = 0;
+			m_wHeightMode = 0;
+			m_x = 0;
+			m_y = 0;
+			m_dx = 0;
+			m_dy = 0;
+			m_reserved2 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CrtLayout12A);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38076,6 +39484,19 @@ namespace NumberDuck
 
 		ColInfoRecord::ColInfoRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_colFirst = 0;
+			m_colLast = 0;
+			m_coldx = 0;
+			m_ixfe = 0;
+			m_fHidden = 0;
+			m_fUserSet = 0;
+			m_fBestFit = 0;
+			m_fPhonetic = 0;
+			m_reserved1 = 0;
+			m_iOutLevel = 0;
+			m_unused1 = 0;
+			m_fCollapsed = 0;
+			m_reserved2 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_COLINFO);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38138,6 +39559,19 @@ namespace NumberDuck
 
 		ColInfoRecord::ColInfoRecord(unsigned short nFirstColumn, unsigned short nLastColumn, unsigned short nColumnWidth, bool bHidden) : BiffRecord(TYPE, SIZE + 2)
 		{
+			m_colFirst = 0;
+			m_colLast = 0;
+			m_coldx = 0;
+			m_ixfe = 0;
+			m_fHidden = 0;
+			m_fUserSet = 0;
+			m_fBestFit = 0;
+			m_fPhonetic = 0;
+			m_reserved1 = 0;
+			m_iOutLevel = 0;
+			m_unused1 = 0;
+			m_fCollapsed = 0;
+			m_reserved2 = 0;
 			SetDefaults();
 			m_colFirst = nFirstColumn;
 			m_colLast = nLastColumn;
@@ -38173,11 +39607,13 @@ namespace NumberDuck
 
 		CodePage::CodePage() : BiffRecord(TYPE, SIZE)
 		{
+			m_cv = 0;
 			SetDefaults();
 		}
 
 		CodePage::CodePage(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_cv = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CODE_PAGE);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38200,11 +39636,19 @@ namespace NumberDuck
 
 		ChartRecord::ChartRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_x = 0;
+			m_y = 0;
+			m_dx = 0;
+			m_dy = 0;
 			SetDefaults();
 		}
 
 		ChartRecord::ChartRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_x = 0;
+			m_y = 0;
+			m_dx = 0;
+			m_dy = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Chart);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38256,11 +39700,35 @@ namespace NumberDuck
 
 		ChartFrtInfoRecord::ChartFrtInfoRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_frtHeaderOld = 0;
+			m_verOriginator = 0;
+			m_verWriter = 0;
+			m_cCFRTID = 0;
+			m_hax1 = 0;
+			m_hax2 = 0;
+			m_hax3 = 0;
+			m_hax4 = 0;
+			m_hax5 = 0;
+			m_hax6 = 0;
+			m_hax7 = 0;
+			m_hax8 = 0;
 			SetDefaults();
 		}
 
 		ChartFrtInfoRecord::ChartFrtInfoRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_frtHeaderOld = 0;
+			m_verOriginator = 0;
+			m_verWriter = 0;
+			m_cCFRTID = 0;
+			m_hax1 = 0;
+			m_hax2 = 0;
+			m_hax3 = 0;
+			m_hax4 = 0;
+			m_hax5 = 0;
+			m_hax6 = 0;
+			m_hax7 = 0;
+			m_hax8 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ChartFrtInfo);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38327,11 +39795,25 @@ namespace NumberDuck
 
 		ChartFormatRecord::ChartFormatRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_reserved1 = 0;
+			m_reserved2 = 0;
+			m_reserved3 = 0;
+			m_reserved4 = 0;
+			m_fVaried = 0;
+			m_reserved5 = 0;
+			m_icrt = 0;
 			SetDefaults();
 		}
 
 		ChartFormatRecord::ChartFormatRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_reserved1 = 0;
+			m_reserved2 = 0;
+			m_reserved3 = 0;
+			m_reserved4 = 0;
+			m_fVaried = 0;
+			m_reserved5 = 0;
+			m_icrt = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ChartFormat);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38375,11 +39857,15 @@ namespace NumberDuck
 
 		Chart3DBarShapeRecord::Chart3DBarShapeRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_riser = 0;
+			m_taper = 0;
 			SetDefaults();
 		}
 
 		Chart3DBarShapeRecord::Chart3DBarShapeRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_riser = 0;
+			m_taper = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Chart3DBarShape);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38405,11 +39891,25 @@ namespace NumberDuck
 
 		CatSerRangeRecord::CatSerRangeRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_catCross = 0;
+			m_catLabel = 0;
+			m_catMark = 0;
+			m_fBetween = 0;
+			m_fMaxCross = 0;
+			m_fReverse = 0;
+			m_reserved = 0;
 			SetDefaults();
 		}
 
 		CatSerRangeRecord::CatSerRangeRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_catCross = 0;
+			m_catLabel = 0;
+			m_catMark = 0;
+			m_fBetween = 0;
+			m_fMaxCross = 0;
+			m_fReverse = 0;
+			m_reserved = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CatSerRange);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38453,11 +39953,23 @@ namespace NumberDuck
 
 		CatLabRecord::CatLabRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_frtHeaderOld = 0;
+			m_wOffset = 0;
+			m_at = 0;
+			m_cAutoCatLabelReal = 0;
+			m_unused = 0;
+			m_reserved = 0;
 			SetDefaults();
 		}
 
 		CatLabRecord::CatLabRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_frtHeaderOld = 0;
+			m_wOffset = 0;
+			m_at = 0;
+			m_cAutoCatLabelReal = 0;
+			m_unused = 0;
+			m_reserved = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CatLab);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38509,11 +40021,13 @@ namespace NumberDuck
 
 		CalcPrecision::CalcPrecision() : BiffRecord(TYPE, SIZE)
 		{
+			m_fFullPrec = 0;
 			SetDefaults();
 		}
 
 		CalcPrecision::CalcPrecision(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_fFullPrec = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CALC_PRECISION);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38536,11 +40050,13 @@ namespace NumberDuck
 
 		CalcCountRecord::CalcCountRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_nMaxNumIteration = 0;
 			SetDefaults();
 		}
 
 		CalcCountRecord::CalcCountRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_nMaxNumIteration = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CALCCOUNT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38563,11 +40079,13 @@ namespace NumberDuck
 
 		BuiltInFnGroupCount::BuiltInFnGroupCount() : BiffRecord(TYPE, SIZE)
 		{
+			m_count = 0;
 			SetDefaults();
 		}
 
 		BuiltInFnGroupCount::BuiltInFnGroupCount(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_count = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BUILT_IN_FN_GROUP_COUNT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38590,6 +40108,12 @@ namespace NumberDuck
 
 		BraiRecord::BraiRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_id = 0;
+			m_rt = 0;
+			m_fUnlinkedIfmt = 0;
+			m_reserved = 0;
+			m_ifmt = 0;
+			m_formula = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BRAI);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38630,6 +40154,12 @@ namespace NumberDuck
 
 		BraiRecord::BraiRecord(unsigned char id, unsigned char rt, bool fUnlinkedIfmt, unsigned short ifmt, Formula* pFormula, WorkbookGlobals* pWorkbookGlobals) : BiffRecord(TYPE, SIZE)
 		{
+			m_id = 0;
+			m_rt = 0;
+			m_fUnlinkedIfmt = 0;
+			m_reserved = 0;
+			m_ifmt = 0;
+			m_formula = 0;
 			SetDefaults();
 			m_id = id;
 			m_rt = rt;
@@ -38680,6 +40210,11 @@ namespace NumberDuck
 
 		BoundSheet8Record::BoundSheet8Record(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_lbPlyPos = 0;
+			m_hsState = 0;
+			m_reserved = 0;
+			m_dt = 0;
+			m_stName = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOUND_SHEET_8);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38717,6 +40252,11 @@ namespace NumberDuck
 
 		BoundSheet8Record::BoundSheet8Record(const char* sxName) : BiffRecord(TYPE, SIZE)
 		{
+			m_lbPlyPos = 0;
+			m_hsState = 0;
+			m_reserved = 0;
+			m_dt = 0;
+			m_stName = 0;
 			SetDefaults();
 			m_stName->m_rgb->Set(sxName);
 			m_pHeader->m_nSize += (unsigned int)(m_stName->GetDynamicSize());
@@ -38739,6 +40279,7 @@ namespace NumberDuck
 
 		BottomMarginRecord::BottomMarginRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_num = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOTTOM_MARGIN);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38761,12 +40302,16 @@ namespace NumberDuck
 
 		BottomMarginRecord::BottomMarginRecord(double num) : BiffRecord(TYPE, SIZE)
 		{
+			m_num = 0;
 			SetDefaults();
 			m_num = num;
 		}
 
 		BoolErrRecord::BoolErrRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_cell = 0;
+			m_bBoolErr = 0;
+			m_fError = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOOLERR);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38795,6 +40340,9 @@ namespace NumberDuck
 
 		BoolErrRecord::BoolErrRecord(unsigned short nX, unsigned short nY, unsigned short nXfIndex, bool bBoolean) : BiffRecord(TYPE, SIZE)
 		{
+			m_cell = 0;
+			m_bBoolErr = 0;
+			m_fError = 0;
 			SetDefaults();
 			m_cell->m_rw->m_rw = nY;
 			m_cell->m_col->m_col = nX;
@@ -38836,6 +40384,20 @@ namespace NumberDuck
 
 		BookExtRecord::BookExtRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_frtHeader = 0;
+			m_cb = 0;
+			m_fDontAutoRecover = 0;
+			m_fHidePivotList = 0;
+			m_fFilterPrivacy = 0;
+			m_fEmbedFactoids = 0;
+			m_mdFactoidDisplay = 0;
+			m_fSavedDuringRecovery = 0;
+			m_fCreatedViaMinimalSave = 0;
+			m_fOpenedViaDataRecovery = 0;
+			m_fOpenedViaSafeLoad = 0;
+			m_reserved = 0;
+			m_grbit1 = 0;
+			m_grbit2 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOOK_EXT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38896,6 +40458,20 @@ namespace NumberDuck
 
 		BookExtRecord::BookExtRecord() : BiffRecord(TYPE, SIZE + 2)
 		{
+			m_frtHeader = 0;
+			m_cb = 0;
+			m_fDontAutoRecover = 0;
+			m_fHidePivotList = 0;
+			m_fFilterPrivacy = 0;
+			m_fEmbedFactoids = 0;
+			m_mdFactoidDisplay = 0;
+			m_fSavedDuringRecovery = 0;
+			m_fCreatedViaMinimalSave = 0;
+			m_fOpenedViaDataRecovery = 0;
+			m_fOpenedViaSafeLoad = 0;
+			m_reserved = 0;
+			m_grbit1 = 0;
+			m_grbit2 = 0;
 			SetDefaults();
 			m_frtHeader->m_rt = (unsigned short)(BiffRecord::Type::TYPE_BOOK_EXT);
 			m_cb = m_pHeader->m_nSize;
@@ -38926,11 +40502,29 @@ namespace NumberDuck
 
 		BookBool::BookBool() : BiffRecord(TYPE, SIZE)
 		{
+			m_fNoSaveSup = 0;
+			m_reserved1 = 0;
+			m_fHasEnvelope = 0;
+			m_fEnvelopeVisible = 0;
+			m_fEnvelopeInitDone = 0;
+			m_grUpdateLinks = 0;
+			m_unused = 0;
+			m_fHideBorderUnselLists = 0;
+			m_reserved2 = 0;
 			SetDefaults();
 		}
 
 		BookBool::BookBool(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_fNoSaveSup = 0;
+			m_reserved1 = 0;
+			m_fHasEnvelope = 0;
+			m_fEnvelopeVisible = 0;
+			m_fEnvelopeInitDone = 0;
+			m_grUpdateLinks = 0;
+			m_unused = 0;
+			m_fHideBorderUnselLists = 0;
+			m_reserved2 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOOK_BOOL);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -38980,6 +40574,12 @@ namespace NumberDuck
 
 		BofRecord::BofRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_vers = 0;
+			m_dt = 0;
+			m_rupBuild = 0;
+			m_rupYear = 0;
+			m_nFileHistoryFlags = 0;
+			m_nMinimumExcelVersion = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOF);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -39017,6 +40617,12 @@ namespace NumberDuck
 
 		BofRecord::BofRecord(BofType eType) : BiffRecord(TYPE, SIZE)
 		{
+			m_vers = 0;
+			m_dt = 0;
+			m_rupBuild = 0;
+			m_rupYear = 0;
+			m_nFileHistoryFlags = 0;
+			m_nMinimumExcelVersion = 0;
 			SetDefaults();
 			m_dt = (unsigned short)(eType);
 		}
@@ -39028,6 +40634,7 @@ namespace NumberDuck
 
 		Blank::Blank(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_cell = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BLANK);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -39050,6 +40657,7 @@ namespace NumberDuck
 
 		Blank::Blank(unsigned short nX, unsigned short nY, unsigned short nXfIndex) : BiffRecord(TYPE, SIZE)
 		{
+			m_cell = 0;
 			SetDefaults();
 			m_cell->m_rw->m_rw = nY;
 			m_cell->m_col->m_col = nX;
@@ -39078,6 +40686,8 @@ namespace NumberDuck
 
 		BiffRecord_ContinueInfo::BiffRecord_ContinueInfo(int nOffset, int nType)
 		{
+			m_nOffset = 0;
+			m_nType = 0;
 			m_nOffset = nOffset;
 			m_nType = nType;
 		}
@@ -39108,6 +40718,13 @@ namespace NumberDuck
 
 		BarRecord::BarRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_pcOverlap = 0;
+			m_pcGap = 0;
+			m_fTranspose = 0;
+			m_fStacked = 0;
+			m_f100 = 0;
+			m_fHasShadow = 0;
+			m_reserved = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Bar);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -39151,6 +40768,13 @@ namespace NumberDuck
 
 		BarRecord::BarRecord(Chart::Type eType) : BiffRecord(TYPE, SIZE)
 		{
+			m_pcOverlap = 0;
+			m_pcGap = 0;
+			m_fTranspose = 0;
+			m_fStacked = 0;
+			m_f100 = 0;
+			m_fHasShadow = 0;
+			m_reserved = 0;
 			nbAssert::Assert(eType == Chart::Type::TYPE_COLUMN || eType == Chart::Type::TYPE_COLUMN_STACKED || eType == Chart::Type::TYPE_COLUMN_STACKED_100 || eType == Chart::Type::TYPE_BAR || eType == Chart::Type::TYPE_BAR_STACKED || eType == Chart::Type::TYPE_BAR_STACKED_100);
 			SetDefaults();
 			if (eType == Chart::Type::TYPE_BAR || eType == Chart::Type::TYPE_BAR_STACKED || eType == Chart::Type::TYPE_BAR_STACKED_100)
@@ -39184,11 +40808,13 @@ namespace NumberDuck
 
 		Backup::Backup() : BiffRecord(TYPE, SIZE)
 		{
+			m_fBackup = 0;
 			SetDefaults();
 		}
 
 		Backup::Backup(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_fBackup = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BACKUP);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -39211,6 +40837,11 @@ namespace NumberDuck
 
 		AxisRecord::AxisRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_wType = 0;
+			m_reserved1 = 0;
+			m_reserved2 = 0;
+			m_reserved3 = 0;
+			m_reserved4 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Axis);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -39245,6 +40876,11 @@ namespace NumberDuck
 
 		AxisRecord::AxisRecord(unsigned short wType) : BiffRecord(TYPE, SIZE)
 		{
+			m_wType = 0;
+			m_reserved1 = 0;
+			m_reserved2 = 0;
+			m_reserved3 = 0;
+			m_reserved4 = 0;
 			SetDefaults();
 			m_wType = wType;
 		}
@@ -39256,11 +40892,21 @@ namespace NumberDuck
 
 		AxisParentRecord::AxisParentRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_iax = 0;
+			m_unused1 = 0;
+			m_unused2 = 0;
+			m_unused3 = 0;
+			m_unused4 = 0;
 			SetDefaults();
 		}
 
 		AxisParentRecord::AxisParentRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_iax = 0;
+			m_unused1 = 0;
+			m_unused2 = 0;
+			m_unused3 = 0;
+			m_unused4 = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AxisParent);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -39295,6 +40941,7 @@ namespace NumberDuck
 
 		AxisLineRecord::AxisLineRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_id = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AxisLine);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -39317,6 +40964,7 @@ namespace NumberDuck
 
 		AxisLineRecord::AxisLineRecord(unsigned short id) : BiffRecord(TYPE, SIZE)
 		{
+			m_id = 0;
 			m_id = id;
 		}
 
@@ -39328,11 +40976,13 @@ namespace NumberDuck
 
 		AxesUsedRecord::AxesUsedRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_cAxes = 0;
 			SetDefaults();
 		}
 
 		AxesUsedRecord::AxesUsedRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_cAxes = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AxesUsed);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -39355,11 +41005,45 @@ namespace NumberDuck
 
 		AxcExtRecord::AxcExtRecord() : BiffRecord(TYPE, SIZE)
 		{
+			m_catMin = 0;
+			m_catMax = 0;
+			m_catMajor = 0;
+			m_duMajor = 0;
+			m_catMinor = 0;
+			m_duMinor = 0;
+			m_duBase = 0;
+			m_catCrossDate = 0;
+			m_fAutoMin = 0;
+			m_fAutoMax = 0;
+			m_fAutoMajor = 0;
+			m_fAutoMinor = 0;
+			m_fDateAxis = 0;
+			m_fAutoBase = 0;
+			m_fAutoCross = 0;
+			m_fAutoDate = 0;
+			m_reserved = 0;
 			SetDefaults();
 		}
 
 		AxcExtRecord::AxcExtRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_catMin = 0;
+			m_catMax = 0;
+			m_catMajor = 0;
+			m_duMajor = 0;
+			m_catMinor = 0;
+			m_duMinor = 0;
+			m_duBase = 0;
+			m_catCrossDate = 0;
+			m_fAutoMin = 0;
+			m_fAutoMax = 0;
+			m_fAutoMajor = 0;
+			m_fAutoMinor = 0;
+			m_fDateAxis = 0;
+			m_fAutoBase = 0;
+			m_fAutoCross = 0;
+			m_fAutoDate = 0;
+			m_reserved = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AxcExt);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -39433,6 +41117,10 @@ namespace NumberDuck
 
 		AreaRecord::AreaRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_fStacked = 0;
+			m_f100 = 0;
+			m_fHasShadow = 0;
+			m_reserved = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Area);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -39467,6 +41155,10 @@ namespace NumberDuck
 
 		AreaRecord::AreaRecord(Chart::Type eType) : BiffRecord(TYPE, SIZE)
 		{
+			m_fStacked = 0;
+			m_f100 = 0;
+			m_fHasShadow = 0;
+			m_reserved = 0;
 			nbAssert::Assert(eType == Chart::Type::TYPE_AREA || eType == Chart::Type::TYPE_AREA_STACKED || eType == Chart::Type::TYPE_AREA_STACKED_100);
 			SetDefaults();
 			if (eType == Chart::Type::TYPE_AREA_STACKED || eType == Chart::Type::TYPE_AREA_STACKED_100)
@@ -39487,6 +41179,14 @@ namespace NumberDuck
 
 		AreaFormatRecord::AreaFormatRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
+			m_rgbFore = 0;
+			m_rgbBack = 0;
+			m_fls = 0;
+			m_fAuto = 0;
+			m_fInvertNeg = 0;
+			m_reserved = 0;
+			m_icvFore = 0;
+			m_icvBack = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AreaFormat);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -39533,6 +41233,14 @@ namespace NumberDuck
 
 		AreaFormatRecord::AreaFormatRecord(unsigned int rgbFore, unsigned int rgbBack, unsigned short fls, bool fAuto, bool fInvertNeg, unsigned short icvFore, unsigned short icvBack) : BiffRecord(TYPE, SIZE)
 		{
+			m_rgbFore = 0;
+			m_rgbBack = 0;
+			m_fls = 0;
+			m_fAuto = 0;
+			m_fInvertNeg = 0;
+			m_reserved = 0;
+			m_icvFore = 0;
+			m_icvBack = 0;
 			SetDefaults();
 			m_rgbFore = rgbFore;
 			m_rgbBack = rgbBack;
@@ -39549,6 +41257,14 @@ namespace NumberDuck
 
 		AreaFormatRecord::AreaFormatRecord(Fill* pFill) : BiffRecord(TYPE, SIZE)
 		{
+			m_rgbFore = 0;
+			m_rgbBack = 0;
+			m_fls = 0;
+			m_fAuto = 0;
+			m_fInvertNeg = 0;
+			m_reserved = 0;
+			m_icvFore = 0;
+			m_icvBack = 0;
 			if (pFill->GetType() == Fill::Type::TYPE_NONE)
 			{
 				m_rgbFore = 0x00ffffff;
@@ -39606,6 +41322,9 @@ namespace NumberDuck
 
 		XTIStruct::XTIStruct()
 		{
+			m_iSupBook = 0;
+			m_itabFirst = 0;
+			m_itabLast = 0;
 			SetDefaults();
 		}
 
@@ -39632,6 +41351,10 @@ namespace NumberDuck
 
 		XLUnicodeStringStruct::XLUnicodeStringStruct()
 		{
+			m_cch = 0;
+			m_fHighByte = 0;
+			m_reserved = 0;
+			m_rgb = 0;
 			SetDefaults();
 		}
 
@@ -39712,8 +41435,24 @@ namespace NumberDuck
 			if (m_rgb) delete m_rgb;
 		}
 
+		XLUnicodeRichExtendedString_ContinueInfo::XLUnicodeRichExtendedString_ContinueInfo()
+		{
+			m_nOffset = 0;
+			m_fHighByte = 0;
+		}
+
 		XLUnicodeRichExtendedString::XLUnicodeRichExtendedString()
 		{
+			m_cch = 0;
+			m_fHighByte = 0;
+			m_reserved1 = 0;
+			m_fExtSt = 0;
+			m_fRichSt = 0;
+			m_reserved2 = 0;
+			m_cRun = 0;
+			m_cbExtRst = 0;
+			m_rgb = 0;
+			m_pContinueInfoVector = 0;
 			SetDefaults();
 		}
 
@@ -39756,6 +41495,16 @@ namespace NumberDuck
 
 		XLUnicodeRichExtendedString::XLUnicodeRichExtendedString(const char* szString)
 		{
+			m_cch = 0;
+			m_fHighByte = 0;
+			m_reserved1 = 0;
+			m_fExtSt = 0;
+			m_fRichSt = 0;
+			m_reserved2 = 0;
+			m_cRun = 0;
+			m_cbExtRst = 0;
+			m_rgb = 0;
+			m_pContinueInfoVector = 0;
 			SetDefaults();
 			m_rgb->Set(szString);
 			m_cch = (unsigned short)(m_rgb->GetLength());
@@ -39938,6 +41687,10 @@ namespace NumberDuck
 
 		ShortXLUnicodeStringStruct::ShortXLUnicodeStringStruct()
 		{
+			m_cch = 0;
+			m_fHighByte = 0;
+			m_reserved = 0;
+			m_rgb = 0;
 			SetDefaults();
 		}
 
@@ -40020,6 +41773,7 @@ namespace NumberDuck
 
 		RwUStruct::RwUStruct()
 		{
+			m_rw = 0;
 			SetDefaults();
 		}
 
@@ -40040,6 +41794,7 @@ namespace NumberDuck
 
 		RwStruct::RwStruct()
 		{
+			m_rw = 0;
 			SetDefaults();
 		}
 
@@ -40060,6 +41815,8 @@ namespace NumberDuck
 
 		RkRecStruct::RkRecStruct()
 		{
+			m_ixfe = 0;
+			m_RK = 0;
 			SetDefaults();
 		}
 
@@ -40083,6 +41840,7 @@ namespace NumberDuck
 
 		RgceStruct::RgceStruct()
 		{
+			m_pParsedExpressionRecordVector = 0;
 			SetDefaults();
 		}
 
@@ -40160,6 +41918,8 @@ namespace NumberDuck
 
 		RgceLocStruct::RgceLocStruct()
 		{
+			m_row = 0;
+			m_column = 0;
 			SetDefaults();
 		}
 
@@ -40189,6 +41949,10 @@ namespace NumberDuck
 
 		RgceAreaStruct::RgceAreaStruct()
 		{
+			m_rowFirst = 0;
+			m_rowLast = 0;
+			m_columnFirst = 0;
+			m_columnLast = 0;
 			SetDefaults();
 		}
 
@@ -40226,6 +41990,10 @@ namespace NumberDuck
 
 		Ref8Struct::Ref8Struct()
 		{
+			m_rwFirst = 0;
+			m_rwLast = 0;
+			m_colFirst = 0;
+			m_colLast = 0;
 			SetDefaults();
 		}
 
@@ -40255,6 +42023,8 @@ namespace NumberDuck
 
 		PtgAttrSpaceTypeStruct::PtgAttrSpaceTypeStruct()
 		{
+			m_type = 0;
+			m_cch = 0;
 			SetDefaults();
 		}
 
@@ -40278,6 +42048,10 @@ namespace NumberDuck
 
 		OfficeArtRecordHeaderStruct::OfficeArtRecordHeaderStruct()
 		{
+			m_recVer = 0;
+			m_recInstance = 0;
+			m_recType = 0;
+			m_recLen = 0;
 			SetDefaults();
 		}
 
@@ -40310,6 +42084,8 @@ namespace NumberDuck
 
 		OfficeArtIDCLStruct::OfficeArtIDCLStruct()
 		{
+			m_dgid = 0;
+			m_cspidCur = 0;
 			SetDefaults();
 		}
 
@@ -40333,6 +42109,8 @@ namespace NumberDuck
 
 		OfficeArtFRITStruct::OfficeArtFRITStruct()
 		{
+			m_fridNew = 0;
+			m_fridOld = 0;
 			SetDefaults();
 		}
 
@@ -40356,6 +42134,9 @@ namespace NumberDuck
 
 		OfficeArtFOPTEStruct::OfficeArtFOPTEStruct()
 		{
+			m_opid = 0;
+			m_op = 0;
+			m_pComplexData = 0;
 			SetDefaults();
 		}
 
@@ -40391,6 +42172,9 @@ namespace NumberDuck
 
 		OfficeArtFOPTEOPIDStruct::OfficeArtFOPTEOPIDStruct()
 		{
+			m_opid = 0;
+			m_fBid = 0;
+			m_fComplex = 0;
 			SetDefaults();
 		}
 
@@ -40420,6 +42204,12 @@ namespace NumberDuck
 
 		MSOCRStruct::MSOCRStruct()
 		{
+			m_red = 0;
+			m_green = 0;
+			m_blue = 0;
+			m_unused1 = 0;
+			m_fSchemeIndex = 0;
+			m_unused2 = 0;
 			SetDefaults();
 		}
 
@@ -40458,6 +42248,22 @@ namespace NumberDuck
 
 		MD4DigestStruct::MD4DigestStruct()
 		{
+			m_rgbUid1_0 = 0;
+			m_rgbUid1_1 = 0;
+			m_rgbUid1_2 = 0;
+			m_rgbUid1_3 = 0;
+			m_rgbUid1_4 = 0;
+			m_rgbUid1_5 = 0;
+			m_rgbUid1_6 = 0;
+			m_rgbUid1_7 = 0;
+			m_rgbUid1_8 = 0;
+			m_rgbUid1_9 = 0;
+			m_rgbUid1_10 = 0;
+			m_rgbUid1_11 = 0;
+			m_rgbUid1_12 = 0;
+			m_rgbUid1_13 = 0;
+			m_rgbUid1_14 = 0;
+			m_rgbUid1_15 = 0;
 			SetDefaults();
 		}
 
@@ -40523,6 +42329,7 @@ namespace NumberDuck
 
 		IcvFontStruct::IcvFontStruct()
 		{
+			m_icv = 0;
 			SetDefaults();
 		}
 
@@ -40543,6 +42350,7 @@ namespace NumberDuck
 
 		IXFCellStruct::IXFCellStruct()
 		{
+			m_ixfe = 0;
 			SetDefaults();
 		}
 
@@ -40563,6 +42371,23 @@ namespace NumberDuck
 
 		IHlinkStruct::IHlinkStruct()
 		{
+			m_CLSID_StdHlink_0 = 0;
+			m_CLSID_StdHlink_1 = 0;
+			m_CLSID_StdHlink_2 = 0;
+			m_CLSID_StdHlink_3 = 0;
+			m_CLSID_StdHlink_4 = 0;
+			m_CLSID_StdHlink_5 = 0;
+			m_CLSID_StdHlink_6 = 0;
+			m_CLSID_StdHlink_7 = 0;
+			m_CLSID_StdHlink_8 = 0;
+			m_CLSID_StdHlink_9 = 0;
+			m_CLSID_StdHlink_10 = 0;
+			m_CLSID_StdHlink_11 = 0;
+			m_CLSID_StdHlink_12 = 0;
+			m_CLSID_StdHlink_13 = 0;
+			m_CLSID_StdHlink_14 = 0;
+			m_CLSID_StdHlink_15 = 0;
+			m_hyperlink = 0;
 			SetDefaults();
 		}
 
@@ -40636,6 +42461,8 @@ namespace NumberDuck
 
 		HyperlinkStringStruct::HyperlinkStringStruct()
 		{
+			m_length = 0;
+			m_string = 0;
 			SetDefaults();
 		}
 
@@ -40686,6 +42513,22 @@ namespace NumberDuck
 
 		HyperlinkObjectStruct::HyperlinkObjectStruct()
 		{
+			m_streamVersion = 0;
+			m_hlstmfHasMoniker = 0;
+			m_hlstmfIsAbsolute = 0;
+			m_hlstmfSiteGaveDisplayName = 0;
+			m_hlstmfHasLocationStr = 0;
+			m_hlstmfHasDisplayName = 0;
+			m_hlstmfHasGUID = 0;
+			m_hlstmfHasCreationTime = 0;
+			m_hlstmfHasFrameName = 0;
+			m_hlstmfMonikerSavedAsStr = 0;
+			m_hlstmfAbsFromGetdataRel = 0;
+			m_reserved = 0;
+			m_displayName = 0;
+			m_targetFrameName = 0;
+			m_moniker = 0;
+			m_haxUrl = 0;
 			SetDefaults();
 		}
 
@@ -40832,6 +42675,17 @@ namespace NumberDuck
 
 		FullColorExtStruct::FullColorExtStruct()
 		{
+			m_xclrType = 0;
+			m_nTintShade = 0;
+			m_xclrValue = 0;
+			m_unusedA = 0;
+			m_unusedB = 0;
+			m_unusedC = 0;
+			m_unusedD = 0;
+			m_unusedE = 0;
+			m_unusedF = 0;
+			m_unusedG = 0;
+			m_unusedH = 0;
 			SetDefaults();
 		}
 
@@ -40882,6 +42736,19 @@ namespace NumberDuck
 
 		FtPioGrbitStruct::FtPioGrbitStruct()
 		{
+			m_ft = 0;
+			m_cb = 0;
+			m_fAutoPict = 0;
+			m_fDde = 0;
+			m_fPrintCalc = 0;
+			m_fIcon = 0;
+			m_fCtl = 0;
+			m_fPrstm = 0;
+			m_unused1 = 0;
+			m_fCamera = 0;
+			m_fDefaultSize = 0;
+			m_fAutoLoad = 0;
+			m_unused2 = 0;
 			SetDefaults();
 		}
 
@@ -40941,6 +42808,9 @@ namespace NumberDuck
 
 		FtCfStruct::FtCfStruct()
 		{
+			m_ft = 0;
+			m_cb = 0;
+			m_cf = 0;
 			SetDefaults();
 		}
 
@@ -40967,6 +42837,10 @@ namespace NumberDuck
 
 		FrtHeaderStruct::FrtHeaderStruct()
 		{
+			m_rt = 0;
+			m_grbitFrt = 0;
+			m_reservedA = 0;
+			m_reservedB = 0;
 			SetDefaults();
 		}
 
@@ -41001,6 +42875,8 @@ namespace NumberDuck
 
 		FrtHeaderOldStruct::FrtHeaderOldStruct()
 		{
+			m_rt = 0;
+			m_grbitFrt = 0;
 			SetDefaults();
 		}
 
@@ -41029,6 +42905,9 @@ namespace NumberDuck
 
 		FrtFlagsStruct::FrtFlagsStruct()
 		{
+			m_fFrtRef = 0;
+			m_fFrtAlert = 0;
+			m_reserved = 0;
 			SetDefaults();
 		}
 
@@ -41058,6 +42937,13 @@ namespace NumberDuck
 
 		FormulaValueStruct::FormulaValueStruct()
 		{
+			m_byte1 = 0;
+			m_byte2 = 0;
+			m_byte3 = 0;
+			m_byte4 = 0;
+			m_byte5 = 0;
+			m_byte6 = 0;
+			m_fExprO = 0;
 			SetDefaults();
 		}
 
@@ -41096,6 +42982,9 @@ namespace NumberDuck
 
 		ExtPropStruct::ExtPropStruct()
 		{
+			m_extType = 0;
+			m_cb = 0;
+			m_pFullColorExt = 0;
 			SetDefaults();
 		}
 
@@ -41173,6 +43062,7 @@ namespace NumberDuck
 
 		ColStruct::ColStruct()
 		{
+			m_col = 0;
 			SetDefaults();
 		}
 
@@ -41193,6 +43083,9 @@ namespace NumberDuck
 
 		ColRelUStruct::ColRelUStruct()
 		{
+			m_col = 0;
+			m_colRelative = 0;
+			m_rowRelative = 0;
 			SetDefaults();
 		}
 
@@ -41222,6 +43115,9 @@ namespace NumberDuck
 
 		CellStruct::CellStruct()
 		{
+			m_rw = 0;
+			m_col = 0;
+			m_ixfe = 0;
 			SetDefaults();
 		}
 
@@ -41255,6 +43151,8 @@ namespace NumberDuck
 
 		CellParsedFormulaStruct::CellParsedFormulaStruct()
 		{
+			m_cce = 0;
+			m_rgce = 0;
 			SetDefaults();
 		}
 
@@ -41279,6 +43177,8 @@ namespace NumberDuck
 
 		CellParsedFormulaStruct::CellParsedFormulaStruct(Formula* pFormula, WorkbookGlobals* pWorkbookGlobals)
 		{
+			m_cce = 0;
+			m_rgce = 0;
 			SetDefaults();
 			if (pFormula != 0)
 			{
@@ -41325,6 +43225,8 @@ namespace NumberDuck
 
 		BuiltInStyleStruct::BuiltInStyleStruct()
 		{
+			m_istyBuiltIn = 0;
+			m_iLevel = 0;
 			SetDefaults();
 		}
 
@@ -41346,13 +43248,27 @@ namespace NumberDuck
 			m_iLevel = 0;
 		}
 
+		OfficeArtDimensions::OfficeArtDimensions()
+		{
+			m_nCellX1 = 0;
+			m_nSubCellX1 = 0;
+			m_nCellY1 = 0;
+			m_nSubCellY1 = 0;
+			m_nCellX2 = 0;
+			m_nSubCellX2 = 0;
+			m_nCellY2 = 0;
+			m_nSubCellY2 = 0;
+		}
+
 		BiffWorksheet::BiffWorksheet(Workbook* pWorkbook) : Worksheet(pWorkbook)
 		{
+			m_pBiffRecordContainer = 0;
 			m_pBiffRecordContainer = 0;
 		}
 
 		BiffWorksheet::BiffWorksheet(Workbook* pWorkbook, BiffWorkbookGlobals* pBiffWorkbookGlobals, BiffRecord* pInitialBiffRecord, Stream* pStream) : Worksheet(pWorkbook)
 		{
+			m_pBiffRecordContainer = 0;
 			m_pBiffRecordContainer = new BiffRecordContainer(pInitialBiffRecord, pStream);
 			SetName(pBiffWorkbookGlobals->GetNextWorksheetName());
 			for (int i = 0; i < m_pBiffRecordContainer->m_pBiffRecordVector->GetSize(); i++)
@@ -42782,11 +44698,13 @@ namespace NumberDuck
 
 		BiffRecordContainer::BiffRecordContainer()
 		{
+			m_pBiffRecordVector = 0;
 			m_pBiffRecordVector = new OwnedVector<BiffRecord*>();
 		}
 
 		BiffRecordContainer::BiffRecordContainer(BiffRecord* pInitialBiffRecord, Stream* pStream)
 		{
+			m_pBiffRecordVector = 0;
 			m_pBiffRecordVector = new OwnedVector<BiffRecord*>();
 			int nDepth = 1;
 			AddBiffRecord(pInitialBiffRecord);
@@ -42876,7 +44794,7 @@ namespace NumberDuck
 
 		void StreamDirectoryImplementation::RedBlackTreeWalk(RedBlackNode* pNode, Stream* pStorage)
 		{
-			Stream* pStream = (Stream*)(pNode->GetObject());
+			Stream* pStream = (Stream*)(pNode->GetStoredObject());
 			if (pNode->GetParent() == 0)
 			{
 				pStorage->SetLeftChildNodeStreamId(-1);
@@ -42889,7 +44807,7 @@ namespace NumberDuck
 			{
 				if (pNode->GetChild(nDirection) != 0)
 				{
-					Stream* pChild = (Stream*)(pNode->GetChild(nDirection)->GetObject());
+					Stream* pChild = (Stream*)(pNode->GetChild(nDirection)->GetStoredObject());
 					if (nDirection == 0)
 						pStream->SetLeftChildNodeStreamId(pChild->GetStreamId());
 					else
@@ -42906,6 +44824,13 @@ namespace NumberDuck
 			}
 		}
 
+		StreamDirectoryImplementation::StreamDirectoryImplementation()
+		{
+			m_nMinimumStandardStreamSize = 0;
+			m_pStreamVector = 0;
+			m_pCompoundFile = 0;
+		}
+
 		StreamDirectoryImplementation::~StreamDirectoryImplementation()
 		{
 			if (m_pStreamVector) delete m_pStreamVector;
@@ -42913,6 +44838,7 @@ namespace NumberDuck
 
 		StreamDirectory::StreamDirectory(int nSectorSize, unsigned int nMinimumStandardStreamSize, CompoundFile* pCompoundFile) : SectorChain(nSectorSize)
 		{
+			m_pImpl = 0;
 			m_pImpl = new StreamDirectoryImplementation();
 			m_pImpl->m_nMinimumStandardStreamSize = nMinimumStandardStreamSize;
 			m_pImpl->m_pStreamVector = new OwnedVector<Stream*>();
@@ -42927,7 +44853,7 @@ namespace NumberDuck
 		Stream* StreamDirectory::GetStreamByIndex(int nStreamDirectoryId)
 		{
 			nbAssert::Assert(nStreamDirectoryId >= 0);
-			nbAssert::Assert((unsigned int)(nStreamDirectoryId) < GetNumStream());
+			nbAssert::Assert(nStreamDirectoryId < GetNumStream());
 			return m_pImpl->m_pStreamVector->Get(nStreamDirectoryId);
 		}
 
@@ -43003,6 +44929,7 @@ namespace NumberDuck
 		SectorAllocationTable::SectorAllocationTable(int nSectorSize) : SectorChain(nSectorSize)
 		{
 			m_nNumFreeSectorId = 0;
+			m_nNumFreeSectorId = 0;
 		}
 
 		int SectorAllocationTable::GetNumSectorId()
@@ -43073,6 +45000,12 @@ namespace NumberDuck
 			AppendSector(pSector);
 		}
 
+		SectorImplementation::SectorImplementation()
+		{
+			m_nSectorId = 0;
+			m_pBlobView = 0;
+		}
+
 		SectorImplementation::~SectorImplementation()
 		{
 			if (m_pBlobView) delete m_pBlobView;
@@ -43080,6 +45013,7 @@ namespace NumberDuck
 
 		Sector::Sector(int nSectorId, BlobView* pBlobView, int nDataSize)
 		{
+			m_pImpl = 0;
 			nbAssert::Assert(pBlobView != 0);
 			nbAssert::Assert(((nDataSize & (nDataSize - 1)) == 0));
 			m_pImpl = new SectorImplementation();
@@ -43110,6 +45044,7 @@ namespace NumberDuck
 
 		MasterSectorAllocationTable::MasterSectorAllocationTable(CompoundFileHeader* pHeader) : SectorAllocationTable(pHeader->GetSectorSize())
 		{
+			m_pHeader = 0;
 			m_pHeader = pHeader;
 		}
 
@@ -43216,6 +45151,18 @@ namespace NumberDuck
 		const unsigned char CompoundFileHeader::MAGIC_WORD[CompoundFileHeader::MAGIC_WORD_SIZE] = {0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1};
 		CompoundFileHeader::CompoundFileHeader(unsigned int nSectorSize, unsigned int nShortSectorSize)
 		{
+			m_nRevisonNumber = 0;
+			m_nVersionNumber = 0;
+			m_nByteOrderIdentifier = 0;
+			m_nSectorSize = 0;
+			m_nShortSectorSize = 0;
+			m_nSectorAllocationTableSize = 0;
+			m_nStreamDirectoryStreamSectorId = 0;
+			m_nMinimumStandardStreamSize = 0;
+			m_nShortSectorAllocationTableSectorId = 0;
+			m_nShortSectorAllocationTableSize = 0;
+			m_nMasterSectorAllocationTableSectorId = 0;
+			m_nMasterSectorAllocationTableSize = 0;
 			unsigned int i;
 			for (i = 0; i < MAGIC_WORD_SIZE; i++)
 				m_pMagicWord[i] = MAGIC_WORD[i];
@@ -43321,6 +45268,14 @@ namespace NumberDuck
 
 		CompoundFile::CompoundFile(unsigned int nSectorSize, unsigned int nShortSectorSize, unsigned int nMinimumStandardStreamSize)
 		{
+			m_pHeader = 0;
+			m_pBlob = 0;
+			m_pMasterSectorAllocationTable = 0;
+			m_pSectorAllocationTable = 0;
+			m_pShortSectorAllocationTable = 0;
+			m_pStreamDirectory = 0;
+			m_pSectorVector = 0;
+			m_pShortSectorVector = 0;
 			nbAssert::Assert(nSectorSize >= Sector::MINIMUM_SECTOR_SIZE && ((nSectorSize & (nSectorSize - 1)) == 0));
 			nbAssert::Assert(nShortSectorSize < nSectorSize && ((nShortSectorSize & (nShortSectorSize - 1)) == 0));
 			m_pSectorVector = new OwnedVector<Sector*>();
@@ -43403,7 +45358,7 @@ namespace NumberDuck
 					}
 					nbAssert::Assert(m_pMasterSectorAllocationTable->GetNumSector() == (int)(m_pHeader->m_nMasterSectorAllocationTableSize));
 					m_pSectorAllocationTable = new SectorAllocationTable(1 << m_pHeader->m_nSectorSize);
-					for (int i = 0; i < m_pHeader->m_nSectorAllocationTableSize; i++)
+					for (int i = 0; i < (int)(m_pHeader->m_nSectorAllocationTableSize); i++)
 						m_pSectorAllocationTable->AppendSector(GetSector(m_pMasterSectorAllocationTable->GetSectorId(i), false));
 					nbAssert::Assert(m_pSectorAllocationTable->GetNumSector() == (int)(m_pHeader->m_nSectorAllocationTableSize));
 					m_pShortSectorAllocationTable = new SectorAllocationTable(1 << m_pHeader->m_nSectorSize);
@@ -43646,6 +45601,9 @@ namespace NumberDuck
 
 		Token::Token(Type eType, SubType eSubType, unsigned char nParameterCount)
 		{
+			m_eType = Type::TYPE_FUNC_COUNT;
+			m_eSubType = SubType::SUB_TYPE_FUNCTION;
+			m_nParameterCount = 0;
 			m_eType = eType;
 			m_eSubType = eSubType;
 			m_nParameterCount = nParameterCount;
@@ -45831,6 +47789,7 @@ namespace NumberDuck
 
 		StringToken::StringToken(const char* sxString) : Token(Type::TYPE_STRING, SubType::SUB_TYPE_VARIABLE, 0)
 		{
+			m_sString = 0;
 			m_sString = new InternalString(sxString);
 		}
 
@@ -45866,6 +47825,8 @@ namespace NumberDuck
 
 		SpaceToken::SpaceToken(SpaceType eSpaceType, unsigned char nCount) : Token(Type::TYPE_SPACE, SubType::SUB_TYPE_VARIABLE, 0)
 		{
+			m_eSpaceType = SpaceType::TYPE_SPACE_BEFORE_BASE_EXPRESSION;
+			m_nCount = 0;
 			nbAssert::Assert(eSpaceType >= SpaceType::TYPE_SPACE_BEFORE_BASE_EXPRESSION && eSpaceType <= SpaceType::TYPE_SPACE_BEFORE_EXPRESSION);
 			nbAssert::Assert(nCount > 0);
 			m_eSpaceType = eSpaceType;
@@ -45898,6 +47859,7 @@ namespace NumberDuck
 
 		OperatorToken::OperatorToken(const char* szOperator) : Token(Type::TYPE_OPERATOR, SubType::SUB_TYPE_OPERATOR, 2)
 		{
+			m_sOperator = 0;
 			m_sOperator = new InternalString(szOperator);
 		}
 
@@ -46014,6 +47976,7 @@ namespace NumberDuck
 
 		NumToken::NumToken(double fNumber) : Token(Type::TYPE_NUMBER, SubType::SUB_TYPE_VARIABLE, 0)
 		{
+			m_fNumber = 0;
 			m_fNumber = fNumber;
 		}
 
@@ -46053,6 +48016,7 @@ namespace NumberDuck
 
 		IntToken::IntToken(unsigned short nInt) : Token(Type::TYPE_INT, SubType::SUB_TYPE_VARIABLE, 0)
 		{
+			m_nInt = 0;
 			m_nInt = nInt;
 		}
 
@@ -46072,8 +48036,16 @@ namespace NumberDuck
 			return true;
 		}
 
+		ParseFunctionData::ParseFunctionData()
+		{
+			m_nCount = 0;
+		}
+
 		ParseSpaceData::ParseSpaceData()
 		{
+			m_nIndex = 0;
+			m_cChar = '0';
+			m_nCount = 0;
 			m_nIndex = 0;
 			m_cChar = '\0';
 			m_nCount = 0;
@@ -46081,6 +48053,9 @@ namespace NumberDuck
 
 		Formula::Formula(const char* szFormula, WorksheetImplementation* pWorksheetImplementation)
 		{
+			m_pTokenVector = 0;
+			m_pValue = 0;
+			m_sTemp = 0;
 			m_sTemp = new InternalString(szFormula);
 			m_pTokenVector = new OwnedVector<Token*>();
 			m_pValue = 0;
@@ -46093,6 +48068,9 @@ namespace NumberDuck
 
 		Formula::Formula(Vector<ParsedExpressionRecord*>* pParsedExpressionRecordVector, WorkbookGlobals* pWorkbookGlobals)
 		{
+			m_pTokenVector = 0;
+			m_pValue = 0;
+			m_sTemp = 0;
 			int i;
 			m_sTemp = new InternalString("");
 			m_pTokenVector = new OwnedVector<Token*>();
@@ -46118,6 +48096,9 @@ namespace NumberDuck
 
 		Formula::Formula(OwnedVector<ParsedExpressionRecord*>* pParsedExpressionRecordVector, WorkbookGlobals* pWorkbookGlobals)
 		{
+			m_pTokenVector = 0;
+			m_pValue = 0;
+			m_sTemp = 0;
 			int i;
 			m_sTemp = new InternalString("");
 			m_pTokenVector = new OwnedVector<Token*>();
@@ -46987,6 +48968,7 @@ namespace NumberDuck
 
 		CoordinateToken::CoordinateToken(Coordinate* pCoordinate) : Token(Type::TYPE_COORDINATE, SubType::SUB_TYPE_VARIABLE, 0)
 		{
+			m_pCoordinate = 0;
 			m_pCoordinate = pCoordinate;
 		}
 
@@ -47020,6 +49002,7 @@ namespace NumberDuck
 
 		Coordinate3dToken::Coordinate3dToken(Coordinate3d* pCoordinate3d) : Token(Type::TYPE_COORDINATE_3D, SubType::SUB_TYPE_VARIABLE, 0)
 		{
+			m_pCoordinate3d = 0;
 			m_pCoordinate3d = pCoordinate3d;
 		}
 
@@ -47110,6 +49093,7 @@ namespace NumberDuck
 
 		BoolToken::BoolToken(bool bBool, bool bFunction) : Token(Type::TYPE_BOOL, bFunction ? SubType::SUB_TYPE_FUNCTION : SubType::SUB_TYPE_VARIABLE, 0)
 		{
+			m_bBool = false;
 			m_bBool = bBool;
 		}
 
@@ -47136,6 +49120,7 @@ namespace NumberDuck
 
 		AreaToken::AreaToken(Area* pArea) : Token(Type::TYPE_AREA, SubType::SUB_TYPE_VARIABLE, 0)
 		{
+			m_pArea = 0;
 			m_pArea = pArea;
 		}
 
@@ -47167,6 +49152,7 @@ namespace NumberDuck
 
 		Area3dToken::Area3dToken(Area3d* pArea3d) : Token(Type::TYPE_AREA_3D, SubType::SUB_TYPE_VARIABLE, 0)
 		{
+			m_pArea3d = 0;
 			m_pArea3d = pArea3d;
 		}
 
@@ -47265,13 +49251,16 @@ namespace NumberDuck
 			return 0;
 		}
 
-		void* RedBlackNode::GetObject() const
+		void* RedBlackNode::GetStoredObject() const
 		{
 			return 0;
 		}
 
 		RedBlackNodeImplementation::RedBlackNodeImplementation(void* pObject)
 		{
+			m_eColor = NodeColor::COLOR_RED;
+			m_pParent = 0;
+			m_pObject = 0;
 			m_eColor = RedBlackNode::NodeColor::COLOR_BLACK;
 			m_pObject = pObject;
 			m_pParent = 0;
@@ -47324,7 +49313,7 @@ namespace NumberDuck
 			return m_pChild[nDirection];
 		}
 
-		void* RedBlackNodeImplementation::GetObject() const
+		void* RedBlackNodeImplementation::GetStoredObject() const
 		{
 			return m_pObject;
 		}
@@ -47336,6 +49325,7 @@ namespace NumberDuck
 
 		RedBlackTree::RedBlackTree(ComparisonCallback* pComparisonCallback)
 		{
+			m_pImpl = 0;
 			nbAssert::Assert(pComparisonCallback != 0);
 			m_pImpl = new RedBlackTreeImplementation();
 			m_pImpl->m_pComparisonCallback = pComparisonCallback;
@@ -47377,7 +49367,7 @@ namespace NumberDuck
 			RedBlackNodeImplementation* pNode = m_pImpl->m_pRootNode;
 			while (true)
 			{
-				int nComparison = m_pImpl->m_pComparisonCallback(pNode->GetObject(), pObject);
+				int nComparison = m_pImpl->m_pComparisonCallback(pNode->GetStoredObject(), pObject);
 				nbAssert::Assert(nComparison >= -1);
 				nbAssert::Assert(nComparison <= 1);
 				if (nComparison == 0)
@@ -47471,7 +49461,7 @@ namespace NumberDuck
 			RedBlackNodeImplementation* pNode = m_pImpl->m_pRootNode;
 			while (pNode != 0)
 			{
-				int nComparison = m_pImpl->m_pComparisonCallback(pNode->GetObject(), pObject);
+				int nComparison = m_pImpl->m_pComparisonCallback(pNode->GetStoredObject(), pObject);
 				nbAssert::Assert(nComparison >= -1);
 				nbAssert::Assert(nComparison <= 1);
 				if (nComparison == 0)
@@ -47577,12 +49567,24 @@ namespace NumberDuck
 			if (pChild) delete pChild;
 		}
 
+		RedBlackTreeImplementation::RedBlackTreeImplementation()
+		{
+			m_pRootNode = 0;
+			m_pComparisonCallback = 0;
+		}
+
 		RedBlackTreeImplementation::~RedBlackTreeImplementation()
 		{
 			if (m_pRootNode) delete m_pRootNode;
 		}
 
-																		PngImageInfo* PngLoader::Load(Blob* pBlob)
+																		PngImageInfo::PngImageInfo()
+		{
+			m_nWidth = 0;
+			m_nHeight = 0;
+		}
+
+		PngImageInfo* PngLoader::Load(Blob* pBlob)
 		{
 			if (m_pImageInfo != 0)
 				{
@@ -47624,9 +49626,20 @@ namespace NumberDuck
 			return m_pImageInfo;
 		}
 
+		PngLoader::PngLoader()
+		{
+			m_pImageInfo = 0;
+		}
+
 		PngLoader::~PngLoader()
 		{
 			if (m_pImageInfo) delete m_pImageInfo;
+		}
+
+		JpegImageInfo::JpegImageInfo()
+		{
+			m_nWidth = 0;
+			m_nHeight = 0;
 		}
 
 		JpegImageInfo* JpegLoader::Load(Blob* pBlob)
@@ -47683,6 +49696,11 @@ namespace NumberDuck
 				}
 			}
 			return m_pImageInfo;
+		}
+
+		JpegLoader::JpegLoader()
+		{
+			m_pImageInfo = 0;
 		}
 
 		JpegLoader::~JpegLoader()
@@ -48390,8 +50408,23 @@ namespace NumberDuck
 			return true;
 		}
 
+		ColumnInfo::ColumnInfo()
+		{
+			m_nWidth = 0;
+			m_bHidden = false;
+		}
+
+		RowInfo::RowInfo()
+		{
+			m_nHeight = 0;
+		}
+
 		Coordinate::Coordinate()
 		{
+			m_nX = 0;
+			m_nY = 0;
+			m_bXRelative = false;
+			m_bYRelative = false;
 			m_nX = 0;
 			m_nY = 0;
 			m_bXRelative = true;
@@ -48400,6 +50433,10 @@ namespace NumberDuck
 
 		Coordinate::Coordinate(unsigned short nX, unsigned short nY, bool bXRelative, bool bYRelative)
 		{
+			m_nX = 0;
+			m_nY = 0;
+			m_bXRelative = false;
+			m_bYRelative = false;
 			nbAssert::Assert(nY <= Worksheet::MAX_ROW);
 			nbAssert::Assert(nX <= Worksheet::MAX_COLUMN);
 			m_nX = nX;
@@ -48415,6 +50452,8 @@ namespace NumberDuck
 
 		WorksheetRange::WorksheetRange(unsigned short nFirst, unsigned short nLast)
 		{
+			m_nFirst = 0;
+			m_nLast = 0;
 			m_nFirst = nFirst;
 			m_nLast = nLast;
 		}
@@ -48426,6 +50465,9 @@ namespace NumberDuck
 
 		Coordinate3d::Coordinate3d(unsigned short nWorksheetFirst, unsigned short nWorksheetLast, Coordinate* pCoordinate)
 		{
+			m_nWorksheetFirst = 0;
+			m_nWorksheetLast = 0;
+			m_pCoordinate = 0;
 			m_nWorksheetFirst = nWorksheetFirst;
 			m_nWorksheetLast = nWorksheetLast;
 			m_pCoordinate = pCoordinate;
@@ -48450,6 +50492,8 @@ namespace NumberDuck
 
 		Area::Area(Coordinate* pTopLeft, Coordinate* pBottomRight)
 		{
+			m_pTopLeft = 0;
+			m_pBottomRight = 0;
 			m_pTopLeft = pTopLeft;
 			m_pBottomRight = pBottomRight;
 		}
@@ -48467,6 +50511,8 @@ namespace NumberDuck
 
 		Area3d::Area3d(unsigned short nWorksheetFirst, unsigned short nWorksheetLast, Area* pArea)
 		{
+			m_pWorksheetRange = 0;
+			m_pArea = 0;
 			m_pWorksheetRange = new WorksheetRange(nWorksheetFirst, nWorksheetLast);
 			m_pArea = pArea;
 		}
@@ -48484,6 +50530,19 @@ namespace NumberDuck
 
 		WorksheetImplementation::WorksheetImplementation(Workbook* pWorkbook, Worksheet* pWorksheet)
 		{
+			m_pWorkbook = 0;
+			m_sName = 0;
+			m_eOrientation = Worksheet::Orientation::ORIENTATION_PORTRAIT;
+			m_bShowGridlines = false;
+			m_bPrintGridlines = false;
+			m_pCellTable = 0;
+			m_pColumnInfoTable = 0;
+			m_pRowInfoTable = 0;
+			m_nDefaultRowHeight = 0;
+			m_pPictureVector = 0;
+			m_pChartVector = 0;
+			m_pMergedCellVector = 0;
+			m_pWorksheet = 0;
 			m_sName = new Secret::InternalString("");
 			m_pWorkbook = pWorkbook;
 			m_pWorksheet = pWorksheet;
@@ -48927,8 +50986,23 @@ namespace NumberDuck
 			if (m_pWorksheetVector) delete m_pWorksheetVector;
 		}
 
+		WorkbookImplementation::WorkbookImplementation()
+		{
+			m_pWorkbookGlobals = 0;
+			m_pWorksheetVector = 0;
+		}
+
 		ValueImplementation::ValueImplementation()
 		{
+			m_eType = Value::Type::TYPE_EMPTY;
+			m_sString = 0;
+			m_fFloat = 0;
+			m_bBoolean = false;
+			m_pFormula = 0;
+			m_pWorksheet = 0;
+			m_pArea = 0;
+			m_pArea3d = 0;
+			m_pValue = 0;
 			m_pFormula = 0;
 			m_pValue = 0;
 			m_sString = new InternalString("");
@@ -49076,6 +51150,18 @@ namespace NumberDuck
 
 		StyleImplementation::StyleImplementation()
 		{
+			m_pFont = 0;
+			m_eHorizontalAlign = Style::HorizontalAlign::HORIZONTAL_ALIGN_GENERAL;
+			m_eVerticalAlign = Style::VerticalAlign::VERTICAL_ALIGN_TOP;
+			m_pBackgroundColor = 0;
+			m_eFillPattern = Style::FillPattern::FILL_PATTERN_NONE;
+			m_pFillPatternColor = 0;
+			m_pTopBorderLine = 0;
+			m_pRightBorderLine = 0;
+			m_pBottomBorderLine = 0;
+			m_pLeftBorderLine = 0;
+			m_sFormat = 0;
+			m_nFormatIndex = 0;
 			m_pFont = new Font();
 			m_eHorizontalAlign = Style::HorizontalAlign::HORIZONTAL_ALIGN_GENERAL;
 			m_eVerticalAlign = Style::VerticalAlign::VERTICAL_ALIGN_BOTTOM;
@@ -49105,6 +51191,13 @@ namespace NumberDuck
 			if (m_sFormat) delete m_sFormat;
 		}
 
+		SharedString::SharedString()
+		{
+			m_sString = 0;
+			m_nChecksum = 0;
+			m_nIndex = 0;
+		}
+
 		SharedString::~SharedString()
 		{
 			if (m_sString) delete m_sString;
@@ -49112,6 +51205,8 @@ namespace NumberDuck
 
 		SharedStringContainer::SharedStringContainer()
 		{
+			m_pSharedStringVector = 0;
+			m_pSharedStringSortedVector = 0;
 			m_pSharedStringVector = new OwnedVector<SharedString*>();
 			m_pSharedStringSortedVector = new Vector<SharedString*>();
 		}
@@ -49183,6 +51278,12 @@ namespace NumberDuck
 
 		SeriesImplementation::SeriesImplementation(Worksheet* pWorksheet, Formula* pValuesFormula)
 		{
+			m_pWorksheet = 0;
+			m_pNameFormula = 0;
+			m_pValuesFormula = 0;
+			m_pLine = 0;
+			m_pFill = 0;
+			m_pMarker = 0;
 			m_pWorksheet = pWorksheet;
 			m_pNameFormula = 0;
 			m_pValuesFormula = pValuesFormula;
@@ -49331,6 +51432,15 @@ namespace NumberDuck
 			m_nY = 0;
 			m_nSubX = 0;
 			m_nSubY = 0;
+			m_nWidth = 0;
+			m_nHeight = 0;
+			m_sUrl = 0;
+			m_pBlob = 0;
+			m_eFormat = Picture::Format::PNG;
+			m_nX = 0;
+			m_nY = 0;
+			m_nSubX = 0;
+			m_nSubY = 0;
 			m_nWidth = 200;
 			m_nHeight = 100;
 			m_sUrl = new InternalString("");
@@ -49348,8 +51458,20 @@ namespace NumberDuck
 			if (m_pBlob) delete m_pBlob;
 		}
 
+		MergedCellImplementation::MergedCellImplementation()
+		{
+			m_nX = 0;
+			m_nY = 0;
+			m_nWidth = 0;
+			m_nHeight = 0;
+		}
+
 		MarkerImplementation::MarkerImplementation()
 		{
+			m_eType = Marker::Type::TYPE_NONE;
+			m_pFillColor = 0;
+			m_pBorderColor = 0;
+			m_nSize = 0;
 			m_eType = Marker::Type::TYPE_SQUARE;
 			m_nSize = WorksheetImplementation::TwipsToPixels(100);
 			m_pFillColor = new Color(255, 0, 255);
@@ -49437,6 +51559,8 @@ namespace NumberDuck
 
 		LineImplementation::LineImplementation()
 		{
+			m_eType = Line::Type::TYPE_NONE;
+			m_pColor = 0;
 			m_eType = Line::Type::TYPE_THIN;
 			m_pColor = new Color(0xFF, 0x00, 0x00);
 		}
@@ -49465,6 +51589,9 @@ namespace NumberDuck
 		LegendImplementation::LegendImplementation()
 		{
 			m_bHidden = false;
+			m_pBorderLine = 0;
+			m_pFill = 0;
+			m_bHidden = false;
 			m_pBorderLine = new Line();
 			m_pFill = new Fill();
 		}
@@ -49477,6 +51604,12 @@ namespace NumberDuck
 
 		FontImplementation::FontImplementation()
 		{
+			m_sName = 0;
+			m_nSizeTwips = 0;
+			m_pColor = 0;
+			m_bBold = false;
+			m_bItalic = false;
+			m_eUnderline = Font::Underline::UNDERLINE_NONE;
 			m_sName = new InternalString("Arial");
 			m_nSizeTwips = 14 * 15;
 			m_pColor = 0;
@@ -49493,6 +51626,9 @@ namespace NumberDuck
 
 		FillImplementation::FillImplementation()
 		{
+			m_eType = Fill::Type::TYPE_NONE;
+			m_pForegroundColor = 0;
+			m_pBackgroundColor = 0;
 			m_eType = Fill::Type::TYPE_SOLID;
 			m_pForegroundColor = new Color(0, 255, 0);
 			m_pBackgroundColor = new Color(0, 0, 255);
@@ -49522,6 +51658,28 @@ namespace NumberDuck
 
 		ChartImplementation::ChartImplementation(Worksheet* pWorksheet, Chart::Type eType)
 		{
+			m_pWorksheet = 0;
+			m_nX = 0;
+			m_nY = 0;
+			m_nSubX = 0;
+			m_nSubY = 0;
+			m_nWidth = 0;
+			m_nHeight = 0;
+			m_eType = Chart::Type::TYPE_COLUMN;
+			m_pCategoriesFormula = 0;
+			m_sTitle = 0;
+			m_sHorizontalAxisLabel = 0;
+			m_sVerticalAxisLabel = 0;
+			m_pLegend = 0;
+			m_pFrameBorderLine = 0;
+			m_pFrameFill = 0;
+			m_pPlotBorderLine = 0;
+			m_pPlotFill = 0;
+			m_pHorizontalAxisLine = 0;
+			m_pHorizontalGridLine = 0;
+			m_pVerticalAxisLine = 0;
+			m_pVerticalGridLine = 0;
+			m_pSeriesVector = 0;
 			m_pWorksheet = pWorksheet;
 			m_nX = 0;
 			m_nY = 0;
@@ -49676,6 +51834,13 @@ namespace NumberDuck
 		void CellImplementation::SetFormula(Formula* pFormula)
 		{
 			m_pValue->m_pImpl->SetFormula(pFormula, m_pWorksheet);
+		}
+
+		CellImplementation::CellImplementation()
+		{
+			m_pWorksheet = 0;
+			m_pValue = 0;
+			m_pStyle = 0;
 		}
 
 		CellImplementation::~CellImplementation()

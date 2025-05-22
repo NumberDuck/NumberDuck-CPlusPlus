@@ -105,7 +105,7 @@ namespace NumberDuck
 			TYPE_ERROR,
 		};
 
-		public: Secret::ValueImplementation* m_pImpl = 0;
+		public: Secret::ValueImplementation* m_pImpl;
 		public: Value();
 		public: bool Equals(const Value* pValue) const;
 		public: Value::Type GetType() const;
@@ -118,7 +118,7 @@ namespace NumberDuck
 	};
 	class Cell
 	{
-		public: Secret::CellImplementation* m_pImpl = 0;
+		public: Secret::CellImplementation* m_pImpl;
 		public: Cell(Worksheet* pWorksheet);
 		public: bool Equals(const Cell* pCell) const;
 		public: const Value* GetValue();
@@ -139,7 +139,7 @@ namespace NumberDuck
 	};
 	class Style
 	{
-		public: Secret::StyleImplementation* m_pImplementation = 0;
+		public: Secret::StyleImplementation* m_pImplementation;
 		public: Style();
 		public: Font* GetFont();
 		public: enum HorizontalAlign
@@ -206,7 +206,7 @@ namespace NumberDuck
 	};
 	class Line
 	{
-		protected: Secret::LineImplementation* m_pImpl = 0;
+		protected: Secret::LineImplementation* m_pImpl;
 		public: enum Type
 		{
 			TYPE_NONE = 0,
@@ -235,7 +235,7 @@ namespace NumberDuck
 	};
 	class Marker
 	{
-		public: Secret::MarkerImplementation* m_pImpl = 0;
+		public: Secret::MarkerImplementation* m_pImpl;
 		public: enum Type
 		{
 			TYPE_NONE = 0,
@@ -267,7 +267,7 @@ namespace NumberDuck
 	};
 	class Fill
 	{
-		protected: Secret::FillImplementation* m_pImpl = 0;
+		protected: Secret::FillImplementation* m_pImpl;
 		public: enum Type
 		{
 			TYPE_NONE = 0,
@@ -285,7 +285,7 @@ namespace NumberDuck
 	};
 	class Font
 	{
-		public: Secret::FontImplementation* m_pImpl = 0;
+		public: Secret::FontImplementation* m_pImpl;
 		public: enum Underline
 		{
 			UNDERLINE_NONE = 0,
@@ -331,7 +331,7 @@ namespace NumberDuck
 			NUM_TYPE,
 		};
 
-		public: Secret::ChartImplementation* m_pImpl = 0;
+		public: Secret::ChartImplementation* m_pImpl;
 		public: Chart(Worksheet* pWorksheet, Type eType);
 		public: unsigned int GetX();
 		public: bool SetX(unsigned int nX);
@@ -372,7 +372,7 @@ namespace NumberDuck
 	};
 	class Picture
 	{
-		public: Secret::PictureImplementation* m_pImplementation = 0;
+		public: Secret::PictureImplementation* m_pImplementation;
 		public: enum Format
 		{
 			PNG,
@@ -405,7 +405,7 @@ namespace NumberDuck
 	};
 	class Worksheet
 	{
-		public: Secret::WorksheetImplementation* m_pImpl = 0;
+		public: Secret::WorksheetImplementation* m_pImpl;
 		public: static const unsigned short MAX_COLUMN = 255;
 		public: static const unsigned short MAX_ROW = 65535;
 		public: static const unsigned short DEFAULT_COLUMN_WIDTH = 64;
@@ -463,6 +463,7 @@ namespace NumberDuck
 		protected: unsigned int FF(unsigned int a, unsigned int b, unsigned int c, unsigned int d, unsigned int x, int s);
 		protected: unsigned int GG(unsigned int a, unsigned int b, unsigned int c, unsigned int d, unsigned int x, int s);
 		protected: unsigned int HH(unsigned int a, unsigned int b, unsigned int c, unsigned int d, unsigned int x, int s);
+		public: MD4();
 	};
 	class Workbook
 	{
@@ -478,7 +479,7 @@ namespace NumberDuck
 			XLSX,
 		};
 
-		public: Secret::WorkbookImplementation* m_pImpl = 0;
+		public: Secret::WorkbookImplementation* m_pImpl;
 		public: Workbook(License eLicense);
 		public: void Clear();
 		public: bool Load(const char* szFileName);
@@ -495,7 +496,7 @@ namespace NumberDuck
 	};
 	class Series
 	{
-		public: Secret::SeriesImplementation* m_pImpl = 0;
+		public: Secret::SeriesImplementation* m_pImpl;
 		public: Series(Worksheet* pWorksheet, Secret::Formula* pValuesFormula);
 		public: const char* GetName();
 		public: bool SetName(const char* szName);
@@ -508,7 +509,7 @@ namespace NumberDuck
 	};
 	class MergedCell
 	{
-		protected: Secret::MergedCellImplementation* m_pImpl = 0;
+		protected: Secret::MergedCellImplementation* m_pImpl;
 		public: MergedCell(unsigned int nX, unsigned int nY, unsigned int nWidth, unsigned int nHeight);
 		public: unsigned int GetX() const;
 		public: void SetX(unsigned int nX);
@@ -522,7 +523,7 @@ namespace NumberDuck
 	};
 	class Legend
 	{
-		protected: Secret::LegendImplementation* m_pImpl = 0;
+		protected: Secret::LegendImplementation* m_pImpl;
 		public: Legend();
 		public: bool GetHidden() const;
 		public: void SetHidden(bool bHidden);
