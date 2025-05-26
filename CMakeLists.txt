@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14...3.22)
 
 project(
 	NumberDuck
-	VERSION 3.0.5
+	VERSION 3.0.6
 	LANGUAGES CXX
 )
 

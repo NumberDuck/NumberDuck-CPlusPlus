@@ -1,5 +1,5 @@
 # Number Duck
-v3.0.5 [J203]
+v3.0.6 [J205]
 
 Copyright (C) 2012-2025, File Scribe
 
@@ -11,7 +11,33 @@ Number Duck is a programming library for developers to read and write Microsoft 
 See NumberDuck.html for API details, or check the example folders.
 
 ## 🚧 Installation
+There are currently three ways to build Number Duck.
+
+### Source
 Since Number Duck is delivered as source, you can just drop the `NumberDuck.cpp` and `NumberDuck.hpp` files into your project.
+
+### CMake
+Alternatively you can use CMake to build and install a static library locally, by calling CMake with the `SIMPLE_OUTPUT` flag, eg:
+
+```
+cmake -S . -B _build -DSIMPLE_OUTPUT=true
+cmake --build _build
+sudo cmake --install _build
+```
+
+This will build Number Duck (in the `_build` directory) and copy it to the default search paths for includes and libraries, so then you can just `#include <NumberDuck.hpp>` in your code and link to `NumberDuck`, eg:
+
+```
+g++ SimpleExample.cpp -lNumberDuck
+```
+
+### CPM.cmake
+
+Number Duck has been tested with the [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake) dependancy manager and works successfully.
+
+```
+CPMAddPackage("gh:NumberDuck/NumberDuck-CPlusPlus@3.0.6")
+````
 
 ## 💾 Saving and Loading a Spreadsheet
 Here is a simple example of writing to a spreadsheet, and then reading it back in.
