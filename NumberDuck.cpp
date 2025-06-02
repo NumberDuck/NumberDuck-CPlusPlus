@@ -11198,6 +11198,7 @@ namespace NumberDuck
 
 	MD4::MD4()
 	{
+		for (int _x = 0; _x < 4; _x++) m_nBuffer[_x] = 0;
 	}
 
 	Workbook::Workbook(License eLicense)
@@ -29249,14 +29250,20 @@ namespace NumberDuck
 
 		StreamDataStruct::StreamDataStruct()
 		{
+			for (int _x = 0; _x < MAX_NAME_LENGTH; _x++) m_pName[_x] = 0;
 			m_nNameDataSize = 0;
 			m_nType = 0;
 			m_nNodeColour = 0;
 			m_nLeftChildNodeStreamId = 0;
 			m_nRightChildNodeStreamId = 0;
 			m_nRootNodeStreamId = 0;
+			for (int _x = 0; _x < 16; _x++) m_pUniqueIdentifier[_x] = 0;
+			for (int _x = 0; _x < 4; _x++) m_pUserFlags[_x] = 0;
+			for (int _x = 0; _x < 8; _x++) m_pCreationDate[_x] = 0;
+			for (int _x = 0; _x < 8; _x++) m_pModificationDate[_x] = 0;
 			m_nSectorId = 0;
 			m_nStreamSize = 0;
+			for (int _x = 0; _x < 4; _x++) m_pUnused[_x] = 0;
 		}
 
 		Stream::Stream(int nStreamId, int nMinimumStandardStreamSize, Blob* pBlob, int nOffset, CompoundFile* pCompoundFile)
@@ -36275,6 +36282,7 @@ namespace NumberDuck
 		PaletteRecord::PaletteRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_ccv = 0;
+			for (int _x = 0; _x < BiffWorkbookGlobals::NUM_CUSTOM_PALETTE_ENTRY; _x++) m_rgColor[_x] = 0;
 			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PALETTE);
 			SetDefaults();
 			BlobRead(m_pBlobView);
@@ -36301,6 +36309,7 @@ namespace NumberDuck
 		PaletteRecord::PaletteRecord() : BiffRecord(TYPE, SIZE + BiffWorkbookGlobals::NUM_CUSTOM_PALETTE_ENTRY * 4)
 		{
 			m_ccv = 0;
+			for (int _x = 0; _x < BiffWorkbookGlobals::NUM_CUSTOM_PALETTE_ENTRY; _x++) m_rgColor[_x] = 0;
 			SetDefaults();
 		}
 
@@ -45151,18 +45160,23 @@ namespace NumberDuck
 		const unsigned char CompoundFileHeader::MAGIC_WORD[CompoundFileHeader::MAGIC_WORD_SIZE] = {0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1};
 		CompoundFileHeader::CompoundFileHeader(unsigned int nSectorSize, unsigned int nShortSectorSize)
 		{
+			for (int _x = 0; _x < MAGIC_WORD_SIZE; _x++) m_pMagicWord[_x] = 0;
+			for (int _x = 0; _x < UNIQUE_IDENTIFIER_SIZE; _x++) m_pUniqueIdentifier[_x] = 0;
 			m_nRevisonNumber = 0;
 			m_nVersionNumber = 0;
 			m_nByteOrderIdentifier = 0;
 			m_nSectorSize = 0;
 			m_nShortSectorSize = 0;
+			for (int _x = 0; _x < 10; _x++) m_pUnusedA[_x] = 0;
 			m_nSectorAllocationTableSize = 0;
 			m_nStreamDirectoryStreamSectorId = 0;
+			for (int _x = 0; _x < 4; _x++) m_pUnusedB[_x] = 0;
 			m_nMinimumStandardStreamSize = 0;
 			m_nShortSectorAllocationTableSectorId = 0;
 			m_nShortSectorAllocationTableSize = 0;
 			m_nMasterSectorAllocationTableSectorId = 0;
 			m_nMasterSectorAllocationTableSize = 0;
+			for (int _x = 0; _x < MasterSectorAllocationTable::INITIAL_SECTOR_ID_ARRAY_SIZE; _x++) m_pMasterSectorAllocationTable[_x] = 0;
 			unsigned int i;
 			for (i = 0; i < MAGIC_WORD_SIZE; i++)
 				m_pMagicWord[i] = MAGIC_WORD[i];
@@ -49260,6 +49274,7 @@ namespace NumberDuck
 		{
 			m_eColor = NodeColor::COLOR_RED;
 			m_pParent = 0;
+			for (int _x = 0; _x < 2; _x++) m_pChild[_x] = 0;
 			m_pObject = 0;
 			m_eColor = RedBlackNode::NodeColor::COLOR_BLACK;
 			m_pObject = pObject;
