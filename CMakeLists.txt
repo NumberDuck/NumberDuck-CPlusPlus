@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14...3.22)
 
 project(
 	NumberDuck
-	VERSION 3.0.6
+	VERSION 3.0.7
 	LANGUAGES CXX
 )
 
@@ -28,6 +28,7 @@ if(SIMPLE_OUTPUT)
 	install(
 		TARGETS ${PROJECT_NAME}
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	)
 else()
 	include(cmake/CPM.cmake)
