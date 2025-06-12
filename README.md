@@ -1,5 +1,5 @@
 # Number Duck
-v3.0.7 [J16]
+v3.0.7 [J70]
 
 Copyright (C) 2012-2025, File Scribe
 
