@@ -64,9 +64,10 @@ namespace NumberDuck
 		class XlsxWorkbookGlobals;
 		class XmlNode;
 		class XlsxWorksheet;
+		class BiffRecordContainer;
+		class ZipWriter;
 		template <class T>
 		class Vector;
-		class BiffRecordContainer;
 		class SeriesImplementation;
 		class MergedCellImplementation;
 		class LegendImplementation;

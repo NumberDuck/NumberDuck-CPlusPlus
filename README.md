@@ -1,5 +1,5 @@
 # Number Duck
-v3.0.7 [J70]
+v3.0.8 [J149]
 
 Copyright (C) 2012-2025, File Scribe
 
@@ -36,7 +36,7 @@ g++ SimpleExample.cpp -lNumberDuck
 Number Duck has been tested with the [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake) dependancy manager and works successfully.
 
 ```
-CPMAddPackage("gh:NumberDuck/NumberDuck-CPlusPlus@3.0.7")
+CPMAddPackage("gh:NumberDuck/NumberDuck-CPlusPlus@3.0.8")
 ````
 
 ## 💾 Saving and Loading a Spreadsheet

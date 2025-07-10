@@ -124,6 +124,7 @@ namespace NumberDuck
 		class TableElement;
 		class PngImageInfo;
 		class JpegImageInfo;
+		class ZipWriter;
 		class XlsxWorkbookGlobals;
 		class XmlNode;
 		class SharedString;
@@ -4804,11 +4805,9 @@ namespace NumberDuck
 					pOwnedElement->m_nRow = nRow;
 					pOwnedElement->m_xObject = 0;
 					pElement = pOwnedElement;
-					{
-						NumberDuck::Secret::TableElement<T>* __828927520 = pOwnedElement;
-						pOwnedElement = 0;
-						m_pElementVector->Insert(nIndex, __828927520);
-					}
+					NumberDuck::Secret::TableElement<T>* __1248157150 = pOwnedElement;
+					pOwnedElement = 0;
+					m_pElementVector->Insert(nIndex, __1248157150);
 					if (pOwnedElement) delete pOwnedElement;
 				}
 				return pElement;
@@ -4823,23 +4822,17 @@ namespace NumberDuck
 			{
 				TableElement<T>* pElement = m_pElementVector->PopBack();
 				T xObject;
-				{
-					T __3920382863 = pElement->m_xObject;
-					pElement->m_xObject = 0;
-					xObject = __3920382863;
-				}
+				T __3793400438 = pElement->m_xObject;
+				pElement->m_xObject = 0;
+				xObject = __3793400438;
 				{
 					delete pElement;
 					pElement = 0;
 				}
-				{
-					T __1841677085 = xObject;
-					xObject = 0;
-					{
-						if (pElement) delete pElement;
-						return __1841677085;
-					}
-				}
+				T __1966963214 = xObject;
+				xObject = 0;
+				if (pElement) delete pElement;
+				return __1966963214;
 			}
 
 			public: int GetSize()
@@ -4882,6 +4875,7 @@ namespace NumberDuck
 		class XlsxWorksheet : public Worksheet
 		{
 			public: XlsxWorksheet(Workbook* pWorkbook);
+			public: static bool Write(Worksheet* pWorksheet, WorkbookGlobals* pWorkbookGlobals, ZipWriter* pZipWriter, int nWorksheetIndex);
 			public: bool Parse(XlsxWorkbookGlobals* pWorkbookGlobals, XmlNode* pWorksheetNode);
 		};
 		class XlsxWorkbookGlobals : public WorkbookGlobals
@@ -4895,6 +4889,11 @@ namespace NumberDuck
 			public: static bool ApplyFill(XmlNode* pFillElement, Style* pStyle);
 			public: static bool ParseStyles(WorkbookGlobals* pWorkbookGlobals, XmlNode* pStyleSheetNode);
 			public: static bool SubParseStyles(WorkbookGlobals* pWorkbookGlobals, XmlNode* pStyleSheetNode, Vector<XmlNode*>* pNumFmtVector, Vector<XmlNode*>* pFontVector, Vector<XmlNode*>* pFillVector, Vector<XmlNode*>* pBorderVector, Vector<XmlNode*>* pCellStyleXfVector, Vector<XmlNode*>* pCellXfVector, Vector<XmlNode*>* pCellStyleVector);
+		};
+		class XlsxUtils
+		{
+			public: static void WriteBgra(unsigned int nRgba, InternalString* sOut);
+			public: static unsigned int ReadBgra(const char* sxRgb);
 		};
 		class ColumnInfo
 		{
@@ -5212,6 +5211,12 @@ namespace NumberDuck
 				if (m_pVector) delete m_pVector;
 			}
 
+			public: T PushFront(T xObject)
+			{
+				m_pVector->PushFront(xObject);
+				return m_pVector->Get(0);
+			}
+
 			public: T PushBack(T xObject)
 			{
 				m_pVector->PushBack(xObject);
@@ -5233,10 +5238,11 @@ namespace NumberDuck
 				while (m_pVector->GetSize() > 0)
 				{
 					T pTemp = m_pVector->PopBack();
-					{
-						delete pTemp;
-						pTemp = 0;
-					}
+					if (pTemp != 0)
+						{
+							delete pTemp;
+							pTemp = 0;
+						}
 				}
 			}
 
@@ -5278,246 +5284,220 @@ namespace NumberDuck
 
 #include <vector>
 
-namespace NumberDuck
+namespace NumberDuck { namespace Secret
 {
-	namespace Secret
+	template <class T>
+	class Vector
 	{
-		template <class T>
-		class Vector
-		{
-			public:
-				Vector() {
-					m_pVector = new std::vector<T>();
-				}
+		public:
+			Vector() {
+				m_pVector = new std::vector<T>();
+			}
 
-				~Vector()
-				{
-					delete m_pVector;
-				}
+			~Vector()
+			{
+				delete m_pVector;
+			}
 
-				void PushFront(T xObject)
-				{
-					m_pVector->insert(m_pVector->begin(), xObject);
-				}
+			void PushFront(T xObject)
+			{
+				m_pVector->insert(m_pVector->begin(), xObject);
+			}
 
-				void PushBack(T xObject)
-				{
-					m_pVector->push_back(xObject);
-				}
+			void PushBack(T xObject)
+			{
+				m_pVector->push_back(xObject);
+			}
 
-				T PopBack()
-				{
-					T xBack = m_pVector->back();
-					m_pVector->pop_back();
-					return xBack;
-				}
+			T PopBack()
+			{
+				T xBack = m_pVector->back();
+				m_pVector->pop_back();
+				return xBack;
+			}
 
-				T PopFront()
-				{
-					T xFront = (*m_pVector)[0];
-					m_pVector->erase(m_pVector->begin());
-					return xFront;
-				}
+			T PopFront()
+			{
+				T xFront = (*m_pVector)[0];
+				m_pVector->erase(m_pVector->begin());
+				return xFront;
+			}
 
-				int GetSize()
-				{
-					return (int)m_pVector->size();
-				}
+			int GetSize()
+			{
+				return (int)m_pVector->size();
+			}
 
-				T Get(int nIndex)
-				{
-					return (*m_pVector)[nIndex];
-				}
+			T Get(int nIndex)
+			{
+				return (*m_pVector)[nIndex];
+			}
 
-				void Set(int nIndex, T xObject)
-				{
-					(*m_pVector)[nIndex] = xObject;
-				}
+			void Set(int nIndex, T xObject)
+			{
+				(*m_pVector)[nIndex] = xObject;
+			}
 
-				void Insert(int nIndex, T xObject)
-				{
-					m_pVector->insert(m_pVector->begin() + nIndex, xObject);
-				}
+			void Insert(int nIndex, T xObject)
+			{
+				m_pVector->insert(m_pVector->begin() + nIndex, xObject);
+			}
 
-				void Clear()
-				{
-					m_pVector->clear();
-				}
+			void Clear()
+			{
+				m_pVector->clear();
+			}
 
-				void Erase(int nIndex)
-				{
-					m_pVector->erase(m_pVector->begin() + nIndex);
-				}
+			void Erase(int nIndex)
+			{
+				m_pVector->erase(m_pVector->begin() + nIndex);
+			}
 
-			protected:
-				std::vector<T>* m_pVector;		
-		};
-	}
-}
+		protected:
+			std::vector<T>* m_pVector;		
+	};
+}}
 
 
 
-namespace NumberDuck
-{
-	namespace Secret
-	{
-		class nbAssert
-		{
-			public: static void Assert(bool bTest, const char* sxAssert, const char* sxFile, int nLine);
-			public: static void Assert(bool bTest);
-		};
-	}
-}
 
-#ifndef CLIFFY_ASSERT
-	#define CLIFFY_ASSERT(x) NumberDuck::Secret::nbAssert::Assert(!!(x), #x, __FILE__, __LINE__)
-#endif
-
-
-
-namespace NumbatLogic
+namespace NumberDuck { namespace Secret
 {
 	class Assert
 	{
 		public: static void Plz(bool bTest, const char* sxAssert, const char* sxFile, int nLine);
 		public: static void Plz(bool bTest);
 	};
-}
+}}
 
 
 
-namespace NumberDuck
+
+namespace NumberDuck { namespace Secret
 {
-	namespace Secret
+	class Console
 	{
-		class Console
-		{
-			public: static void Log(const char* sxPath);
-		};
-	}
-}
+		public: static void Log(const char* sxPath);
+	};
+}}
 
 
 
-namespace NumberDuck
+
+namespace NumberDuck { namespace Secret
 {
-	namespace Secret
+	class ExternalString
 	{
-		class ExternalString
-		{
-			public:
-				static bool Equal(const char* szA, const char* szB);
-				static int GetChecksum(const char* szString);
-				static long hextol(const char* szString);
+		public:
+			static bool Equal(const char* szA, const char* szB);
+			static int GetChecksum(const char* szString);
+			static long hextol(const char* szString);
 
-				static int atoi(const char* szString);
+			static int atoi(const char* szString);
 
-				static double atof(const char* szString);
-				static long atol(const char* szString);
-		};
-	}
-}
+			static double atof(const char* szString);
+			static long atol(const char* szString);
+	};
+}}
+
 
 
 
 #include <cstddef>
 #include <string.h>	// for NULL
 
-namespace NumberDuck
+namespace NumberDuck { class BlobView; }
+
+namespace NumberDuck { namespace Secret
 {
-	class BlobView;
-
-	namespace Secret
+	class InternalString
 	{
-		class InternalString
-		{
-			public:
-				InternalString(const char* szString);
-				~InternalString();
+		public:
+			InternalString(const char* szString);
+			~InternalString();
 
-				InternalString* CreateClone();
+			InternalString* CreateClone();
 
-				void Set(const char* szString);
-				const char* GetExternalString() const;
+			void Set(const char* szString);
+			const char* GetExternalString() const;
 
-				void Append(const char* szString);
-				void AppendChar(unsigned short nChar);
-				void AppendString(const char* szString);
-				void AppendStringData(unsigned char* pData, int nLength);
+			void Append(const char* szString);
+			void AppendChar(unsigned short nChar);
+			void AppendString(const char* szString);
+			void AppendStringData(unsigned char* pData, int nLength);
 
-				void AppendInt(int nInt);
-				void AppendUnsignedInt(unsigned int nUint32);
-				void AppendUint32(unsigned int nUint32);
-				void AppendDouble(double fDouble);
+			void AppendInt(int nInt);
+			void AppendUnsignedInt(unsigned int nUint32);
+			void AppendUint32(unsigned int nUint32);
+			void AppendDouble(double fDouble);
+			void AppendHex(unsigned int nUint32);
 
-				void PrependChar(unsigned short nChar);
-				void PrependString(const char* szString);
+			void PrependChar(unsigned short nChar);
+			void PrependString(const char* szString);
 
-				void SubStr(int nStart, int nLength);
-				void CropFront(int nLength);
+			void SubStr(int nStart, int nLength);
+			void CropFront(int nLength);
 
-				//void CropBack(int nLength);
+			//void CropBack(int nLength);
 
-				int GetLength();
-				unsigned short GetChar(int nIndex);
+			int GetLength();
+			unsigned short GetChar(int nIndex);
 
-				void BlobWriteUtf8(BlobView* pBlobView, bool bZeroTerminator);
-				void BlobWrite16Bit(BlobView* pBlobView, bool bZeroTerminator);
+			void BlobWriteUtf8(BlobView* pBlobView, bool bZeroTerminator);
+			void BlobWrite16Bit(BlobView* pBlobView, bool bZeroTerminator);
 
-				bool IsAscii();
+			bool IsAscii();
 
-				bool IsEqual(const char* szCompare);
-				bool StartsWith(const char* szString);
-				bool EndsWith(const char* szString);
+			bool IsEqual(const char* szCompare);
+			bool StartsWith(const char* szString);
+			bool EndsWith(const char* szString);
 
-				double ParseDouble();
-				unsigned int ParseHex();
+			double ParseDouble();
+			unsigned int ParseHex();
 
-				int FindChar(unsigned short nChar);
+			int FindChar(unsigned short nChar);
 
-				void Replace(const char* sxFind, const char* sxReplace);
+			void Replace(const char* sxFind, const char* sxReplace);
 
-			protected:
-				char* m_szBuffer;
-				int m_nBufferSize;
+		protected:
+			char* m_szBuffer;
+			int m_nBufferSize;
 
-				int m_nByteLength;
-				int m_nCharLength;
+			int m_nByteLength;
+			int m_nCharLength;
 
-				void Resize(int nSize);
+			void Resize(int nSize);
 
-				static int GetCharSize(unsigned short nChar);
-				static int GetUtf8CharSize(unsigned char cLeadChar);
-				static bool GetUtf8Length(const char* szString, int* pCharLength, int* pByteLength);
+			static int GetCharSize(unsigned short nChar);
+			static int GetUtf8CharSize(unsigned char cLeadChar);
+			static bool GetUtf8Length(const char* szString, int* pCharLength, int* pByteLength);
 
-				static unsigned short DecodeChar(unsigned char* pUtf8Char);
-				static int EncodeChar(unsigned short nChar, unsigned char* pBuffer);
-		};
-	}
-}
+			static unsigned short DecodeChar(unsigned char* pUtf8Char);
+			static int EncodeChar(unsigned short nChar, unsigned char* pBuffer);
+	};
+}}
+
 
 
 
 #include <stdint.h>
 
-namespace NumberDuck
+namespace NumberDuck { namespace Secret
 {
-	namespace Secret
+	class InternalString;
+	class Utils
 	{
-		class InternalString;
-		class Utils
-		{
-			public:
-				static double Pow(double fBase, double fExponent);
-				static double ByteConvertUint64ToDouble(uint64_t nValue);
-				static int32_t ByteConvertUint32ToInt32(uint32_t nValue);
-				static uint32_t ByteConvertInt32ToUint32(int32_t nValue);
+		public:
+			static double Pow(double fBase, double fExponent);
+			static double ByteConvertUint64ToDouble(uint64_t nValue);
+			static int32_t ByteConvertUint32ToInt32(uint32_t nValue);
+			static uint32_t ByteConvertInt32ToUint32(int32_t nValue);
 
-				static void Indent(int nTabDepth, InternalString* sOut);
-		};
-	}
+			static void Indent(int nTabDepth, InternalString* sOut);
+	};
 }
 
+}
 
 
 /*
@@ -7912,52 +7892,49 @@ private:
 	
 #endif
 
-namespace NumberDuck
+namespace NumberDuck { class BlobView; }
+
+namespace NumberDuck { namespace Secret
 {
-	class Blob;
-	class BlobView;
+	template <class T>
+	class Vector;
 
-	namespace Secret
+	class XmlNode
 	{
-		template <class T>
-		class Vector;
+		public:
+			XmlNode* GetFirstChildElement(const char* szName);
+			XmlNode* GetNextSiblingElement(const char* szName);
+			const char* GetValue();
+			const char* GetText();
+			const char* GetAttribute(const char* szName);
 
-		class XmlNode
-		{
-			public:
-				XmlNode* GetFirstChildElement(const char* szName);
-				XmlNode* GetNextSiblingElement(const char* szName);
-				const char* GetValue();
-				const char* GetText();
-				const char* GetAttribute(const char* szName);
+			void SetAttribute(const char* szName, const char* szValue);
+			void SetText(const char* szText);
+			void AppendChild(XmlNode* pChild);
 
-			protected:
-				#ifndef CLANG_PARSE
-					XmlNode(tinyxml2::XMLNode* pNode, XmlNode* pParent);
-					virtual ~XmlNode();
+			XmlNode(tinyxml2::XMLNode* pNode, XmlNode* pParent);
+			virtual ~XmlNode();
 
-					tinyxml2::XMLNode* m_pNode;
-					XmlNode* m_pParent;
-					Vector<XmlNode*>* m_pChildNodeVector;
-				#endif
-		};
+			tinyxml2::XMLNode* m_pNode;
+			XmlNode* m_pParent;
+			Vector<XmlNode*>* m_pChildNodeVector;
+	};
 
-		class XmlFile : public XmlNode
-		{
-			public:
-				XmlFile();
-				~XmlFile();
+	class XmlFile : public XmlNode
+	{
+		public:
+			XmlFile();
+			~XmlFile();
 
-				bool Load(BlobView* pBlobView);
+			bool Load(BlobView* pBlobView);
+			bool Save(BlobView* pBlobView);
+			XmlNode* CreateElement(const char* szName);
 
-			protected:
-				#ifndef CLANG_PARSE
-					void Cleanup();
-
-					tinyxml2::XMLDocument* m_pDocument;
-				#endif
-		};
-	}
+		protected:
+			void Cleanup();
+			tinyxml2::XMLDocument* m_pDocument;
+	};
+}
 }
 
 
@@ -9391,61 +9368,101 @@ MINIZ_EXPORT void *mz_zip_extract_archive_file_to_heap_v2(const char *pZip_filen
 	
 #endif
 
-namespace NumberDuck
+namespace NumberDuck { class Blob; }
+namespace NumberDuck { class BlobView; }
+
+namespace NumberDuck { namespace Secret
 {
-	class Blob;
-	class BlobView;
-	namespace Secret
+	class InternalString;
+
+	class ZipFileInfo
 	{
-		class InternalString;
+		public:
+			const char* GetFileName();
+			int GetSize();
 
-		class ZipFileInfo
-		{
-			public:
-				const char* GetFileName();
-				int GetSize();
+		//unsigned int GetCrc32();
 
-			//unsigned int GetCrc32();
+		protected:
+			#ifndef CLANG_PARSE
+				friend class Zip;
+				ZipFileInfo();
+				~ZipFileInfo();
 
-			protected:
-				#ifndef CLANG_PARSE
-					friend class Zip;
-					ZipFileInfo();
-					~ZipFileInfo();
+				mz_zip_archive_file_stat* m_pFileStat;
+			#endif
+	};
 
-					mz_zip_archive_file_stat* m_pFileStat;
-				#endif
-		};
+	class Zip
+	{
+		public:
+			Zip();
+			~Zip();
 
-		class Zip
-		{
-			public:
-				Zip();
-				~Zip();
+			bool LoadBlobView(BlobView* pBlobView);
+			bool LoadFile(const char* szFileName);
+			bool SaveBlobView(BlobView* pBlobView);
 
-				bool LoadBlobView(BlobView* pBlobView);
-				bool LoadFile(const char* szFileName);
+			int GetNumFile();
+			ZipFileInfo* GetFileInfo(int nIndex);
 
-				int GetNumFile();
-				ZipFileInfo* GetFileInfo(int nIndex);
+			bool ExtractFileByIndex(int nIndex, BlobView* pOutBlobView);
+			bool ExtractFileByName(const char* szFileName, BlobView* pOutBlobView);
 
-				bool ExtractFileByIndex(int nIndex, BlobView* pOutBlobView);
-				bool ExtractFileByName(const char* szFileName, BlobView* pOutBlobView);
+			bool ExtractFileByIndexToString(int nIndex, InternalString* sOut);
 
-				bool ExtractFileByIndexToString(int nIndex, InternalString* sOut);
+			bool AddFileFromBlobView(const char* szFileName, BlobView* pBlobView);
 
-			private:
-				#ifndef CLANG_PARSE
-					void CleanupArchive();
-					void Cleanup();
+		private:
+			#ifndef CLANG_PARSE
+				void CleanupArchive();
+				void Cleanup();
 
-					Blob* m_pBlob;
-					mz_zip_archive* m_pArchive;
-					ZipFileInfo* m_pTempFileInfo;
-				#endif
-		};
-	}
+				Blob* m_pBlob;
+				mz_zip_archive* m_pArchive;
+				ZipFileInfo* m_pTempFileInfo;
+			#endif
+	};
 }
+}
+
+
+
+
+
+
+namespace NumberDuck { class Blob; }
+namespace NumberDuck { class BlobView; }
+
+namespace NumberDuck { namespace Secret
+{
+	template<typename T> class Vector;
+	class InternalString;
+
+	struct ZipEntry
+	{
+		InternalString* sFileName;
+		Blob* pBlob;
+
+		ZipEntry(const char* szFileName, Blob* pBlob);
+		~ZipEntry();
+	};
+	
+	class ZipWriter
+	{
+		public:
+			ZipWriter();
+			~ZipWriter();
+
+			bool SaveBlobView(BlobView* pBlobView);
+			bool AddFileFromBlob(const char* szFileName, Blob* pBlob);
+
+		private:
+			
+
+			Vector<ZipEntry*>* m_pZipEntryVector;
+	};
+} }
 
 
 #include "NumberDuck.hpp"
@@ -9460,6 +9477,9 @@ namespace NumberDuck
 	class MergedCell;
 	class Blob;
 	class BlobView;
+	class Style;
+	class Font;
+	class Color;
 }
 namespace NumberDuck
 {
@@ -9510,7 +9530,7 @@ namespace NumberDuck
 				}
 
 			}
-			NumbatLogic::Assert::Plz(false);
+			Secret::Assert::Plz(false);
 		}
 		return false;
 	}
@@ -9943,8 +9963,9 @@ namespace NumberDuck
 	{
 		if (nSize < 10)
 			nSize = 10;
-		else if (nSize > 96)
-			nSize = 96;
+		else
+			if (nSize > 96)
+				nSize = 96;
 		m_pImpl->m_nSizeTwips = nSize * 15;
 	}
 
@@ -10101,21 +10122,17 @@ namespace NumberDuck
 		Secret::Formula* pFormula = new Secret::Formula(szValues, m_pImpl->m_pWorksheet->m_pImpl);
 		if (pFormula->ValidateForChart(m_pImpl->m_pWorksheet->m_pImpl))
 		{
-			NumberDuck::Secret::Formula* __879619620 = pFormula;
+			NumberDuck::Secret::Formula* __978252844 = pFormula;
 			pFormula = 0;
-			{
-				if (pFormula) delete pFormula;
-				return m_pImpl->CreateSeries(__879619620);
-			}
+			if (pFormula) delete pFormula;
+			return m_pImpl->CreateSeries(__978252844);
 		}
 		{
 			delete pFormula;
 			pFormula = 0;
 		}
-		{
-			if (pFormula) delete pFormula;
-			return 0;
-		}
+		if (pFormula) delete pFormula;
+		return 0;
 	}
 
 	void Chart::PurgeSeries(unsigned int nIndex)
@@ -10138,20 +10155,14 @@ namespace NumberDuck
 			{
 				delete m_pImpl->m_pCategoriesFormula;
 			}
-			{
-				NumberDuck::Secret::Formula* __879619620 = pFormula;
-				pFormula = 0;
-				m_pImpl->m_pCategoriesFormula = __879619620;
-			}
-			{
-				if (pFormula) delete pFormula;
-				return true;
-			}
-		}
-		{
+			NumberDuck::Secret::Formula* __1632544379 = pFormula;
+			pFormula = 0;
+			m_pImpl->m_pCategoriesFormula = __1632544379;
 			if (pFormula) delete pFormula;
-			return false;
+			return true;
 		}
+		if (pFormula) delete pFormula;
+		return false;
 	}
 
 	const char* Chart::GetTitle()
@@ -10435,15 +10446,14 @@ namespace NumberDuck
 				{
 					m_pImpl->m_pColumnInfoTable->Erase(i);
 				}
-				else if (pElement->m_nColumn >= nColumn)
-				{
+				else
+					if (pElement->m_nColumn >= nColumn)
 					{
-						NumberDuck::Secret::ColumnInfo* __3920382863 = pElement->m_xObject;
+						NumberDuck::Secret::ColumnInfo* __2065688932 = pElement->m_xObject;
 						pElement->m_xObject = 0;
-						m_pImpl->m_pColumnInfoTable->Set(pElement->m_nColumn + 1, pElement->m_nRow, __3920382863);
+						m_pImpl->m_pColumnInfoTable->Set(pElement->m_nColumn + 1, pElement->m_nRow, __2065688932);
+						m_pImpl->m_pColumnInfoTable->Erase(i);
 					}
-					m_pImpl->m_pColumnInfoTable->Erase(i);
-				}
 				if (i == 0)
 					break;
 				i--;
@@ -10459,15 +10469,14 @@ namespace NumberDuck
 				{
 					m_pImpl->m_pCellTable->Erase(i);
 				}
-				else if (pElement->m_nColumn >= nColumn)
-				{
+				else
+					if (pElement->m_nColumn >= nColumn)
 					{
-						NumberDuck::Cell* __3920382863 = pElement->m_xObject;
+						NumberDuck::Cell* __4129240323 = pElement->m_xObject;
 						pElement->m_xObject = 0;
-						m_pImpl->m_pCellTable->Set(pElement->m_nColumn + 1, pElement->m_nRow, __3920382863);
+						m_pImpl->m_pCellTable->Set(pElement->m_nColumn + 1, pElement->m_nRow, __4129240323);
+						m_pImpl->m_pCellTable->Erase(i);
 					}
-					m_pImpl->m_pCellTable->Erase(i);
-				}
 				if (i == 0)
 					break;
 				i--;
@@ -10520,8 +10529,9 @@ namespace NumberDuck
 				pMergedCell->SetX(pMergedCell->GetX() + 1);
 				pMergedCell->SetWidth(pMergedCell->GetWidth());
 			}
-			else if (pMergedCell->GetX() + pMergedCell->GetWidth() >= nColumn)
-				pMergedCell->SetWidth(pMergedCell->GetWidth() + 1);
+			else
+				if (pMergedCell->GetX() + pMergedCell->GetWidth() >= nColumn)
+					pMergedCell->SetWidth(pMergedCell->GetWidth() + 1);
 			i++;
 		}
 	}
@@ -10539,28 +10549,25 @@ namespace NumberDuck
 				{
 					m_pImpl->m_pColumnInfoTable->Erase(i);
 				}
-				else if (pElement->m_nColumn > nColumn)
-				{
-					int nTempColumn = pElement->m_nColumn - 1;
-					int nTempRow = pElement->m_nRow;
-					Secret::ColumnInfo* pColumnInfo = 0;
-					{
-						NumberDuck::Secret::ColumnInfo* __3920382863 = pElement->m_xObject;
-						pElement->m_xObject = 0;
-						pColumnInfo = __3920382863;
-					}
-					m_pImpl->m_pColumnInfoTable->Erase(i++);
-					{
-						NumberDuck::Secret::ColumnInfo* __1173438266 = pColumnInfo;
-						pColumnInfo = 0;
-						m_pImpl->m_pColumnInfoTable->Set(nTempColumn, nTempRow, __1173438266);
-					}
-					if (pColumnInfo) delete pColumnInfo;
-				}
 				else
-				{
-					i++;
-				}
+					if (pElement->m_nColumn > nColumn)
+					{
+						int nTempColumn = pElement->m_nColumn - 1;
+						int nTempRow = pElement->m_nRow;
+						Secret::ColumnInfo* pColumnInfo = 0;
+						NumberDuck::Secret::ColumnInfo* __2049912110 = pElement->m_xObject;
+						pElement->m_xObject = 0;
+						pColumnInfo = __2049912110;
+						m_pImpl->m_pColumnInfoTable->Erase(i++);
+						NumberDuck::Secret::ColumnInfo* __2744690011 = pColumnInfo;
+						pColumnInfo = 0;
+						m_pImpl->m_pColumnInfoTable->Set(nTempColumn, nTempRow, __2744690011);
+						if (pColumnInfo) delete pColumnInfo;
+					}
+					else
+					{
+						i++;
+					}
 			}
 		}
 		{
@@ -10572,28 +10579,25 @@ namespace NumberDuck
 				{
 					m_pImpl->m_pCellTable->Erase(i);
 				}
-				else if (pElement->m_nColumn > nColumn)
-				{
-					int nTempColumn = pElement->m_nColumn - 1;
-					int nTempRow = pElement->m_nRow;
-					Cell* pCell = 0;
-					{
-						NumberDuck::Cell* __3920382863 = pElement->m_xObject;
-						pElement->m_xObject = 0;
-						pCell = __3920382863;
-					}
-					m_pImpl->m_pCellTable->Erase(i++);
-					{
-						NumberDuck::Cell* __2223188566 = pCell;
-						pCell = 0;
-						m_pImpl->m_pCellTable->Set(nTempColumn, nTempRow, __2223188566);
-					}
-					if (pCell) delete pCell;
-				}
 				else
-				{
-					i++;
-				}
+					if (pElement->m_nColumn > nColumn)
+					{
+						int nTempColumn = pElement->m_nColumn - 1;
+						int nTempRow = pElement->m_nRow;
+						Cell* pCell = 0;
+						NumberDuck::Cell* __3677312517 = pElement->m_xObject;
+						pElement->m_xObject = 0;
+						pCell = __3677312517;
+						m_pImpl->m_pCellTable->Erase(i++);
+						NumberDuck::Cell* __1763178785 = pCell;
+						pCell = 0;
+						m_pImpl->m_pCellTable->Set(nTempColumn, nTempRow, __1763178785);
+						if (pCell) delete pCell;
+					}
+					else
+					{
+						i++;
+					}
 			}
 		}
 		for (int i = 0; i < m_pImpl->m_pPictureVector->GetSize(); )
@@ -10638,10 +10642,12 @@ namespace NumberDuck
 				PurgeMergedCell((unsigned short)(i));
 				continue;
 			}
-			else if (pMergedCell->GetX() > nColumn)
-				pMergedCell->SetX(pMergedCell->GetX() - 1);
-			else if (pMergedCell->GetX() + pMergedCell->GetWidth() > nColumn)
-				pMergedCell->SetWidth(pMergedCell->GetWidth() - 1);
+			else
+				if (pMergedCell->GetX() > nColumn)
+					pMergedCell->SetX(pMergedCell->GetX() - 1);
+				else
+					if (pMergedCell->GetX() + pMergedCell->GetWidth() > nColumn)
+						pMergedCell->SetWidth(pMergedCell->GetWidth() - 1);
 			i++;
 		}
 	}
@@ -10676,15 +10682,14 @@ namespace NumberDuck
 				{
 					m_pImpl->m_pRowInfoTable->Erase(i);
 				}
-				else if (pElement->m_nRow >= nRow)
-				{
+				else
+					if (pElement->m_nRow >= nRow)
 					{
-						NumberDuck::Secret::RowInfo* __3920382863 = pElement->m_xObject;
+						NumberDuck::Secret::RowInfo* __3057570708 = pElement->m_xObject;
 						pElement->m_xObject = 0;
-						m_pImpl->m_pRowInfoTable->Set(pElement->m_nColumn, pElement->m_nRow + 1, __3920382863);
+						m_pImpl->m_pRowInfoTable->Set(pElement->m_nColumn, pElement->m_nRow + 1, __3057570708);
+						m_pImpl->m_pRowInfoTable->Erase(i);
 					}
-					m_pImpl->m_pRowInfoTable->Erase(i);
-				}
 				if (i == 0)
 					break;
 				i--;
@@ -10700,15 +10705,14 @@ namespace NumberDuck
 				{
 					m_pImpl->m_pCellTable->Erase(i);
 				}
-				else if (pElement->m_nRow >= nRow)
-				{
+				else
+					if (pElement->m_nRow >= nRow)
 					{
-						NumberDuck::Cell* __3920382863 = pElement->m_xObject;
+						NumberDuck::Cell* __1263528047 = pElement->m_xObject;
 						pElement->m_xObject = 0;
-						m_pImpl->m_pCellTable->Set(pElement->m_nColumn, pElement->m_nRow + 1, __3920382863);
+						m_pImpl->m_pCellTable->Set(pElement->m_nColumn, pElement->m_nRow + 1, __1263528047);
+						m_pImpl->m_pCellTable->Erase(i);
 					}
-					m_pImpl->m_pCellTable->Erase(i);
-				}
 				if (i == 0)
 					break;
 				i--;
@@ -10761,8 +10765,9 @@ namespace NumberDuck
 				pMergedCell->SetY(pMergedCell->GetY() + 1);
 				pMergedCell->SetHeight(pMergedCell->GetHeight());
 			}
-			else if (pMergedCell->GetY() + pMergedCell->GetHeight() >= nRow)
-				pMergedCell->SetHeight(pMergedCell->GetHeight() + 1);
+			else
+				if (pMergedCell->GetY() + pMergedCell->GetHeight() >= nRow)
+					pMergedCell->SetHeight(pMergedCell->GetHeight() + 1);
 			i++;
 		}
 	}
@@ -10780,28 +10785,25 @@ namespace NumberDuck
 				{
 					m_pImpl->m_pRowInfoTable->Erase(i);
 				}
-				else if (pElement->m_nRow > nRow)
-				{
-					int nTempColumn = pElement->m_nColumn;
-					int nTempRow = pElement->m_nRow - 1;
-					Secret::RowInfo* pRowInfo = 0;
-					{
-						NumberDuck::Secret::RowInfo* __3920382863 = pElement->m_xObject;
-						pElement->m_xObject = 0;
-						pRowInfo = __3920382863;
-					}
-					m_pImpl->m_pRowInfoTable->Erase(i++);
-					{
-						NumberDuck::Secret::RowInfo* __3798332131 = pRowInfo;
-						pRowInfo = 0;
-						m_pImpl->m_pRowInfoTable->Set(nTempColumn, nTempRow, __3798332131);
-					}
-					if (pRowInfo) delete pRowInfo;
-				}
 				else
-				{
-					i++;
-				}
+					if (pElement->m_nRow > nRow)
+					{
+						int nTempColumn = pElement->m_nColumn;
+						int nTempRow = pElement->m_nRow - 1;
+						Secret::RowInfo* pRowInfo = 0;
+						NumberDuck::Secret::RowInfo* __2321545627 = pElement->m_xObject;
+						pElement->m_xObject = 0;
+						pRowInfo = __2321545627;
+						m_pImpl->m_pRowInfoTable->Erase(i++);
+						NumberDuck::Secret::RowInfo* __2234162399 = pRowInfo;
+						pRowInfo = 0;
+						m_pImpl->m_pRowInfoTable->Set(nTempColumn, nTempRow, __2234162399);
+						if (pRowInfo) delete pRowInfo;
+					}
+					else
+					{
+						i++;
+					}
 			}
 		}
 		{
@@ -10813,28 +10815,25 @@ namespace NumberDuck
 				{
 					m_pImpl->m_pCellTable->Erase(i);
 				}
-				else if (pElement->m_nRow > nRow)
-				{
-					int nTempColumn = pElement->m_nColumn;
-					int nTempRow = pElement->m_nRow - 1;
-					Cell* pCell = 0;
-					{
-						NumberDuck::Cell* __3920382863 = pElement->m_xObject;
-						pElement->m_xObject = 0;
-						pCell = __3920382863;
-					}
-					m_pImpl->m_pCellTable->Erase(i++);
-					{
-						NumberDuck::Cell* __2223188566 = pCell;
-						pCell = 0;
-						m_pImpl->m_pCellTable->Set(nTempColumn, nTempRow, __2223188566);
-					}
-					if (pCell) delete pCell;
-				}
 				else
-				{
-					i++;
-				}
+					if (pElement->m_nRow > nRow)
+					{
+						int nTempColumn = pElement->m_nColumn;
+						int nTempRow = pElement->m_nRow - 1;
+						Cell* pCell = 0;
+						NumberDuck::Cell* __1834986130 = pElement->m_xObject;
+						pElement->m_xObject = 0;
+						pCell = __1834986130;
+						m_pImpl->m_pCellTable->Erase(i++);
+						NumberDuck::Cell* __2892443254 = pCell;
+						pCell = 0;
+						m_pImpl->m_pCellTable->Set(nTempColumn, nTempRow, __2892443254);
+						if (pCell) delete pCell;
+					}
+					else
+					{
+						i++;
+					}
 			}
 		}
 		for (int i = 0; i < m_pImpl->m_pPictureVector->GetSize(); )
@@ -10879,10 +10878,12 @@ namespace NumberDuck
 				PurgeMergedCell((unsigned short)(i));
 				continue;
 			}
-			else if (pMergedCell->GetY() > nRow)
-				pMergedCell->SetY(pMergedCell->GetY() - 1);
-			else if (pMergedCell->GetY() + pMergedCell->GetHeight() > nRow)
-				pMergedCell->SetHeight(pMergedCell->GetHeight() - 1);
+			else
+				if (pMergedCell->GetY() > nRow)
+					pMergedCell->SetY(pMergedCell->GetY() - 1);
+				else
+					if (pMergedCell->GetY() + pMergedCell->GetHeight() > nRow)
+						pMergedCell->SetHeight(pMergedCell->GetHeight() - 1);
 			i++;
 		}
 	}
@@ -10918,10 +10919,8 @@ namespace NumberDuck
 			delete pCoordinate;
 			pCoordinate = 0;
 		}
-		{
-			if (pCoordinate) delete pCoordinate;
-			return pCell;
-		}
+		if (pCoordinate) delete pCoordinate;
+		return pCell;
 	}
 
 	int Worksheet::GetNumPicture()
@@ -10952,11 +10951,9 @@ namespace NumberDuck
 					pOwnedPicture->SetWidth((unsigned int)(pImageInfo->m_nWidth));
 					pOwnedPicture->SetHeight((unsigned int)(pImageInfo->m_nHeight));
 					pPicture = pOwnedPicture;
-					{
-						NumberDuck::Picture* __1257297764 = pOwnedPicture;
-						pOwnedPicture = 0;
-						m_pImpl->m_pPictureVector->PushBack(__1257297764);
-					}
+					NumberDuck::Picture* __1093683604 = pOwnedPicture;
+					pOwnedPicture = 0;
+					m_pImpl->m_pPictureVector->PushBack(__1093683604);
 					if (pOwnedPicture) delete pOwnedPicture;
 				}
 				{
@@ -10975,11 +10972,9 @@ namespace NumberDuck
 					pOwnedPicture->SetWidth((unsigned int)(pImageInfo->m_nWidth));
 					pOwnedPicture->SetHeight((unsigned int)(pImageInfo->m_nHeight));
 					pPicture = pOwnedPicture;
-					{
-						NumberDuck::Picture* __1257297764 = pOwnedPicture;
-						pOwnedPicture = 0;
-						m_pImpl->m_pPictureVector->PushBack(__1257297764);
-					}
+					NumberDuck::Picture* __1496342809 = pOwnedPicture;
+					pOwnedPicture = 0;
+					m_pImpl->m_pPictureVector->PushBack(__1496342809);
 					if (pOwnedPicture) delete pOwnedPicture;
 				}
 				{
@@ -10993,10 +10988,8 @@ namespace NumberDuck
 			delete pBlob;
 			pBlob = 0;
 		}
-		{
-			if (pBlob) delete pBlob;
-			return pPicture;
-		}
+		if (pBlob) delete pBlob;
+		return pPicture;
 	}
 
 	void Worksheet::PurgePicture(int nIndex)
@@ -11022,15 +11015,11 @@ namespace NumberDuck
 	{
 		Chart* pOwnedChart = new Chart(this, eType);
 		Chart* pChart = pOwnedChart;
-		{
-			NumberDuck::Chart* __1362309574 = pOwnedChart;
-			pOwnedChart = 0;
-			m_pImpl->m_pChartVector->PushBack(__1362309574);
-		}
-		{
-			if (pOwnedChart) delete pOwnedChart;
-			return pChart;
-		}
+		NumberDuck::Chart* __621874701 = pOwnedChart;
+		pOwnedChart = 0;
+		m_pImpl->m_pChartVector->PushBack(__621874701);
+		if (pOwnedChart) delete pOwnedChart;
+		return pChart;
 	}
 
 	void Worksheet::PurgeChart(int nIndex)
@@ -11056,15 +11045,11 @@ namespace NumberDuck
 	{
 		MergedCell* pOwnedMergedCell = new MergedCell(nX, nY, nWidth, nHeight);
 		MergedCell* pMergedCell = pOwnedMergedCell;
-		{
-			NumberDuck::MergedCell* __3844553686 = pOwnedMergedCell;
-			pOwnedMergedCell = 0;
-			m_pImpl->m_pMergedCellVector->PushBack(__3844553686);
-		}
-		{
-			if (pOwnedMergedCell) delete pOwnedMergedCell;
-			return pMergedCell;
-		}
+		NumberDuck::MergedCell* __741724221 = pOwnedMergedCell;
+		pOwnedMergedCell = 0;
+		m_pImpl->m_pMergedCellVector->PushBack(__741724221);
+		if (pOwnedMergedCell) delete pOwnedMergedCell;
+		return pMergedCell;
 	}
 
 	void Worksheet::PurgeMergedCell(int nIndex)
@@ -11126,7 +11111,7 @@ namespace NumberDuck
 		unsigned int C = m_nBuffer[2];
 		unsigned int D = m_nBuffer[3];
 		unsigned int m_nChunk[BLOCK_SIZE >> 2];
-		NumbatLogic::Assert::Plz(pBlobView->GetOffset() + BLOCK_SIZE <= pBlobView->GetSize());
+		Secret::Assert::Plz(pBlobView->GetOffset() + BLOCK_SIZE <= pBlobView->GetSize());
 		for (i = 0; i < 16; i++)
 		{
 			unsigned int c0 = pBlobView->UnpackUint8();
@@ -11260,50 +11245,38 @@ namespace NumberDuck
 						{
 							case Secret::BofRecord::BofType::BOF_TYPE_WORKBOOK_GLOBALS:
 							{
-								{
-									NumberDuck::Secret::BiffRecord* __3036547922 = pBiffRecord;
-									pBiffRecord = 0;
-									m_pImpl->m_pWorkbookGlobals = new Secret::BiffWorkbookGlobals(__3036547922, pStream);
-								}
+								NumberDuck::Secret::BiffRecord* __2022264646 = pBiffRecord;
+								pBiffRecord = 0;
+								m_pImpl->m_pWorkbookGlobals = new Secret::BiffWorkbookGlobals(__2022264646, pStream);
 								continue;
 							}
 
 							case Secret::BofRecord::BofType::BOF_TYPE_SHEET:
 							{
 								Worksheet* pWorksheet = 0;
-								{
-									NumberDuck::Secret::BiffRecord* __3036547922 = pBiffRecord;
-									pBiffRecord = 0;
-									pWorksheet = new Secret::BiffWorksheet(this, (Secret::BiffWorkbookGlobals*)(m_pImpl->m_pWorkbookGlobals), __3036547922, pStream);
-								}
-								{
-									NumberDuck::Worksheet* __3928651719 = pWorksheet;
-									pWorksheet = 0;
-									m_pImpl->m_pWorksheetVector->PushBack(__3928651719);
-								}
-								{
-									if (pWorksheet) delete pWorksheet;
-									continue;
-								}
+								NumberDuck::Secret::BiffRecord* __1586056698 = pBiffRecord;
+								pBiffRecord = 0;
+								pWorksheet = new Secret::BiffWorksheet(this, (Secret::BiffWorkbookGlobals*)(m_pImpl->m_pWorkbookGlobals), __1586056698, pStream);
+								NumberDuck::Worksheet* __378261126 = pWorksheet;
+								pWorksheet = 0;
+								m_pImpl->m_pWorksheetVector->PushBack(__378261126);
+								if (pWorksheet) delete pWorksheet;
+								continue;
 							}
 
 							default:
 							{
-								NumbatLogic::Assert::Plz(false);
+								Secret::Assert::Plz(false);
 								break;
 							}
 
 						}
 					}
-					NumbatLogic::Assert::Plz(false);
+					Secret::Assert::Plz(false);
 					if (pBiffRecord) delete pBiffRecord;
 				}
 				bLoaded = true;
 			}
-		}
-		{
-			delete pCompoundFile;
-			pCompoundFile = 0;
 		}
 		if (!bLoaded)
 		{
@@ -11320,18 +11293,8 @@ namespace NumberDuck
 					{
 						Secret::XmlFile* pXmlFile = new Secret::XmlFile();
 						pXmlBlobView->SetOffset(0);
-						if (pXmlFile->Load(pXmlBlobView))
-						{
-						}
-						{
-							delete pXmlFile;
-							pXmlFile = 0;
-						}
+						pXmlFile->Load(pXmlBlobView);
 						if (pXmlFile) delete pXmlFile;
-					}
-					{
-						delete pXmlBlob;
-						pXmlBlob = 0;
 					}
 					if (pXmlBlob) delete pXmlBlob;
 				}
@@ -11378,14 +11341,6 @@ namespace NumberDuck
 							pSheetNode = pSheetNode->GetNextSiblingElement("sheet");
 						}
 					}
-					{
-						delete pXmlBlob;
-						pXmlBlob = 0;
-					}
-					{
-						delete pXmlFile;
-						pXmlFile = 0;
-					}
 					if (pXmlFile) delete pXmlFile;
 					if (pXmlBlob) delete pXmlBlob;
 				}
@@ -11412,8 +11367,6 @@ namespace NumberDuck
 					if (bContinue)
 					{
 						pSiNode = pSstNode->GetFirstChildElement("si");
-						if (pSiNode == 0)
-							bContinue = false;
 					}
 					while (bContinue && pSiNode != 0)
 					{
@@ -11427,14 +11380,6 @@ namespace NumberDuck
 						const char* szTemp = pTNode->GetText();
 						m_pImpl->m_pWorkbookGlobals->PushSharedString(szTemp);
 						pSiNode = pSiNode->GetNextSiblingElement("si");
-					}
-					{
-						delete pXmlBlob;
-						pXmlBlob = 0;
-					}
-					{
-						delete pXmlFile;
-						pXmlFile = 0;
 					}
 					if (pXmlFile) delete pXmlFile;
 					if (pXmlBlob) delete pXmlBlob;
@@ -11459,14 +11404,6 @@ namespace NumberDuck
 							bContinue = false;
 					}
 					bContinue = bContinue && Secret::XlsxWorkbookGlobals::ParseStyles(m_pImpl->m_pWorkbookGlobals, pStyleSheetNode);
-					{
-						delete pXmlBlob;
-						pXmlBlob = 0;
-					}
-					{
-						delete pXmlFile;
-						pXmlFile = 0;
-					}
 					if (pXmlFile) delete pXmlFile;
 					if (pXmlBlob) delete pXmlBlob;
 				}
@@ -11487,19 +11424,9 @@ namespace NumberDuck
 							nNumFail++;
 							if (nNumFail > 5)
 							{
-								{
-									delete pXmlBlob;
-									pXmlBlob = 0;
-								}
-								{
-									delete pXmlFile;
-									pXmlFile = 0;
-								}
-								{
-									if (pXmlFile) delete pXmlFile;
-									if (pXmlBlob) delete pXmlBlob;
-									break;
-								}
+								if (pXmlFile) delete pXmlFile;
+								if (pXmlBlob) delete pXmlBlob;
+								break;
 							}
 						}
 						else
@@ -11508,81 +11435,35 @@ namespace NumberDuck
 							pXmlBlobView->SetOffset(0);
 							if (!pXmlFile->Load(pXmlBlobView))
 							{
-								{
-									delete pXmlBlob;
-									pXmlBlob = 0;
-								}
-								{
-									delete pXmlFile;
-									pXmlFile = 0;
-								}
 								bContinue = false;
-								{
-									if (pXmlFile) delete pXmlFile;
-									if (pXmlBlob) delete pXmlBlob;
-									break;
-								}
+								if (pXmlFile) delete pXmlFile;
+								if (pXmlBlob) delete pXmlBlob;
+								break;
 							}
 							pWorksheetNode = pXmlFile->GetFirstChildElement("worksheet");
 							Secret::XlsxWorksheet* pWorksheet = new Secret::XlsxWorksheet(this);
 							pWorksheet->SetName(sNameVector->Get(m_pImpl->m_pWorksheetVector->GetSize())->GetExternalString());
 							if (!pWorksheet->Parse((Secret::XlsxWorkbookGlobals*)(m_pImpl->m_pWorkbookGlobals), pWorksheetNode))
 							{
-								{
-									delete pWorksheet;
-									pWorksheet = 0;
-								}
-								{
-									delete pXmlBlob;
-									pXmlBlob = 0;
-								}
-								{
-									delete pXmlFile;
-									pXmlFile = 0;
-								}
 								bContinue = false;
-								{
-									if (pWorksheet) delete pWorksheet;
-									if (pXmlFile) delete pXmlFile;
-									if (pXmlBlob) delete pXmlBlob;
-									break;
-								}
+								if (pWorksheet) delete pWorksheet;
+								if (pXmlFile) delete pXmlFile;
+								if (pXmlBlob) delete pXmlBlob;
+								break;
 							}
-							{
-								NumberDuck::Secret::XlsxWorksheet* __3928651719 = pWorksheet;
-								pWorksheet = 0;
-								m_pImpl->m_pWorksheetVector->PushBack(__3928651719);
-							}
+							NumberDuck::Secret::XlsxWorksheet* __3536044127 = pWorksheet;
+							pWorksheet = 0;
+							m_pImpl->m_pWorksheetVector->PushBack(__3536044127);
 							if (pWorksheet) delete pWorksheet;
 						}
 						nWorksheetIndex++;
-						{
-							delete pXmlBlob;
-							pXmlBlob = 0;
-						}
-						{
-							delete pXmlFile;
-							pXmlFile = 0;
-						}
 						if (pXmlFile) delete pXmlFile;
 						if (pXmlBlob) delete pXmlBlob;
 					}
 				}
 				bLoaded = bContinue;
 				sNameVector->Clear();
-				{
-					delete sNameVector;
-					sNameVector = 0;
-				}
 				if (sNameVector) delete sNameVector;
-			}
-			{
-				delete pZip;
-				pZip = 0;
-			}
-			{
-				delete sFileName;
-				sFileName = 0;
 			}
 			if (sFileName) delete sFileName;
 			if (pZip) delete pZip;
@@ -11593,26 +11474,26 @@ namespace NumberDuck
 			return true;
 		}
 		Clear();
-		{
-			if (pCompoundFile) delete pCompoundFile;
-			return false;
-		}
+		if (pCompoundFile) delete pCompoundFile;
+		return false;
 	}
 
 	bool Workbook::Save(const char* szFileName, FileType eFileType)
 	{
 		m_pImpl->m_pWorkbookGlobals->Clear();
+		Secret::InternalString* sTemp = new Secret::InternalString("");
 		if (eFileType == FileType::XLS)
 		{
-			Secret::Vector<Secret::BiffRecordContainer*>* pWorksheetBiffRecordContainerVector = new Secret::Vector<Secret::BiffRecordContainer*>();
+			Secret::OwnedVector<Secret::BiffRecordContainer*>* pWorksheetBiffRecordContainerVector = new Secret::OwnedVector<Secret::BiffRecordContainer*>();
 			for (int i = 0; i < m_pImpl->m_pWorksheetVector->GetSize(); i++)
 			{
 				Worksheet* pWorksheet = m_pImpl->m_pWorksheetVector->Get(i);
 				Secret::BiffRecordContainer* pBiffRecordContainer = new Secret::BiffRecordContainer();
 				Secret::BiffWorksheet::Write(pWorksheet, m_pImpl->m_pWorkbookGlobals, (unsigned short)(i), pBiffRecordContainer);
 				m_pImpl->m_pWorkbookGlobals->PushBiffWorksheetStreamSize(pBiffRecordContainer->GetSize());
-				pWorksheetBiffRecordContainerVector->PushBack(pBiffRecordContainer);
+				NumberDuck::Secret::BiffRecordContainer* __729810869 = pBiffRecordContainer;
 				pBiffRecordContainer = 0;
+				pWorksheetBiffRecordContainerVector->PushBack(__729810869);
 				if (pBiffRecordContainer) delete pBiffRecordContainer;
 			}
 			Secret::CompoundFile* pCompoundFile = new Secret::CompoundFile();
@@ -11622,30 +11503,926 @@ namespace NumberDuck
 			{
 				Secret::BiffRecordContainer* pBiffRecordContainer = pWorksheetBiffRecordContainerVector->Get(i);
 				pBiffRecordContainer->Write(pStream);
-				{
-					delete pBiffRecordContainer;
-					pBiffRecordContainer = 0;
-				}
-			}
-			{
-				delete pWorksheetBiffRecordContainerVector;
-				pWorksheetBiffRecordContainerVector = 0;
 			}
 			bool bResult = pCompoundFile->Save(szFileName);
-			{
-				delete pCompoundFile;
-				pCompoundFile = 0;
-			}
-			{
-				if (pWorksheetBiffRecordContainerVector) delete pWorksheetBiffRecordContainerVector;
-				if (pCompoundFile) delete pCompoundFile;
-				return bResult;
-			}
+			if (pWorksheetBiffRecordContainerVector) delete pWorksheetBiffRecordContainerVector;
+			if (pCompoundFile) delete pCompoundFile;
+			if (sTemp) delete sTemp;
+			return bResult;
 		}
 		else
-		{
-			return false;
-		}
+			if (eFileType == FileType::XLSX)
+			{
+				Secret::ZipWriter* pZipWriter = new Secret::ZipWriter();
+				bool bSuccess = true;
+				Blob* pContentTypesBlob = new Blob(true);
+				Secret::XmlFile* pContentTypesXml = new Secret::XmlFile();
+				Secret::XmlNode* pTypesNode = pContentTypesXml->CreateElement("Types");
+				pTypesNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/package/2006/content-types");
+				Secret::XmlNode* pDefaultXml = pContentTypesXml->CreateElement("Default");
+				pDefaultXml->SetAttribute("Extension", "xml");
+				pDefaultXml->SetAttribute("ContentType", "application/xml");
+				pTypesNode->AppendChild(pDefaultXml);
+				Secret::XmlNode* pDefaultRels = pContentTypesXml->CreateElement("Default");
+				pDefaultRels->SetAttribute("Extension", "rels");
+				pDefaultRels->SetAttribute("ContentType", "application/vnd.openxmlformats-package.relationships+xml");
+				pTypesNode->AppendChild(pDefaultRels);
+				Secret::XmlNode* pOverrideWorkbook = pContentTypesXml->CreateElement("Override");
+				pOverrideWorkbook->SetAttribute("PartName", "/xl/workbook.xml");
+				pOverrideWorkbook->SetAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml");
+				pTypesNode->AppendChild(pOverrideWorkbook);
+				Secret::XmlNode* pOverrideStyles = pContentTypesXml->CreateElement("Override");
+				pOverrideStyles->SetAttribute("PartName", "/xl/styles.xml");
+				pOverrideStyles->SetAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml");
+				pTypesNode->AppendChild(pOverrideStyles);
+				Secret::XmlNode* pOverrideSharedStrings = pContentTypesXml->CreateElement("Override");
+				pOverrideSharedStrings->SetAttribute("PartName", "/xl/sharedStrings.xml");
+				pOverrideSharedStrings->SetAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml");
+				pTypesNode->AppendChild(pOverrideSharedStrings);
+				for (int i = 0; i < m_pImpl->m_pWorksheetVector->GetSize(); i++)
+				{
+					Secret::XmlNode* pOverrideWorksheet = pContentTypesXml->CreateElement("Override");
+					sTemp->Set("/xl/worksheets/sheet");
+					sTemp->AppendInt(i + 1);
+					sTemp->AppendString(".xml");
+					pOverrideWorksheet->SetAttribute("PartName", sTemp->GetExternalString());
+					pOverrideWorksheet->SetAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml");
+					pTypesNode->AppendChild(pOverrideWorksheet);
+				}
+				pContentTypesXml->AppendChild(pTypesNode);
+				pContentTypesXml->Save(pContentTypesBlob->GetBlobView());
+				NumberDuck::Blob* __2254750831 = pContentTypesBlob;
+				pContentTypesBlob = 0;
+				bSuccess = bSuccess && pZipWriter->AddFileFromBlob("[Content_Types].xml", __2254750831);
+				Blob* pRelsBlob = new Blob(true);
+				Secret::XmlFile* pRelsXml = new Secret::XmlFile();
+				Secret::XmlNode* pRelationshipsNode = pRelsXml->CreateElement("Relationships");
+				pRelationshipsNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/package/2006/relationships");
+				Secret::XmlNode* pRelationshipNode = pRelsXml->CreateElement("Relationship");
+				pRelationshipNode->SetAttribute("Id", "rId1");
+				pRelationshipNode->SetAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument");
+				pRelationshipNode->SetAttribute("Target", "xl/workbook.xml");
+				pRelationshipsNode->AppendChild(pRelationshipNode);
+				pRelsXml->AppendChild(pRelationshipsNode);
+				pRelsXml->Save(pRelsBlob->GetBlobView());
+				NumberDuck::Blob* __3907551603 = pRelsBlob;
+				pRelsBlob = 0;
+				bSuccess = bSuccess && pZipWriter->AddFileFromBlob("_rels/.rels", __3907551603);
+				Blob* pWorkbookRelsBlob = new Blob(true);
+				Secret::XmlFile* pWorkbookRelsXml = new Secret::XmlFile();
+				Secret::XmlNode* pWorkbookRelationshipsNode = pWorkbookRelsXml->CreateElement("Relationships");
+				pWorkbookRelationshipsNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/package/2006/relationships");
+				Secret::XmlNode* pStylesRelationship = pWorkbookRelsXml->CreateElement("Relationship");
+				pStylesRelationship->SetAttribute("Id", "rId1");
+				pStylesRelationship->SetAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles");
+				pStylesRelationship->SetAttribute("Target", "styles.xml");
+				pWorkbookRelationshipsNode->AppendChild(pStylesRelationship);
+				Secret::XmlNode* pSharedStringsRelationship = pWorkbookRelsXml->CreateElement("Relationship");
+				pSharedStringsRelationship->SetAttribute("Id", "rId2");
+				pSharedStringsRelationship->SetAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings");
+				pSharedStringsRelationship->SetAttribute("Target", "sharedStrings.xml");
+				pWorkbookRelationshipsNode->AppendChild(pSharedStringsRelationship);
+				Secret::XmlNode* pWorksheetRelationship = pWorkbookRelsXml->CreateElement("Relationship");
+				pWorksheetRelationship->SetAttribute("Id", "rId3");
+				pWorksheetRelationship->SetAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet");
+				pWorksheetRelationship->SetAttribute("Target", "worksheets/sheet1.xml");
+				pWorkbookRelationshipsNode->AppendChild(pWorksheetRelationship);
+				pWorkbookRelsXml->AppendChild(pWorkbookRelationshipsNode);
+				pWorkbookRelsXml->Save(pWorkbookRelsBlob->GetBlobView());
+				NumberDuck::Blob* __1397593453 = pWorkbookRelsBlob;
+				pWorkbookRelsBlob = 0;
+				bSuccess = bSuccess && pZipWriter->AddFileFromBlob("xl/_rels/workbook.xml.rels", __1397593453);
+				Blob* pWorkbookBlob = new Blob(true);
+				Secret::XmlFile* pWorkbookXml = new Secret::XmlFile();
+				Secret::XmlNode* pWorkbookNode = pWorkbookXml->CreateElement("workbook");
+				pWorkbookNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+				pWorkbookNode->SetAttribute("xmlns:r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+				Secret::XmlNode* pSheetsNode = pWorkbookXml->CreateElement("sheets");
+				for (int i = 0; i < m_pImpl->m_pWorksheetVector->GetSize(); i++)
+				{
+					Worksheet* pWorksheet = m_pImpl->m_pWorksheetVector->Get(i);
+					Secret::XmlNode* pSheetNode = pWorkbookXml->CreateElement("sheet");
+					pSheetNode->SetAttribute("name", pWorksheet->GetName());
+					sTemp->Set("");
+					sTemp->AppendInt(i + 1);
+					pSheetNode->SetAttribute("sheetId", sTemp->GetExternalString());
+					sTemp->Set("rId");
+					sTemp->AppendInt(i + 3);
+					pSheetNode->SetAttribute("r:id", sTemp->GetExternalString());
+					pSheetsNode->AppendChild(pSheetNode);
+				}
+				pWorkbookNode->AppendChild(pSheetsNode);
+				pWorkbookXml->AppendChild(pWorkbookNode);
+				pWorkbookXml->Save(pWorkbookBlob->GetBlobView());
+				NumberDuck::Blob* __2937886614 = pWorkbookBlob;
+				pWorkbookBlob = 0;
+				bSuccess = bSuccess && pZipWriter->AddFileFromBlob("xl/workbook.xml", __2937886614);
+				Blob* pStylesBlob = new Blob(true);
+				Secret::XmlFile* pStylesXml = new Secret::XmlFile();
+				Secret::XmlNode* pStyleSheetNode = pStylesXml->CreateElement("styleSheet");
+				pStyleSheetNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+				Secret::Vector<const char*>* pFormatVector = new Secret::Vector<const char*>();
+				Secret::Vector<unsigned short>* pFormatIndexVector = new Secret::Vector<unsigned short>();
+				pFormatVector->PushBack("General");
+				pFormatIndexVector->PushBack(0);
+				for (int i = 0; i < m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
+				{
+					Style* pStyle = m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
+					const char* szFormat = pStyle->GetFormat();
+					bool bFound = false;
+					for (int j = 0; j < pFormatVector->GetSize(); j++)
+					{
+						if (Secret::ExternalString::Equal(pFormatVector->Get(j), szFormat))
+						{
+							bFound = true;
+							break;
+						}
+					}
+					if (!bFound)
+					{
+						pFormatVector->PushBack(szFormat);
+						pFormatIndexVector->PushBack((unsigned short)(pFormatVector->GetSize() - 1));
+					}
+				}
+				Secret::XmlNode* pNumFmtsNode = pStylesXml->CreateElement("numFmts");
+				sTemp->Set("");
+				sTemp->AppendInt(pFormatVector->GetSize());
+				pNumFmtsNode->SetAttribute("count", sTemp->GetExternalString());
+				for (int i = 0; i < pFormatVector->GetSize(); i++)
+				{
+					Secret::XmlNode* pNumFmtNode = pStylesXml->CreateElement("numFmt");
+					sTemp->Set("");
+					sTemp->AppendInt(i);
+					pNumFmtNode->SetAttribute("numFmtId", sTemp->GetExternalString());
+					pNumFmtNode->SetAttribute("formatCode", pFormatVector->Get(i));
+					pNumFmtsNode->AppendChild(pNumFmtNode);
+				}
+				pStyleSheetNode->AppendChild(pNumFmtsNode);
+				Secret::OwnedVector<Font*>* pFontVector = new Secret::OwnedVector<Font*>();
+				{
+					Font* pDefaultFont = new Font();
+					pDefaultFont->SetName("Calibri");
+					pDefaultFont->SetSize(14);
+					NumberDuck::Font* __4054834440 = pDefaultFont;
+					pDefaultFont = 0;
+					pFontVector->PushBack(__4054834440);
+					if (pDefaultFont) delete pDefaultFont;
+				}
+				for (int i = 0; i < m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
+				{
+					Style* pStyle = m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
+					Font* pStyleFont = pStyle->GetFont();
+					bool bFound = false;
+					for (int j = 0; j < pFontVector->GetSize(); j++)
+					{
+						Font* pTestFont = pFontVector->Get(j);
+						if (Secret::ExternalString::Equal(pTestFont->GetName(), pStyleFont->GetName()) && pTestFont->GetSize() == pStyleFont->GetSize() && pTestFont->GetBold() == pStyleFont->GetBold() && pTestFont->GetItalic() == pStyleFont->GetItalic() && pTestFont->GetUnderline() == pStyleFont->GetUnderline())
+						{
+							bFound = true;
+							break;
+						}
+					}
+					if (!bFound)
+					{
+						Font* pNewFont = new Font();
+						pNewFont->SetName(pStyleFont->GetName());
+						pNewFont->SetSize(pStyleFont->GetSize());
+						pNewFont->SetBold(pStyleFont->GetBold());
+						pNewFont->SetItalic(pStyleFont->GetItalic());
+						pNewFont->SetUnderline(pStyleFont->GetUnderline());
+						Color* pFontColor = pStyleFont->GetColor(false);
+						if (pFontColor != 0)
+						{
+							pNewFont->GetColor(true)->SetFromColor(pFontColor);
+						}
+						NumberDuck::Font* __103412828 = pNewFont;
+						pNewFont = 0;
+						pFontVector->PushBack(__103412828);
+						if (pNewFont) delete pNewFont;
+					}
+				}
+				Secret::XmlNode* pFontsNode = pStylesXml->CreateElement("fonts");
+				sTemp->Set("");
+				sTemp->AppendInt(pFontVector->GetSize());
+				pFontsNode->SetAttribute("count", sTemp->GetExternalString());
+				for (int i = 0; i < pFontVector->GetSize(); i++)
+				{
+					Font* pFont = pFontVector->Get(i);
+					Secret::XmlNode* pFontNode = pStylesXml->CreateElement("font");
+					Secret::XmlNode* pSzNode = pStylesXml->CreateElement("sz");
+					sTemp->Set("");
+					float fPoints = (float)(pFont->m_pImpl->m_nSizeTwips) / 20.0f;
+					sTemp->AppendDouble(fPoints);
+					pSzNode->SetAttribute("val", sTemp->GetExternalString());
+					pFontNode->AppendChild(pSzNode);
+					Secret::XmlNode* pNameNode = pStylesXml->CreateElement("name");
+					pNameNode->SetAttribute("val", pFont->GetName());
+					pFontNode->AppendChild(pNameNode);
+					if (pFont->GetBold())
+					{
+						Secret::XmlNode* pBoldNode = pStylesXml->CreateElement("b");
+						pFontNode->AppendChild(pBoldNode);
+					}
+					if (pFont->GetItalic())
+					{
+						Secret::XmlNode* pItalicNode = pStylesXml->CreateElement("i");
+						pFontNode->AppendChild(pItalicNode);
+					}
+					if (pFont->GetUnderline() != Font::Underline::UNDERLINE_NONE)
+					{
+						Secret::XmlNode* pUnderlineNode = pStylesXml->CreateElement("u");
+						pFontNode->AppendChild(pUnderlineNode);
+					}
+					Color* pFontColor = pFont->GetColor(false);
+					if (pFontColor != 0)
+					{
+						Secret::XmlNode* pColorNode = pStylesXml->CreateElement("color");
+						sTemp->Set("");
+						sTemp->AppendHex(pFontColor->GetRgba());
+						pColorNode->SetAttribute("rgb", sTemp->GetExternalString());
+						pFontNode->AppendChild(pColorNode);
+					}
+					pFontsNode->AppendChild(pFontNode);
+				}
+				pStyleSheetNode->AppendChild(pFontsNode);
+				Secret::OwnedVector<Style*>* pFillVector = new Secret::OwnedVector<Style*>();
+				{
+					Style* pDefaultFill = new Style();
+					NumberDuck::Style* __1055641746 = pDefaultFill;
+					pDefaultFill = 0;
+					pFillVector->PushBack(__1055641746);
+					Style* pGrayFill = new Style();
+					pGrayFill->SetFillPattern(Style::FillPattern::FILL_PATTERN_125);
+					NumberDuck::Style* __4149295839 = pGrayFill;
+					pGrayFill = 0;
+					pFillVector->PushBack(__4149295839);
+					if (pDefaultFill) delete pDefaultFill;
+					if (pGrayFill) delete pGrayFill;
+				}
+				for (int i = 0; i < m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
+				{
+					Style* pStyle = m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
+					Color* pBackgroundColor = pStyle->GetBackgroundColor(false);
+					Style::FillPattern eFillPattern = pStyle->GetFillPattern();
+					Color* pFillPatternColor = pStyle->GetFillPatternColor(false);
+					bool bFound = false;
+					for (int j = 0; j < pFillVector->GetSize(); j++)
+					{
+						Style* pTestStyle = pFillVector->Get(j);
+						Color* pTestBackgroundColor = pTestStyle->GetBackgroundColor(false);
+						Color* pTestFillPatternColor = pTestStyle->GetFillPatternColor(false);
+						if (eFillPattern == pTestStyle->GetFillPattern() && ((pBackgroundColor == 0 && pTestBackgroundColor == 0) || (pBackgroundColor != 0 && pTestBackgroundColor != 0 && pBackgroundColor->Equals(pTestBackgroundColor))) && ((pFillPatternColor == 0 && pTestFillPatternColor == 0) || (pFillPatternColor != 0 && pTestFillPatternColor != 0 && pFillPatternColor->Equals(pTestFillPatternColor))))
+						{
+							bFound = true;
+							break;
+						}
+					}
+					if (!bFound)
+					{
+						Style* pNewFill = new Style();
+						pNewFill->SetFillPattern(eFillPattern);
+						if (pBackgroundColor != 0)
+							pNewFill->GetBackgroundColor(true)->SetFromColor(pBackgroundColor);
+						if (pFillPatternColor != 0)
+							pNewFill->GetFillPatternColor(true)->SetFromColor(pFillPatternColor);
+						NumberDuck::Style* __510524373 = pNewFill;
+						pNewFill = 0;
+						pFillVector->PushBack(__510524373);
+						if (pNewFill) delete pNewFill;
+					}
+				}
+				Secret::XmlNode* pFillsNode = pStylesXml->CreateElement("fills");
+				sTemp->Set("");
+				sTemp->AppendInt(pFillVector->GetSize());
+				pFillsNode->SetAttribute("count", sTemp->GetExternalString());
+				for (int i = 0; i < pFillVector->GetSize(); i++)
+				{
+					Style* pFill = pFillVector->Get(i);
+					Secret::XmlNode* pFillNode = pStylesXml->CreateElement("fill");
+					Secret::XmlNode* pPatternFillNode = pStylesXml->CreateElement("patternFill");
+					switch (pFill->GetFillPattern())
+					{
+						case Style::FillPattern::FILL_PATTERN_NONE:
+						{
+							pPatternFillNode->SetAttribute("patternType", "solid");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_50:
+						{
+							pPatternFillNode->SetAttribute("patternType", "mediumGray");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_75:
+						{
+							pPatternFillNode->SetAttribute("patternType", "darkGray");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_25:
+						{
+							pPatternFillNode->SetAttribute("patternType", "lightGray");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_HORIZONTAL_STRIPE:
+						{
+							pPatternFillNode->SetAttribute("patternType", "darkHorizontal");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_VARTICAL_STRIPE:
+						{
+							pPatternFillNode->SetAttribute("patternType", "darkVertical");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_REVERSE_DIAGONAL_STRIPE:
+						{
+							pPatternFillNode->SetAttribute("patternType", "darkDown");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_DIAGONAL_STRIPE:
+						{
+							pPatternFillNode->SetAttribute("patternType", "darkUp");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_DIAGONAL_CROSSHATCH:
+						{
+							pPatternFillNode->SetAttribute("patternType", "darkGrid");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THICK_DIAGONAL_CROSSHATCH:
+						{
+							pPatternFillNode->SetAttribute("patternType", "darkTrellis");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THIN_HORIZONTAL_STRIPE:
+						{
+							pPatternFillNode->SetAttribute("patternType", "lightHorizontal");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THIN_VERTICAL_STRIPE:
+						{
+							pPatternFillNode->SetAttribute("patternType", "lightVertical");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THIN_REVERSE_VERTICAL_STRIPE:
+						{
+							pPatternFillNode->SetAttribute("patternType", "lightDown");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THIN_DIAGONAL_STRIPE:
+						{
+							pPatternFillNode->SetAttribute("patternType", "lightUp");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THIN_HORIZONTAL_CROSSHATCH:
+						{
+							pPatternFillNode->SetAttribute("patternType", "lightGrid");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THIN_DIAGONAL_CROSSHATCH:
+						{
+							pPatternFillNode->SetAttribute("patternType", "lightTrellis");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_125:
+						{
+							pPatternFillNode->SetAttribute("patternType", "gray125");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_625:
+						{
+							pPatternFillNode->SetAttribute("patternType", "gray0625");
+							break;
+						}
+
+						default:
+						{
+							pPatternFillNode->SetAttribute("patternType", "none");
+							break;
+						}
+
+					}
+					Color* pBackgroundColor = pFill->GetBackgroundColor(false);
+					if (pBackgroundColor != 0)
+					{
+						Secret::XmlNode* pFgColorNode = pStylesXml->CreateElement("fgColor");
+						sTemp->Set("");
+						Secret::XlsxUtils::WriteBgra(pBackgroundColor->GetRgba(), sTemp);
+						pFgColorNode->SetAttribute("rgb", sTemp->GetExternalString());
+						pPatternFillNode->AppendChild(pFgColorNode);
+					}
+					Color* pFillPatternColor = pFill->GetFillPatternColor(false);
+					if (pFillPatternColor != 0)
+					{
+						Secret::XmlNode* pBgColorNode = pStylesXml->CreateElement("bgColor");
+						sTemp->Set("");
+						Secret::XlsxUtils::WriteBgra(pFillPatternColor->GetRgba(), sTemp);
+						pBgColorNode->SetAttribute("rgb", sTemp->GetExternalString());
+						pPatternFillNode->AppendChild(pBgColorNode);
+					}
+					pFillNode->AppendChild(pPatternFillNode);
+					pFillsNode->AppendChild(pFillNode);
+				}
+				pStyleSheetNode->AppendChild(pFillsNode);
+				Secret::OwnedVector<Style*>* pBorderVector = new Secret::OwnedVector<Style*>();
+				{
+					Style* pDefaultBorder = new Style();
+					NumberDuck::Style* __3091345307 = pDefaultBorder;
+					pDefaultBorder = 0;
+					pBorderVector->PushBack(__3091345307);
+					if (pDefaultBorder) delete pDefaultBorder;
+				}
+				for (int i = 0; i < m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
+				{
+					Style* pStyle = m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
+					bool bFound = false;
+					for (int j = 0; j < pBorderVector->GetSize(); j++)
+					{
+						Style* pTestStyle = pBorderVector->Get(j);
+						if (pStyle->GetTopBorderLine()->GetType() == pTestStyle->GetTopBorderLine()->GetType() && pStyle->GetRightBorderLine()->GetType() == pTestStyle->GetRightBorderLine()->GetType() && pStyle->GetBottomBorderLine()->GetType() == pTestStyle->GetBottomBorderLine()->GetType() && pStyle->GetLeftBorderLine()->GetType() == pTestStyle->GetLeftBorderLine()->GetType())
+						{
+							bFound = true;
+							break;
+						}
+					}
+					if (!bFound)
+					{
+						Style* pNewBorder = new Style();
+						pNewBorder->GetTopBorderLine()->SetType(pStyle->GetTopBorderLine()->GetType());
+						pNewBorder->GetRightBorderLine()->SetType(pStyle->GetRightBorderLine()->GetType());
+						pNewBorder->GetBottomBorderLine()->SetType(pStyle->GetBottomBorderLine()->GetType());
+						pNewBorder->GetLeftBorderLine()->SetType(pStyle->GetLeftBorderLine()->GetType());
+						Color* pTopColor = pStyle->GetTopBorderLine()->GetColor();
+						if (pTopColor != 0)
+							pNewBorder->GetTopBorderLine()->GetColor()->SetFromColor(pTopColor);
+						Color* pRightColor = pStyle->GetRightBorderLine()->GetColor();
+						if (pRightColor != 0)
+							pNewBorder->GetRightBorderLine()->GetColor()->SetFromColor(pRightColor);
+						Color* pBottomColor = pStyle->GetBottomBorderLine()->GetColor();
+						if (pBottomColor != 0)
+							pNewBorder->GetBottomBorderLine()->GetColor()->SetFromColor(pBottomColor);
+						Color* pLeftColor = pStyle->GetLeftBorderLine()->GetColor();
+						if (pLeftColor != 0)
+							pNewBorder->GetLeftBorderLine()->GetColor()->SetFromColor(pLeftColor);
+						NumberDuck::Style* __675719651 = pNewBorder;
+						pNewBorder = 0;
+						pBorderVector->PushBack(__675719651);
+						if (pNewBorder) delete pNewBorder;
+					}
+				}
+				Secret::XmlNode* pBordersNode = pStylesXml->CreateElement("borders");
+				sTemp->Set("");
+				sTemp->AppendInt(pBorderVector->GetSize());
+				pBordersNode->SetAttribute("count", sTemp->GetExternalString());
+				for (int i = 0; i < pBorderVector->GetSize(); i++)
+				{
+					Style* pBorder = pBorderVector->Get(i);
+					Secret::XmlNode* pBorderNode = pStylesXml->CreateElement("border");
+					Secret::XmlNode* pLeftNode = pStylesXml->CreateElement("left");
+					if (pBorder->GetLeftBorderLine()->GetType() != Line::Type::TYPE_NONE)
+					{
+						Secret::XmlNode* pLeftStyleNode = pStylesXml->CreateElement("style");
+						switch (pBorder->GetLeftBorderLine()->GetType())
+						{
+							case Line::Type::TYPE_THIN:
+							{
+								pLeftStyleNode->SetText("thin");
+								break;
+							}
+
+							case Line::Type::TYPE_MEDIUM:
+							{
+								pLeftStyleNode->SetText("medium");
+								break;
+							}
+
+							case Line::Type::TYPE_THICK:
+							{
+								pLeftStyleNode->SetText("thick");
+								break;
+							}
+
+							case Line::Type::TYPE_DASHED:
+							{
+								pLeftStyleNode->SetText("dashed");
+								break;
+							}
+
+							case Line::Type::TYPE_DOTTED:
+							{
+								pLeftStyleNode->SetText("dotted");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT:
+							{
+								pLeftStyleNode->SetText("dashDot");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT_DOT:
+							{
+								pLeftStyleNode->SetText("dashDotDot");
+								break;
+							}
+
+							default:
+							{
+								pLeftStyleNode->SetText("thin");
+								break;
+							}
+
+						}
+						pLeftNode->AppendChild(pLeftStyleNode);
+						Color* pLeftColor = pBorder->GetLeftBorderLine()->GetColor();
+						if (pLeftColor != 0)
+						{
+							Secret::XmlNode* pLeftColorNode = pStylesXml->CreateElement("color");
+							sTemp->Set("");
+							sTemp->AppendHex(pLeftColor->GetRgba());
+							pLeftNode->AppendChild(pLeftColorNode);
+						}
+					}
+					pBorderNode->AppendChild(pLeftNode);
+					Secret::XmlNode* pRightNode = pStylesXml->CreateElement("right");
+					if (pBorder->GetRightBorderLine()->GetType() != Line::Type::TYPE_NONE)
+					{
+						Secret::XmlNode* pRightStyleNode = pStylesXml->CreateElement("style");
+						switch (pBorder->GetRightBorderLine()->GetType())
+						{
+							case Line::Type::TYPE_THIN:
+							{
+								pRightStyleNode->SetText("thin");
+								break;
+							}
+
+							case Line::Type::TYPE_MEDIUM:
+							{
+								pRightStyleNode->SetText("medium");
+								break;
+							}
+
+							case Line::Type::TYPE_THICK:
+							{
+								pRightStyleNode->SetText("thick");
+								break;
+							}
+
+							case Line::Type::TYPE_DASHED:
+							{
+								pRightStyleNode->SetText("dashed");
+								break;
+							}
+
+							case Line::Type::TYPE_DOTTED:
+							{
+								pRightStyleNode->SetText("dotted");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT:
+							{
+								pRightStyleNode->SetText("dashDot");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT_DOT:
+							{
+								pRightStyleNode->SetText("dashDotDot");
+								break;
+							}
+
+							default:
+							{
+								pRightStyleNode->SetText("thin");
+								break;
+							}
+
+						}
+						pRightNode->AppendChild(pRightStyleNode);
+						Color* pRightColor = pBorder->GetRightBorderLine()->GetColor();
+						if (pRightColor != 0)
+						{
+							Secret::XmlNode* pRightColorNode = pStylesXml->CreateElement("color");
+							sTemp->Set("");
+							sTemp->AppendHex(pRightColor->GetRgba());
+							pRightColorNode->SetAttribute("rgb", sTemp->GetExternalString());
+							pRightNode->AppendChild(pRightColorNode);
+						}
+					}
+					pBorderNode->AppendChild(pRightNode);
+					Secret::XmlNode* pTopNode = pStylesXml->CreateElement("top");
+					if (pBorder->GetTopBorderLine()->GetType() != Line::Type::TYPE_NONE)
+					{
+						Secret::XmlNode* pTopStyleNode = pStylesXml->CreateElement("style");
+						switch (pBorder->GetTopBorderLine()->GetType())
+						{
+							case Line::Type::TYPE_THIN:
+							{
+								pTopStyleNode->SetText("thin");
+								break;
+							}
+
+							case Line::Type::TYPE_MEDIUM:
+							{
+								pTopStyleNode->SetText("medium");
+								break;
+							}
+
+							case Line::Type::TYPE_THICK:
+							{
+								pTopStyleNode->SetText("thick");
+								break;
+							}
+
+							case Line::Type::TYPE_DASHED:
+							{
+								pTopStyleNode->SetText("dashed");
+								break;
+							}
+
+							case Line::Type::TYPE_DOTTED:
+							{
+								pTopStyleNode->SetText("dotted");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT:
+							{
+								pTopStyleNode->SetText("dashDot");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT_DOT:
+							{
+								pTopStyleNode->SetText("dashDotDot");
+								break;
+							}
+
+							default:
+							{
+								pTopStyleNode->SetText("thin");
+								break;
+							}
+
+						}
+						pTopNode->AppendChild(pTopStyleNode);
+						Color* pTopColor = pBorder->GetTopBorderLine()->GetColor();
+						if (pTopColor != 0)
+						{
+							Secret::XmlNode* pTopColorNode = pStylesXml->CreateElement("color");
+							sTemp->Set("");
+							sTemp->AppendHex(pTopColor->GetRgba());
+							pTopColorNode->SetAttribute("rgb", sTemp->GetExternalString());
+							pTopNode->AppendChild(pTopColorNode);
+						}
+					}
+					pBorderNode->AppendChild(pTopNode);
+					Secret::XmlNode* pBottomNode = pStylesXml->CreateElement("bottom");
+					if (pBorder->GetBottomBorderLine()->GetType() != Line::Type::TYPE_NONE)
+					{
+						Secret::XmlNode* pBottomStyleNode = pStylesXml->CreateElement("style");
+						switch (pBorder->GetBottomBorderLine()->GetType())
+						{
+							case Line::Type::TYPE_THIN:
+							{
+								pBottomStyleNode->SetText("thin");
+								break;
+							}
+
+							case Line::Type::TYPE_MEDIUM:
+							{
+								pBottomStyleNode->SetText("medium");
+								break;
+							}
+
+							case Line::Type::TYPE_THICK:
+							{
+								pBottomStyleNode->SetText("thick");
+								break;
+							}
+
+							case Line::Type::TYPE_DASHED:
+							{
+								pBottomStyleNode->SetText("dashed");
+								break;
+							}
+
+							case Line::Type::TYPE_DOTTED:
+							{
+								pBottomStyleNode->SetText("dotted");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT:
+							{
+								pBottomStyleNode->SetText("dashDot");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT_DOT:
+							{
+								pBottomStyleNode->SetText("dashDotDot");
+								break;
+							}
+
+							default:
+							{
+								pBottomStyleNode->SetText("thin");
+								break;
+							}
+
+						}
+						pBottomNode->AppendChild(pBottomStyleNode);
+						Color* pBottomColor = pBorder->GetBottomBorderLine()->GetColor();
+						if (pBottomColor != 0)
+						{
+							Secret::XmlNode* pBottomColorNode = pStylesXml->CreateElement("color");
+							sTemp->Set("");
+							sTemp->AppendHex(pBottomColor->GetRgba());
+							pBottomColorNode->SetAttribute("rgb", sTemp->GetExternalString());
+							pBottomNode->AppendChild(pBottomColorNode);
+						}
+					}
+					pBorderNode->AppendChild(pBottomNode);
+					Secret::XmlNode* pDiagonalNode = pStylesXml->CreateElement("diagonal");
+					pBorderNode->AppendChild(pDiagonalNode);
+					pBordersNode->AppendChild(pBorderNode);
+				}
+				pStyleSheetNode->AppendChild(pBordersNode);
+				Secret::XmlNode* pCellStyleXfsNode = pStylesXml->CreateElement("cellStyleXfs");
+				pCellStyleXfsNode->SetAttribute("count", "1");
+				Secret::XmlNode* pXfStyleNode = pStylesXml->CreateElement("xf");
+				pXfStyleNode->SetAttribute("numFmtId", "0");
+				pXfStyleNode->SetAttribute("fontId", "0");
+				pXfStyleNode->SetAttribute("fillId", "0");
+				pXfStyleNode->SetAttribute("borderId", "0");
+				pCellStyleXfsNode->AppendChild(pXfStyleNode);
+				pStyleSheetNode->AppendChild(pCellStyleXfsNode);
+				Secret::XmlNode* pCellXfsNode = pStylesXml->CreateElement("cellXfs");
+				sTemp->Set("");
+				sTemp->AppendInt(m_pImpl->m_pWorkbookGlobals->GetNumStyle());
+				pCellXfsNode->SetAttribute("count", sTemp->GetExternalString());
+				for (int i = 0; i < m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
+				{
+					Style* pStyle = m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
+					Secret::XmlNode* pXfNode = pStylesXml->CreateElement("xf");
+					const char* szFormat = pStyle->GetFormat();
+					unsigned short nFormatIndex = 0;
+					for (int j = 0; j < pFormatVector->GetSize(); j++)
+					{
+						if (Secret::ExternalString::Equal(pFormatVector->Get(j), szFormat))
+						{
+							nFormatIndex = (unsigned short)(j);
+							break;
+						}
+					}
+					Font* pStyleFont = pStyle->GetFont();
+					unsigned short nFontIndex = 0;
+					for (int j = 0; j < pFontVector->GetSize(); j++)
+					{
+						Font* pTestFont = pFontVector->Get(j);
+						if (Secret::ExternalString::Equal(pTestFont->GetName(), pStyleFont->GetName()) && pTestFont->GetSize() == pStyleFont->GetSize() && pTestFont->GetBold() == pStyleFont->GetBold() && pTestFont->GetItalic() == pStyleFont->GetItalic() && pTestFont->GetUnderline() == pStyleFont->GetUnderline())
+						{
+							nFontIndex = (unsigned short)(j);
+							break;
+						}
+					}
+					Color* pBackgroundColor = pStyle->GetBackgroundColor(false);
+					Style::FillPattern eFillPattern = pStyle->GetFillPattern();
+					Color* pFillPatternColor = pStyle->GetFillPatternColor(false);
+					unsigned short nFillIndex = 0;
+					for (int j = 0; j < pFillVector->GetSize(); j++)
+					{
+						Style* pTestStyle = pFillVector->Get(j);
+						Color* pTestBackgroundColor = pTestStyle->GetBackgroundColor(false);
+						Color* pTestFillPatternColor = pTestStyle->GetFillPatternColor(false);
+						if (eFillPattern == pTestStyle->GetFillPattern() && ((pBackgroundColor == 0 && pTestBackgroundColor == 0) || (pBackgroundColor != 0 && pTestBackgroundColor != 0 && pBackgroundColor->Equals(pTestBackgroundColor))) && ((pFillPatternColor == 0 && pTestFillPatternColor == 0) || (pFillPatternColor != 0 && pTestFillPatternColor != 0 && pFillPatternColor->Equals(pTestFillPatternColor))))
+						{
+							nFillIndex = (unsigned short)(j);
+							break;
+						}
+					}
+					unsigned short nBorderIndex = 0;
+					for (int j = 0; j < pBorderVector->GetSize(); j++)
+					{
+						Style* pTestStyle = pBorderVector->Get(j);
+						if (pStyle->GetTopBorderLine()->GetType() == pTestStyle->GetTopBorderLine()->GetType() && pStyle->GetRightBorderLine()->GetType() == pTestStyle->GetRightBorderLine()->GetType() && pStyle->GetBottomBorderLine()->GetType() == pTestStyle->GetBottomBorderLine()->GetType() && pStyle->GetLeftBorderLine()->GetType() == pTestStyle->GetLeftBorderLine()->GetType())
+						{
+							nBorderIndex = (unsigned short)(j);
+							break;
+						}
+					}
+					sTemp->Set("");
+					sTemp->AppendUint32(nFormatIndex);
+					pXfNode->SetAttribute("numFmtId", sTemp->GetExternalString());
+					sTemp->Set("");
+					sTemp->AppendUint32(nFontIndex);
+					pXfNode->SetAttribute("fontId", sTemp->GetExternalString());
+					{
+						pXfNode->SetAttribute("applyFont", "1");
+					}
+					sTemp->Set("");
+					sTemp->AppendUint32(nFillIndex);
+					pXfNode->SetAttribute("fillId", sTemp->GetExternalString());
+					{
+						pXfNode->SetAttribute("applyFill", "1");
+					}
+					sTemp->Set("");
+					sTemp->AppendUint32(nBorderIndex);
+					pXfNode->SetAttribute("borderId", sTemp->GetExternalString());
+					{
+						pXfNode->SetAttribute("applyBorder", "1");
+					}
+					pXfNode->SetAttribute("xfId", "0");
+					pCellXfsNode->AppendChild(pXfNode);
+				}
+				pStyleSheetNode->AppendChild(pCellXfsNode);
+				pStylesXml->AppendChild(pStyleSheetNode);
+				pStylesXml->Save(pStylesBlob->GetBlobView());
+				NumberDuck::Blob* __2447729404 = pStylesBlob;
+				pStylesBlob = 0;
+				bSuccess = bSuccess && pZipWriter->AddFileFromBlob("xl/styles.xml", __2447729404);
+				for (int i = 0; i < m_pImpl->m_pWorksheetVector->GetSize(); i++)
+				{
+					Worksheet* pWorksheet = m_pImpl->m_pWorksheetVector->Get(i);
+					bSuccess = bSuccess && Secret::XlsxWorksheet::Write(pWorksheet, m_pImpl->m_pWorkbookGlobals, pZipWriter, i);
+				}
+				if (bSuccess)
+				{
+					Blob* pSharedStringsBlob = new Blob(true);
+					Secret::XmlFile* pSharedStringsXml = new Secret::XmlFile();
+					Secret::XmlNode* pSstNode = pSharedStringsXml->CreateElement("sst");
+					pSstNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+					int nStringCount = m_pImpl->m_pWorkbookGlobals->m_pSharedStringContainer->GetSize();
+					sTemp->Set("");
+					sTemp->AppendInt(nStringCount);
+					pSstNode->SetAttribute("count", sTemp->GetExternalString());
+					pSstNode->SetAttribute("uniqueCount", sTemp->GetExternalString());
+					for (int i = 0; i < nStringCount; i++)
+					{
+						Secret::XmlNode* pSiNode = pSharedStringsXml->CreateElement("si");
+						Secret::XmlNode* pTNode = pSharedStringsXml->CreateElement("t");
+						const char* szString = m_pImpl->m_pWorkbookGlobals->GetSharedStringByIndex((unsigned int)(i));
+						pTNode->SetText(szString);
+						pSiNode->AppendChild(pTNode);
+						pSstNode->AppendChild(pSiNode);
+					}
+					pSharedStringsXml->AppendChild(pSstNode);
+					pSharedStringsXml->Save(pSharedStringsBlob->GetBlobView());
+					NumberDuck::Blob* __1262110751 = pSharedStringsBlob;
+					pSharedStringsBlob = 0;
+					bSuccess = bSuccess && pZipWriter->AddFileFromBlob("xl/sharedStrings.xml", __1262110751);
+					if (pSharedStringsBlob) delete pSharedStringsBlob;
+					if (pSharedStringsXml) delete pSharedStringsXml;
+				}
+				Blob* pZipBlob = new Blob(true);
+				bSuccess = bSuccess && pZipWriter->SaveBlobView(pZipBlob->GetBlobView());
+				if (bSuccess)
+				{
+					pZipBlob->Save(szFileName);
+				}
+				if (pZipWriter) delete pZipWriter;
+				if (pContentTypesBlob) delete pContentTypesBlob;
+				if (pContentTypesXml) delete pContentTypesXml;
+				if (pRelsBlob) delete pRelsBlob;
+				if (pRelsXml) delete pRelsXml;
+				if (pWorkbookRelsBlob) delete pWorkbookRelsBlob;
+				if (pWorkbookRelsXml) delete pWorkbookRelsXml;
+				if (pWorkbookBlob) delete pWorkbookBlob;
+				if (pWorkbookXml) delete pWorkbookXml;
+				if (pStylesBlob) delete pStylesBlob;
+				if (pStylesXml) delete pStylesXml;
+				if (pFormatVector) delete pFormatVector;
+				if (pFormatIndexVector) delete pFormatIndexVector;
+				if (pFontVector) delete pFontVector;
+				if (pFillVector) delete pFillVector;
+				if (pBorderVector) delete pBorderVector;
+				if (pZipBlob) delete pZipBlob;
+				if (sTemp) delete sTemp;
+				return bSuccess;
+			}
+			else
+			{
+				if (sTemp) delete sTemp;
+				return false;
+			}
+		if (sTemp) delete sTemp;
 	}
 
 	unsigned int Workbook::GetNumWorksheet()
@@ -11672,21 +12449,13 @@ namespace NumberDuck
 			if (pWorksheet->SetName(sName->GetExternalString()))
 				break;
 		}
-		{
-			delete sName;
-			sName = 0;
-		}
 		Worksheet* pTempWorksheet = pWorksheet;
-		{
-			NumberDuck::Worksheet* __3928651719 = pWorksheet;
-			pWorksheet = 0;
-			m_pImpl->m_pWorksheetVector->PushBack(__3928651719);
-		}
-		{
-			if (pWorksheet) delete pWorksheet;
-			if (sName) delete sName;
-			return pTempWorksheet;
-		}
+		NumberDuck::Worksheet* __119035549 = pWorksheet;
+		pWorksheet = 0;
+		m_pImpl->m_pWorksheetVector->PushBack(__119035549);
+		if (pWorksheet) delete pWorksheet;
+		if (sName) delete sName;
+		return pTempWorksheet;
 	}
 
 	void Workbook::PurgeWorksheet(unsigned int nIndex)
@@ -11746,24 +12515,18 @@ namespace NumberDuck
 			{
 				delete m_pImpl->m_pNameFormula;
 			}
-			{
-				NumberDuck::Secret::Formula* __879619620 = pFormula;
-				pFormula = 0;
-				m_pImpl->m_pNameFormula = __879619620;
-			}
-			{
-				if (pFormula) delete pFormula;
-				return true;
-			}
+			NumberDuck::Secret::Formula* __1934514609 = pFormula;
+			pFormula = 0;
+			m_pImpl->m_pNameFormula = __1934514609;
+			if (pFormula) delete pFormula;
+			return true;
 		}
 		{
 			delete pFormula;
 			pFormula = 0;
 		}
-		{
-			if (pFormula) delete pFormula;
-			return false;
-		}
+		if (pFormula) delete pFormula;
+		return false;
 	}
 
 	const char* Series::GetValues()
@@ -11781,24 +12544,18 @@ namespace NumberDuck
 			{
 				delete m_pImpl->m_pValuesFormula;
 			}
-			{
-				NumberDuck::Secret::Formula* __879619620 = pFormula;
-				pFormula = 0;
-				m_pImpl->m_pValuesFormula = __879619620;
-			}
-			{
-				if (pFormula) delete pFormula;
-				return true;
-			}
+			NumberDuck::Secret::Formula* __2370743830 = pFormula;
+			pFormula = 0;
+			m_pImpl->m_pValuesFormula = __2370743830;
+			if (pFormula) delete pFormula;
+			return true;
 		}
 		{
 			delete pFormula;
 			pFormula = 0;
 		}
-		{
-			if (pFormula) delete pFormula;
-			return false;
-		}
+		if (pFormula) delete pFormula;
+		return false;
 	}
 
 	Line* Series::GetLine()
@@ -11996,66 +12753,6 @@ namespace NumberDuck
 
 
 
-#if defined(CLANG_PARSE)
-
-#elif defined(_MSC_VER)
-	#include <stdio.h>
-	#include <Windows.h>
-#elif defined(CMAKE_PLATFORM_ANDROID)
-	#include <android/log.h>
-	#include <assert.h>
-	#include <stdio.h>
-#else
-	#include <assert.h>
-	#include <stdio.h>
-#endif
-
-namespace NumberDuck
-{
-	namespace  Secret
-	{
-		void nbAssert::Assert(bool bTest, const char* sxAssert, const char* sxFile, int nLine)
-		{
-			if (!bTest)
-			{
-				#if defined(CLANG_PARSE)
-				#elif defined(_MSC_VER)
-					printf("Assert: %s (%d) : %s\n", sxFile, nLine, sxAssert);
-					DebugBreak();
-				#elif defined(CMAKE_PLATFORM_ANDROID)
-					//__android_log_print(ANDROID_LOG_DEBUG, "LOG_TAG", "test");
-					__android_log_print(ANDROID_LOG_DEBUG, "LOG_TAG", "Assert: %s (%d) : %s\n", sxFile, nLine, sxAssert);
-					assert(0);
-				#else
-					printf("Assert: %s (%d) : %s\n", sxFile, nLine, sxAssert);
-					assert(0);
-				#endif
-			}
-		}
-
-		void nbAssert::Assert(bool bTest)
-		{
-			if (!bTest)
-			{
-				#if defined(CLANG_PARSE)
-				#elif defined(_MSC_VER)
-					//printf("Assert: %s (%d) : %s\n", szFile, nLine, szAssert);
-					DebugBreak();
-				#elif defined(CMAKE_PLATFORM_ANDROID)
-					//__android_log_print(ANDROID_LOG_DEBUG, "LOG_TAG", "Assert: %s (%d) : %s\n", szFile, nLine, szAssert);
-					assert(0);
-				#else
-					//printf("Assert: %s (%d) : %s\n", szFile, nLine, szAssert);
-					assert(0);
-				#endif
-			}
-		}
-	}
-}
-
-
-
-
 #if defined(_MSC_VER)
 	#include <stdio.h>
 	#include <Windows.h>
@@ -12068,7 +12765,7 @@ namespace NumberDuck
 	#include <stdio.h>
 #endif
 
-namespace NumbatLogic
+namespace NumberDuck { namespace Secret
 {
 	void Assert::Plz(bool bTest, const char* sxAssert, const char* sxFile, int nLine)
 	{
@@ -12104,6 +12801,7 @@ namespace NumbatLogic
 			#endif
 		}
 	}
+}
 }
 
 
@@ -12204,7 +12902,7 @@ namespace NumberDuck
 		unsigned char* pOldBuffer = m_pBuffer;
 
 		if (bAutoResize)
-			CLIFFY_ASSERT(m_bAutoResize);
+			Secret::Assert::Plz(m_bAutoResize);
 
 		if (nSize > m_nSize)
 		{
@@ -12279,13 +12977,13 @@ namespace NumberDuck
 
 	void Blob::PackData(unsigned char* pData, int nOffset, int nSize)
 	{
-		CLIFFY_ASSERT(nOffset + nSize <= m_nSize);
+		Secret::Assert::Plz(nOffset + nSize <= m_nSize);
 		memcpy(m_pBuffer + nOffset, pData, nSize);
 	}
 
 	void Blob::UnpackData(unsigned char* pData, int nOffset, int nSize)
 	{
-		CLIFFY_ASSERT(nOffset + nSize <= m_nSize);
+		Secret::Assert::Plz(nOffset + nSize <= m_nSize);
 		memcpy(pData, m_pBuffer + nOffset, nSize);
 	}
 
@@ -12304,9 +13002,9 @@ namespace NumberDuck
 	// Blob View
 	BlobView::BlobView(Blob* pBlob, int nStart, int nEnd)
 	{
-		CLIFFY_ASSERT(nStart >= 0);
-		CLIFFY_ASSERT(nStart <= nEnd);
-		CLIFFY_ASSERT(nEnd <= pBlob->GetSize());
+		Secret::Assert::Plz(nStart >= 0);
+		Secret::Assert::Plz(nStart <= nEnd);
+		Secret::Assert::Plz(nEnd <= pBlob->GetSize());
 
 		m_pBlob = pBlob;
 		m_nStart = nStart;
@@ -12455,8 +13153,8 @@ namespace NumberDuck
 	{
 		if (nEnd > 0)
 		{
-			CLIFFY_ASSERT(nEnd > m_nOffset);
-			CLIFFY_ASSERT(nEnd >= m_nStart);
+			Secret::Assert::Plz(nEnd > m_nOffset);
+			Secret::Assert::Plz(nEnd >= m_nStart);
 		}
 
 		m_nEnd = nEnd;
@@ -12539,7 +13237,7 @@ namespace NumberDuck
 		}
 		else
 		{
-			CLIFFY_ASSERT(nBlobOffset + nSize <= m_nEnd);
+			Secret::Assert::Plz(nBlobOffset + nSize <= m_nEnd);
 		}
 		m_pBlob->PackData(pData, nBlobOffset, nSize);
 	}
@@ -12550,7 +13248,7 @@ namespace NumberDuck
 		int nEnd = m_nEnd;
 		if (nEnd == 0)
 			nEnd = m_pBlob->GetSize();
-		CLIFFY_ASSERT(nBlobOffset + nSize <= nEnd);
+		Secret::Assert::Plz(nBlobOffset + nSize <= nEnd);
 		m_pBlob->UnpackData(pData, nBlobOffset, nSize);
 	}
 }
@@ -12559,17 +13257,15 @@ namespace NumberDuck
 
 #include <stdio.h>
 
-namespace NumberDuck
+namespace NumberDuck { namespace Secret
 {
-	namespace Secret
+	void Console::Log(const char* sxLog)
 	{
-		void Console::Log(const char* sxLog)
-		{
-			printf("%s\n", sxLog);
-			fflush(stdout);
-		}
+		printf("%s\n", sxLog);
+		fflush(stdout);
 	}
-}
+}}
+
 
 
 
@@ -12577,46 +13273,44 @@ namespace NumberDuck
 #include <stdlib.h>
 #include <cstring>
 
-namespace NumberDuck
+namespace NumberDuck { namespace Secret
 {
-	namespace Secret
+	bool ExternalString::Equal(const char* szA, const char* szB)
 	{
-		bool ExternalString::Equal(const char* szA, const char* szB)
-		{
-			return strcmp(szA, szB) == 0;
-		}
-
-		// a bad checksum
-		int ExternalString::GetChecksum(const char* szString)
-		{
-			int nResult = 0xABC123;
-			const char* p = szString;
-			while (*p)
-				nResult = (nResult ^ *(p++)) << 1;
-			return nResult;
-		}
-
-		long ExternalString::hextol(const char* szString)
-		{
-			return ::strtol(szString, NULL, 16);
-		}
-
-		int ExternalString::atoi(const char* szString)
-		{
-			return ::atoi(szString);
-		}
-
-		double ExternalString::atof(const char* szString)
-		{
-			return ::atof(szString);
-		}
-
-		long ExternalString::atol(const char* szString)
-		{
-			return ::atol(szString);
-		}
+		return strcmp(szA, szB) == 0;
 	}
-}
+
+	// a bad checksum
+	int ExternalString::GetChecksum(const char* szString)
+	{
+		int nResult = 0xABC123;
+		const char* p = szString;
+		while (*p)
+			nResult = (nResult ^ *(p++)) << 1;
+		return nResult;
+	}
+
+	long ExternalString::hextol(const char* szString)
+	{
+		return ::strtol(szString, NULL, 16);
+	}
+
+	int ExternalString::atoi(const char* szString)
+	{
+		return ::atoi(szString);
+	}
+
+	double ExternalString::atof(const char* szString)
+	{
+		return ::atof(szString);
+	}
+
+	long ExternalString::atol(const char* szString)
+	{
+		return ::atol(szString);
+	}
+}}
+
 
 
 
@@ -12625,658 +13319,661 @@ namespace NumberDuck
 #include <stdio.h>
 #include <stdlib.h>
 
-namespace NumberDuck
+namespace NumberDuck { namespace Secret
 {
-	namespace Secret
+	InternalString::InternalString(const char* szString)
 	{
-		InternalString::InternalString(const char* szString)
+		m_szBuffer = NULL;
+		m_nBufferSize = 0;
+		m_nByteLength = 0;
+		m_nCharLength = 0;
+		Set(szString);
+	}
+
+	InternalString::~InternalString()
+	{
+		if (m_szBuffer)
+			delete [] m_szBuffer;
+	}
+
+	InternalString* InternalString::CreateClone()
+	{
+		return new InternalString(m_szBuffer);
+	}
+
+	void InternalString::Set(const char* szString)
+	{
+		GetUtf8Length(szString, &m_nCharLength, &m_nByteLength);
+		Resize(m_nByteLength);
+		memcpy(m_szBuffer, szString, m_nByteLength);
+		m_szBuffer[m_nByteLength] = 0;
+	}
+
+	const char* InternalString::GetExternalString() const
+	{
+		return m_szBuffer;
+	}
+
+	void InternalString::Append(const char* szString)
+	{
+		AppendString(szString);
+	}
+
+	void InternalString::AppendChar(unsigned short nChar)
+	{
+		if (nChar <= 0x7F)
 		{
-			m_szBuffer = NULL;
-			m_nBufferSize = 0;
-			m_nByteLength = 0;
-			m_nCharLength = 0;
-			Set(szString);
-		}
-
-		InternalString::~InternalString()
-		{
-			if (m_szBuffer)
-				delete [] m_szBuffer;
-		}
-
-		InternalString* InternalString::CreateClone()
-		{
-			return new InternalString(m_szBuffer);
-		}
-
-		void InternalString::Set(const char* szString)
-		{
-			GetUtf8Length(szString, &m_nCharLength, &m_nByteLength);
-			Resize(m_nByteLength);
-			memcpy(m_szBuffer, szString, m_nByteLength);
-			m_szBuffer[m_nByteLength] = 0;
-		}
-
-		const char* InternalString::GetExternalString() const
-		{
-			return m_szBuffer;
-		}
-
-		void InternalString::Append(const char* szString)
-		{
-			AppendString(szString);
-		}
-
-		void InternalString::AppendChar(unsigned short nChar)
-		{
-			if (nChar <= 0x7F)
-			{
-				m_szBuffer[m_nByteLength] = (unsigned char)nChar;
-				m_nCharLength++;
-				m_nByteLength++;
-				Resize(m_nByteLength);
-				m_szBuffer[m_nByteLength] = 0;
-				return;
-			}
-
-			if (nChar <= 0x7FF)
-			{
-				Resize(m_nByteLength + 2);
-				m_nCharLength++;
-				m_szBuffer[m_nByteLength++] = 0xC0 | ((nChar >> 6) & 0xFF);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
-				m_szBuffer[m_nByteLength] = 0;
-				return;
-			}
-
-			if (nChar <= 0xFFFF)
-			{
-				Resize(m_nByteLength + 3);
-				m_nCharLength++;
-				m_szBuffer[m_nByteLength++] = 0xE0 | ((nChar >> 12) & 0xFF);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
-				m_szBuffer[m_nByteLength] = 0;
-				return;
-			}
-
-			/*if (nChar <= 0x1FFFFF)
-			   {
-				Resize(m_nByteLength+4);
-				m_nCharLength++;
-				m_szBuffer[m_nByteLength++] = 0xF0 | ((nChar >> 18) & 0xFF);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
-				m_szBuffer[m_nByteLength] = 0;
-				return;
-			   }
-
-			   if (nChar <= 0x3FFFFFF)
-			   {
-				Resize(m_nByteLength+5);
-				m_nCharLength++;
-				m_szBuffer[m_nByteLength++] = 0xF8 | ((nChar >> 24) & 0xFF);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 18) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
-				m_szBuffer[m_nByteLength] = 0;
-				return;
-			   }
-
-			   if (nChar <= 0x7FFFFFFF)
-			   {
-				Resize(m_nByteLength+6);
-				m_nCharLength++;
-				m_szBuffer[m_nByteLength++] = 0xFC | ((nChar >> 30) & 0xFF);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 24) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 18) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
-				m_szBuffer[m_nByteLength] = 0;
-				return;
-			   }*/
-
-			CLIFFY_ASSERT(false);
-		}
-
-		void InternalString::AppendString(const char* szString)
-		{
-			int nCharLength = 0;
-			int nByteLength = 0;
-			GetUtf8Length(szString, &nCharLength, &nByteLength);
-			Resize(m_nByteLength + nByteLength);
-			memcpy(m_szBuffer + m_nByteLength, szString, nByteLength);
-			m_nCharLength += nCharLength;
-			m_nByteLength += nByteLength;
-			m_szBuffer[m_nByteLength] = 0;
-		}
-
-		void InternalString::AppendInt(int nInt)
-		{
-			if (nInt == -0)
-				nInt = 0;
-
-			char szTemp[1024];
-			sprintf(szTemp, "%d", nInt);
-			AppendString(szTemp);
-		}
-
-		void InternalString::AppendUnsignedInt(unsigned int nUint32)
-		{
-			AppendUint32(nUint32);
-		}
-
-		void InternalString::AppendUint32(unsigned int nUint32)
-		{
-			char szTemp[1024];
-			sprintf(szTemp, "%u", nUint32);
-			AppendString(szTemp);
-		}
-
-		void InternalString::AppendDouble(double fDouble)
-		{
-			char szTemp[1024];
-			sprintf(szTemp, "%G", fDouble);
-			if (strcmp(szTemp, "-0") == 0)
-				AppendString("0");
-			else
-				AppendString(szTemp);
-		}
-
-		void InternalString::PrependChar(unsigned short nChar)
-		{
-			int nCharSize = GetCharSize(nChar);
-			Resize(m_nByteLength + nCharSize);
-
-			memmove(m_szBuffer + nCharSize, m_szBuffer, m_nByteLength);
-
-			EncodeChar(nChar, (unsigned char*)m_szBuffer);
-
+			m_szBuffer[m_nByteLength] = (unsigned char)nChar;
 			m_nCharLength++;
-			m_nByteLength += nCharSize;
+			m_nByteLength++;
+			Resize(m_nByteLength);
 			m_szBuffer[m_nByteLength] = 0;
+			return;
 		}
 
-		void InternalString::PrependString(const char* szString)
+		if (nChar <= 0x7FF)
 		{
-			int nCharLength = 0;
-			int nByteLength = 0;
-			GetUtf8Length(szString, &nCharLength, &nByteLength);
-			Resize(m_nByteLength + nByteLength);
-			memmove(m_szBuffer + nByteLength, m_szBuffer, m_nByteLength);
-			memcpy(m_szBuffer, szString, nByteLength);
-
-			m_nCharLength += nCharLength;
-			m_nByteLength += nByteLength;
+			Resize(m_nByteLength + 2);
+			m_nCharLength++;
+			m_szBuffer[m_nByteLength++] = 0xC0 | ((nChar >> 6) & 0xFF);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
 			m_szBuffer[m_nByteLength] = 0;
+			return;
 		}
 
-		void InternalString::AppendStringData(unsigned char* pData, int nLength)
+		if (nChar <= 0xFFFF)
 		{
-			// not utf8
-			int nNewLength = m_nCharLength + nLength;
-			Resize(nNewLength);
-
-			memcpy(m_szBuffer + m_nCharLength, pData, nLength);
-
-			m_nCharLength = nNewLength;
-			m_nByteLength = m_nCharLength;
+			Resize(m_nByteLength + 3);
+			m_nCharLength++;
+			m_szBuffer[m_nByteLength++] = 0xE0 | ((nChar >> 12) & 0xFF);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
 			m_szBuffer[m_nByteLength] = 0;
+			return;
 		}
 
-		void InternalString::SubStr(int nStart, int nLength)
-		{
-			CLIFFY_ASSERT(nStart >= 0);
-			CLIFFY_ASSERT(nLength >= 0);
-			CLIFFY_ASSERT(nStart + nLength <= m_nCharLength);
-
-			if (IsAscii())
+		/*if (nChar <= 0x1FFFFF)
 			{
-				memmove(m_szBuffer, m_szBuffer+nStart, nLength);
-				m_szBuffer[nLength] = 0;
-				m_nCharLength = nLength;
-				m_nByteLength = nLength;
-				return;
+			Resize(m_nByteLength+4);
+			m_nCharLength++;
+			m_szBuffer[m_nByteLength++] = 0xF0 | ((nChar >> 18) & 0xFF);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
+			m_szBuffer[m_nByteLength] = 0;
+			return;
 			}
 
-			int i;
-			unsigned char* p = (unsigned char*)m_szBuffer;
-			for (i = 0; i < nStart; i++)
-				p += GetUtf8CharSize((*p));
-
-			char* szTemp = new char[m_nBufferSize];
-
-			unsigned char* pOut = (unsigned char*)szTemp;
-			for (i = 0; i < nLength; i++)
+			if (nChar <= 0x3FFFFFF)
 			{
-				unsigned short nChar = DecodeChar(p);
-				int nCharSize = EncodeChar(nChar, pOut);
-
-				p += nCharSize;
-				pOut += nCharSize;
+			Resize(m_nByteLength+5);
+			m_nCharLength++;
+			m_szBuffer[m_nByteLength++] = 0xF8 | ((nChar >> 24) & 0xFF);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 18) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
+			m_szBuffer[m_nByteLength] = 0;
+			return;
 			}
-			(*pOut) = 0;
 
+			if (nChar <= 0x7FFFFFFF)
+			{
+			Resize(m_nByteLength+6);
+			m_nCharLength++;
+			m_szBuffer[m_nByteLength++] = 0xFC | ((nChar >> 30) & 0xFF);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 24) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 18) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
+			m_szBuffer[m_nByteLength] = 0;
+			return;
+			}*/
+
+		Assert::Plz(false);
+	}
+
+	void InternalString::AppendString(const char* szString)
+	{
+		int nCharLength = 0;
+		int nByteLength = 0;
+		GetUtf8Length(szString, &nCharLength, &nByteLength);
+		Resize(m_nByteLength + nByteLength);
+		memcpy(m_szBuffer + m_nByteLength, szString, nByteLength);
+		m_nCharLength += nCharLength;
+		m_nByteLength += nByteLength;
+		m_szBuffer[m_nByteLength] = 0;
+	}
+
+	void InternalString::AppendInt(int nInt)
+	{
+		if (nInt == -0)
+			nInt = 0;
+
+		char szTemp[32];
+		sprintf(szTemp, "%d", nInt);
+		AppendString(szTemp);
+	}
+
+	void InternalString::AppendUnsignedInt(unsigned int nUint32)
+	{
+		AppendUint32(nUint32);
+	}
+
+	void InternalString::AppendUint32(unsigned int nUint32)
+	{
+		char szTemp[32];
+		sprintf(szTemp, "%u", nUint32);
+		AppendString(szTemp);
+	}
+
+	void InternalString::AppendDouble(double fDouble)
+	{
+		char szTemp[32];
+		sprintf(szTemp, "%G", fDouble);
+		if (strcmp(szTemp, "-0") == 0)
+			AppendString("0");
+		else
+			AppendString(szTemp);
+	}
+
+	void InternalString::AppendHex(unsigned int nUint32)
+	{
+		char szTemp[32]; // 8 hex digits + null terminator
+		sprintf(szTemp, "%X", nUint32);
+		AppendString(szTemp);
+	}
+
+	void InternalString::PrependChar(unsigned short nChar)
+	{
+		int nCharSize = GetCharSize(nChar);
+		Resize(m_nByteLength + nCharSize);
+
+		memmove(m_szBuffer + nCharSize, m_szBuffer, m_nByteLength);
+
+		EncodeChar(nChar, (unsigned char*)m_szBuffer);
+
+		m_nCharLength++;
+		m_nByteLength += nCharSize;
+		m_szBuffer[m_nByteLength] = 0;
+	}
+
+	void InternalString::PrependString(const char* szString)
+	{
+		int nCharLength = 0;
+		int nByteLength = 0;
+		GetUtf8Length(szString, &nCharLength, &nByteLength);
+		Resize(m_nByteLength + nByteLength);
+		memmove(m_szBuffer + nByteLength, m_szBuffer, m_nByteLength);
+		memcpy(m_szBuffer, szString, nByteLength);
+
+		m_nCharLength += nCharLength;
+		m_nByteLength += nByteLength;
+		m_szBuffer[m_nByteLength] = 0;
+	}
+
+	void InternalString::AppendStringData(unsigned char* pData, int nLength)
+	{
+		// not utf8
+		int nNewLength = m_nCharLength + nLength;
+		Resize(nNewLength);
+
+		memcpy(m_szBuffer + m_nCharLength, pData, nLength);
+
+		m_nCharLength = nNewLength;
+		m_nByteLength = m_nCharLength;
+		m_szBuffer[m_nByteLength] = 0;
+	}
+
+	void InternalString::SubStr(int nStart, int nLength)
+	{
+		Assert::Plz(nStart >= 0);
+		Assert::Plz(nLength >= 0);
+		Assert::Plz(nStart + nLength <= m_nCharLength);
+
+		if (IsAscii())
+		{
+			memmove(m_szBuffer, m_szBuffer+nStart, nLength);
+			m_szBuffer[nLength] = 0;
 			m_nCharLength = nLength;
-			m_nByteLength = (int)(pOut - (unsigned char*)szTemp);
+			m_nByteLength = nLength;
+			return;
+		}
 
-			delete m_szBuffer;
+		int i;
+		unsigned char* p = (unsigned char*)m_szBuffer;
+		for (i = 0; i < nStart; i++)
+			p += GetUtf8CharSize((*p));
+
+		char* szTemp = new char[m_nBufferSize];
+
+		unsigned char* pOut = (unsigned char*)szTemp;
+		for (i = 0; i < nLength; i++)
+		{
+			unsigned short nChar = DecodeChar(p);
+			int nCharSize = EncodeChar(nChar, pOut);
+
+			p += nCharSize;
+			pOut += nCharSize;
+		}
+		(*pOut) = 0;
+
+		m_nCharLength = nLength;
+		m_nByteLength = (int)(pOut - (unsigned char*)szTemp);
+
+		delete [] m_szBuffer;
+		m_szBuffer = szTemp;
+	}
+
+	/*void InternalString :: CropBack(int nLength)
+		{
+		Assert::Plz(nLength <= m_nCharLength);
+		SubStr(0, m_nCharLength - nLength);
+		}*/
+
+	void InternalString::CropFront(int nLength)
+	{
+		Assert::Plz(nLength >= 0);
+		Assert::Plz(nLength <= m_nCharLength);
+
+		int i;
+		unsigned char* p = (unsigned char*)m_szBuffer;
+		for (i = 0; i < nLength; i++)
+			p += GetUtf8CharSize((*p));
+
+		m_nByteLength -= (int)(p - (unsigned char*)m_szBuffer);
+		m_nCharLength -= nLength;
+
+		memmove(m_szBuffer, p, m_nByteLength);
+		m_szBuffer[m_nByteLength] = 0;
+	}
+
+	int InternalString::GetLength()
+	{
+		return m_nCharLength;
+	}
+
+	unsigned short InternalString::GetChar(int nIndex)
+	{
+		Assert::Plz(nIndex >= 0);
+		Assert::Plz(nIndex < m_nCharLength);
+
+		int i;
+		unsigned char* p = (unsigned char*)m_szBuffer;
+		for (i = 0; i < nIndex; i++)
+			p += GetUtf8CharSize((*p));
+		return DecodeChar(p);
+	}
+
+	void InternalString::BlobWriteUtf8(BlobView* pBlobView, bool bZeroTerminator)
+	{
+		unsigned char* p = (unsigned char*)m_szBuffer;
+		pBlobView->PackData(p, m_nByteLength);
+		if (bZeroTerminator)
+			pBlobView->PackUint8(0);
+	}
+
+	void InternalString::BlobWrite16Bit(BlobView* pBlobView, bool bZeroTerminator)
+	{
+		int i;
+		unsigned char* p = (unsigned char*)m_szBuffer;
+		for (i = 0; i < m_nCharLength; i++)
+		{
+			pBlobView->PackUint16(DecodeChar(p));
+			p += GetUtf8CharSize(p[0]);
+		}
+		if (bZeroTerminator)
+			pBlobView->PackUint16(0);
+	}
+
+	bool InternalString::IsAscii()
+	{
+		return m_nCharLength == m_nByteLength;
+	}
+
+	bool InternalString::IsEqual(const char* szCompare)
+	{
+		return strcmp(m_szBuffer, szCompare) == 0;
+	}
+
+	bool InternalString::StartsWith(const char* szString)
+	{
+		int nCharLength;
+		int nByteLength;
+		GetUtf8Length(szString, &nCharLength, &nByteLength);
+
+		if (nByteLength <= m_nByteLength)
+			if (memcmp(szString, m_szBuffer, nByteLength) == 0)
+				return true;
+		return false;
+	}
+
+	bool InternalString::EndsWith(const char* szString)
+	{
+		int nCharLength;
+		int nByteLength;
+		GetUtf8Length(szString, &nCharLength, &nByteLength);
+
+		if (nByteLength <= m_nByteLength)
+			if (memcmp(szString, m_szBuffer + m_nByteLength - nByteLength, nByteLength) == 0)
+				return true;
+		return false;
+	}
+
+	double InternalString::ParseDouble()
+	{
+		double fTemp = 0.0f;
+		sscanf(m_szBuffer, "%lf", &fTemp);
+		return fTemp;
+	}
+
+	unsigned int InternalString::ParseHex()
+	{
+		unsigned int nTemp;
+		sscanf(m_szBuffer, "%x", &nTemp);
+		return nTemp;
+	}
+
+	int InternalString::FindChar(unsigned short nChar)
+	{
+		int nIndex = 0;
+		unsigned char* p = (unsigned char*)m_szBuffer;
+		while (nIndex < m_nCharLength)
+		{
+			unsigned short nTestChar = DecodeChar(p);
+			if (nTestChar == nChar)
+				return nIndex;
+			p += GetUtf8CharSize((*p));
+			nIndex++;
+		}
+		return -1;
+	}
+
+	// probably broken...
+	void InternalString::Replace(const char* sxFind, const char* sxReplace)
+	{
+		InternalString* sFind = new InternalString(sxFind);
+		InternalString* sReplace = new InternalString(sxReplace);
+		int nByteLengthDelta = sReplace->m_nByteLength - sFind->m_nByteLength;
+		int nCharLengthDelta = sReplace->m_nCharLength - sFind->m_nCharLength;
+
+		int nOffset = 0;
+		while (true)
+		{
+			if (nOffset + sFind->m_nByteLength > m_nByteLength)
+			{
+				delete sFind;
+				delete sReplace;
+				return;
+			}
+
+			unsigned char c = m_szBuffer[nOffset];
+			if (c == 0)
+				break;
+
+			if (memcmp(m_szBuffer + nOffset, sFind->m_szBuffer, sFind->m_nByteLength) == 0)
+			{
+				if (nByteLengthDelta > 0)
+					Resize(m_nByteLength + nByteLengthDelta);
+
+				int nFrom = nOffset + sFind->m_nByteLength;
+				int nTo = nFrom + nByteLengthDelta;
+				int nRemain = m_nByteLength - nFrom + 1;
+				if (nRemain < 1)
+					nRemain = 1;
+				memmove(m_szBuffer+nTo, m_szBuffer+nFrom, nRemain);
+				memcpy(m_szBuffer + nOffset, sReplace->m_szBuffer, sReplace->m_nByteLength);
+
+				m_nByteLength += nByteLengthDelta;
+				nCharLengthDelta += nCharLengthDelta;
+
+				nOffset = nTo;
+				continue;
+			}
+
+			nOffset += GetUtf8CharSize(c);
+		}
+
+		delete sFind;
+		delete sReplace;
+	}
+
+	void InternalString::Resize(int nSize)
+	{
+		Assert::Plz(nSize < 1024 * 1024 * 100);
+		nSize++;
+		if (m_nBufferSize < nSize)
+		{
+			nSize *= 2;
+			char* szTemp = new char[nSize];
+			if (m_szBuffer)
+			{
+				memcpy(szTemp, m_szBuffer, m_nBufferSize);
+				delete [] 
+				m_szBuffer;
+			}
 			m_szBuffer = szTemp;
-		}
-
-		/*void InternalString :: CropBack(int nLength)
-		   {
-			CLIFFY_ASSERT(nLength <= m_nCharLength);
-			SubStr(0, m_nCharLength - nLength);
-		   }*/
-
-		void InternalString::CropFront(int nLength)
-		{
-			CLIFFY_ASSERT(nLength >= 0);
-			CLIFFY_ASSERT(nLength <= m_nCharLength);
-
-			int i;
-			unsigned char* p = (unsigned char*)m_szBuffer;
-			for (i = 0; i < nLength; i++)
-				p += GetUtf8CharSize((*p));
-
-			m_nByteLength -= (int)(p - (unsigned char*)m_szBuffer);
-			m_nCharLength -= nLength;
-
-			memmove(m_szBuffer, p, m_nByteLength);
-			m_szBuffer[m_nByteLength] = 0;
-		}
-
-		int InternalString::GetLength()
-		{
-			return m_nCharLength;
-		}
-
-		unsigned short InternalString::GetChar(int nIndex)
-		{
-			CLIFFY_ASSERT(nIndex >= 0);
-			CLIFFY_ASSERT(nIndex < m_nCharLength);
-
-			int i;
-			unsigned char* p = (unsigned char*)m_szBuffer;
-			for (i = 0; i < nIndex; i++)
-				p += GetUtf8CharSize((*p));
-			return DecodeChar(p);
-		}
-
-		void InternalString::BlobWriteUtf8(BlobView* pBlobView, bool bZeroTerminator)
-		{
-			unsigned char* p = (unsigned char*)m_szBuffer;
-			pBlobView->PackData(p, m_nByteLength);
-			if (bZeroTerminator)
-				pBlobView->PackUint8(0);
-		}
-
-		void InternalString::BlobWrite16Bit(BlobView* pBlobView, bool bZeroTerminator)
-		{
-			int i;
-			unsigned char* p = (unsigned char*)m_szBuffer;
-			for (i = 0; i < m_nCharLength; i++)
-			{
-				pBlobView->PackUint16(DecodeChar(p));
-				p += GetUtf8CharSize(p[0]);
-			}
-			if (bZeroTerminator)
-				pBlobView->PackUint16(0);
-		}
-
-		bool InternalString::IsAscii()
-		{
-			return m_nCharLength == m_nByteLength;
-		}
-
-		bool InternalString::IsEqual(const char* szCompare)
-		{
-			return strcmp(m_szBuffer, szCompare) == 0;
-		}
-
-		bool InternalString::StartsWith(const char* szString)
-		{
-			int nCharLength;
-			int nByteLength;
-			GetUtf8Length(szString, &nCharLength, &nByteLength);
-
-			if (nByteLength <= m_nByteLength)
-				if (memcmp(szString, m_szBuffer, nByteLength) == 0)
-					return true;
-			return false;
-		}
-
-		bool InternalString::EndsWith(const char* szString)
-		{
-			int nCharLength;
-			int nByteLength;
-			GetUtf8Length(szString, &nCharLength, &nByteLength);
-
-			if (nByteLength <= m_nByteLength)
-				if (memcmp(szString, m_szBuffer + m_nByteLength - nByteLength, nByteLength) == 0)
-					return true;
-			return false;
-		}
-
-		double InternalString::ParseDouble()
-		{
-			double fTemp = 0.0f;
-			sscanf(m_szBuffer, "%lf", &fTemp);
-			return fTemp;
-		}
-
-		unsigned int InternalString::ParseHex()
-		{
-			unsigned int nTemp;
-			sscanf(m_szBuffer, "%x", &nTemp);
-			return nTemp;
-		}
-
-		int InternalString::FindChar(unsigned short nChar)
-		{
-			int nIndex = 0;
-			unsigned char* p = (unsigned char*)m_szBuffer;
-			while (nIndex < m_nCharLength)
-			{
-				unsigned short nTestChar = DecodeChar(p);
-				if (nTestChar == nChar)
-					return nIndex;
-				p += GetUtf8CharSize((*p));
-				nIndex++;
-			}
-			return -1;
-		}
-
-		// probably broken...
-		void InternalString::Replace(const char* sxFind, const char* sxReplace)
-		{
-			InternalString* sFind = new InternalString(sxFind);
-			InternalString* sReplace = new InternalString(sxReplace);
-			int nByteLengthDelta = sReplace->m_nByteLength - sFind->m_nByteLength;
-			int nCharLengthDelta = sReplace->m_nCharLength - sFind->m_nCharLength;
-
-			int nOffset = 0;
-			while (true)
-			{
-				if (nOffset + sFind->m_nByteLength > m_nByteLength)
-				{
-					delete sFind;
-					delete sReplace;
-					return;
-				}
-
-				unsigned char c = m_szBuffer[nOffset];
-				if (c == 0)
-					break;
-
-				if (memcmp(m_szBuffer + nOffset, sFind->m_szBuffer, sFind->m_nByteLength) == 0)
-				{
-					if (nByteLengthDelta > 0)
-						Resize(m_nByteLength + nByteLengthDelta);
-
-					int nFrom = nOffset + sFind->m_nByteLength;
-					int nTo = nFrom + nByteLengthDelta;
-					int nRemain = m_nByteLength - nFrom + 1;
-					if (nRemain < 1)
-						nRemain = 1;
-					memmove(m_szBuffer+nTo, m_szBuffer+nFrom, nRemain);
-					memcpy(m_szBuffer + nOffset, sReplace->m_szBuffer, sReplace->m_nByteLength);
-
-					m_nByteLength += nByteLengthDelta;
-					nCharLengthDelta += nCharLengthDelta;
-
-					nOffset = nTo;
-					continue;
-				}
-
-				nOffset += GetUtf8CharSize(c);
-			}
-
-			delete sFind;
-			delete sReplace;
-		}
-
-		void InternalString::Resize(int nSize)
-		{
-			CLIFFY_ASSERT(nSize < 1024 * 1024 * 100);
-			nSize++;
-			if (m_nBufferSize < nSize)
-			{
-				nSize *= 2;
-				char* szTemp = new char[nSize];
-				if (m_szBuffer)
-				{
-					memcpy(szTemp, m_szBuffer, m_nBufferSize);
-					delete [] 
-					m_szBuffer;
-				}
-				m_szBuffer = szTemp;
-				m_nBufferSize = nSize;
-			}
-		}
-
-		int InternalString::GetCharSize(unsigned short nChar)
-		{
-			if (nChar <= 0x7F)
-				return 1;
-			if (nChar <= 0x7FF)
-				return 2;
-			if (nChar <= 0xFFFF)
-				return 3;
-
-			/*if (nChar <= 0x1FFFFF)
-			   {
-				Resize(m_nByteLength+4);
-				m_nCharLength++;
-				m_szBuffer[m_nByteLength++] = 0xF0 | ((nChar >> 18) & 0xFF);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
-				m_szBuffer[m_nByteLength] = 0;
-				return;
-			   }
-
-			   if (nChar <= 0x3FFFFFF)
-			   {
-				Resize(m_nByteLength+5);
-				m_nCharLength++;
-				m_szBuffer[m_nByteLength++] = 0xF8 | ((nChar >> 24) & 0xFF);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 18) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
-				m_szBuffer[m_nByteLength] = 0;
-				return;
-			   }
-
-			   if (nChar <= 0x7FFFFFFF)
-			   {
-				Resize(m_nByteLength+6);
-				m_nCharLength++;
-				m_szBuffer[m_nByteLength++] = 0xFC | ((nChar >> 30) & 0xFF);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 24) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 18) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
-				m_szBuffer[m_nByteLength] = 0;
-				return;
-			   }*/
-
-			CLIFFY_ASSERT(false);
-			return 0;
-		}
-
-		int InternalString::GetUtf8CharSize(unsigned char cLeadChar)
-		{
-			if (cLeadChar < 128)
-				return 1;
-			if (cLeadChar < 234)
-				return 2;
-			if (cLeadChar < 240)
-				return 3;
-			return 4;
-		}
-
-		bool InternalString::GetUtf8Length(const char* szString, int* pCharLength, int* pByteLength)
-		{
-			const char* p = szString;
-			(*pCharLength) = 0;
-			(*pByteLength) = 0;
-
-			while (true)
-			{
-				unsigned char c = p[(*pByteLength)];
-
-				if (c == 0)
-					break;
-
-				int nCharSize = GetUtf8CharSize(c);
-				(*pCharLength)++;
-				(*pByteLength) += nCharSize;
-			}
-
-			return true;
-		}
-
-		unsigned short InternalString::DecodeChar(unsigned char* pUtf8Char)
-		{
-			if (pUtf8Char[0] <= 0x7F)
-				return pUtf8Char[0];
-
-			if ((pUtf8Char[0] & 0xE0) == 0xC0)	// 110xxxxx
-			{
-				if ((pUtf8Char[1] & 0xC0) != 0x80)	// 10xxxxxx
-					return 0;
-				return (((unsigned short)(pUtf8Char[0] & 0x1F)) << 6) + (pUtf8Char[1] & 0x3F);
-			}
-
-			if ((pUtf8Char[0] & 0xF0) == 0xE0)	// 1110xxxx
-			{
-				if ((pUtf8Char[1] & 0xC0) != 0x80)	// 10xxxxxx
-					return 0;
-				if ((pUtf8Char[2] & 0xC0) != 0x80)	// 10xxxxxx
-					return 0;
-
-				// untested
-				return (((unsigned short)(pUtf8Char[0] & 0x1F)) << 12) + (((unsigned short)(pUtf8Char[1] & 0x3F)) << 6) + (pUtf8Char[2] & 0x3F);
-			}
-
-			//printf("%04X - %s\n", pUtf8Char[0], pUtf8Char);
-			CLIFFY_ASSERT(false);
-
-			return 0;
-		}
-
-		int InternalString::EncodeChar(unsigned short nChar, unsigned char* pBuffer)
-		{
-			if (nChar <= 0x7F)
-			{
-				pBuffer[0] = (unsigned char)nChar;
-				return 1;
-			}
-
-			if (nChar <= 0x7FF)
-			{
-				pBuffer[0] = 0xC0 | ((nChar >> 6) & 0xFF);
-				pBuffer[1] = 0x80 | ((nChar >> 0) & 0x3F);
-				return 2;
-			}
-
-			if (nChar <= 0xFFFF)
-			{
-				pBuffer[0] = 0xE0 | ((nChar >> 12) & 0xFF);
-				pBuffer[1] = 0x80 | ((nChar >> 6) & 0x3F);
-				pBuffer[2] = 0x80 | ((nChar >> 0) & 0x3F);
-				return 3;
-			}
-
-			/*if (nChar <= 0x1FFFFF)
-			   {
-				Resize(m_nByteLength+4);
-				m_nCharLength++;
-				m_szBuffer[m_nByteLength++] = 0xF0 | ((nChar >> 18) & 0xFF);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
-				m_szBuffer[m_nByteLength] = 0;
-				return;
-			   }
-
-			   if (nChar <= 0x3FFFFFF)
-			   {
-				Resize(m_nByteLength+5);
-				m_nCharLength++;
-				m_szBuffer[m_nByteLength++] = 0xF8 | ((nChar >> 24) & 0xFF);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 18) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
-				m_szBuffer[m_nByteLength] = 0;
-				return;
-			   }
-
-			   if (nChar <= 0x7FFFFFFF)
-			   {
-				Resize(m_nByteLength+6);
-				m_nCharLength++;
-				m_szBuffer[m_nByteLength++] = 0xFC | ((nChar >> 30) & 0xFF);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 24) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 18) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
-				m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
-				m_szBuffer[m_nByteLength] = 0;
-				return;
-			   }*/
-
-			CLIFFY_ASSERT(false);
-			return 0;
+			m_nBufferSize = nSize;
 		}
 	}
-}
+
+	int InternalString::GetCharSize(unsigned short nChar)
+	{
+		if (nChar <= 0x7F)
+			return 1;
+		if (nChar <= 0x7FF)
+			return 2;
+		if (nChar <= 0xFFFF)
+			return 3;
+
+		/*if (nChar <= 0x1FFFFF)
+			{
+			Resize(m_nByteLength+4);
+			m_nCharLength++;
+			m_szBuffer[m_nByteLength++] = 0xF0 | ((nChar >> 18) & 0xFF);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
+			m_szBuffer[m_nByteLength] = 0;
+			return;
+			}
+
+			if (nChar <= 0x3FFFFFF)
+			{
+			Resize(m_nByteLength+5);
+			m_nCharLength++;
+			m_szBuffer[m_nByteLength++] = 0xF8 | ((nChar >> 24) & 0xFF);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 18) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
+			m_szBuffer[m_nByteLength] = 0;
+			return;
+			}
+
+			if (nChar <= 0x7FFFFFFF)
+			{
+			Resize(m_nByteLength+6);
+			m_nCharLength++;
+			m_szBuffer[m_nByteLength++] = 0xFC | ((nChar >> 30) & 0xFF);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 24) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 18) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
+			m_szBuffer[m_nByteLength] = 0;
+			return;
+			}*/
+
+		Assert::Plz(false);
+		return 0;
+	}
+
+	int InternalString::GetUtf8CharSize(unsigned char cLeadChar)
+	{
+		if (cLeadChar < 128)
+			return 1;
+		if (cLeadChar < 234)
+			return 2;
+		if (cLeadChar < 240)
+			return 3;
+		return 4;
+	}
+
+	bool InternalString::GetUtf8Length(const char* szString, int* pCharLength, int* pByteLength)
+	{
+		const char* p = szString;
+		(*pCharLength) = 0;
+		(*pByteLength) = 0;
+
+		while (true)
+		{
+			unsigned char c = p[(*pByteLength)];
+
+			if (c == 0)
+				break;
+
+			int nCharSize = GetUtf8CharSize(c);
+			(*pCharLength)++;
+			(*pByteLength) += nCharSize;
+		}
+
+		return true;
+	}
+
+	unsigned short InternalString::DecodeChar(unsigned char* pUtf8Char)
+	{
+		if (pUtf8Char[0] <= 0x7F)
+			return pUtf8Char[0];
+
+		if ((pUtf8Char[0] & 0xE0) == 0xC0)	// 110xxxxx
+		{
+			if ((pUtf8Char[1] & 0xC0) != 0x80)	// 10xxxxxx
+				return 0;
+			return (((unsigned short)(pUtf8Char[0] & 0x1F)) << 6) + (pUtf8Char[1] & 0x3F);
+		}
+
+		if ((pUtf8Char[0] & 0xF0) == 0xE0)	// 1110xxxx
+		{
+			if ((pUtf8Char[1] & 0xC0) != 0x80)	// 10xxxxxx
+				return 0;
+			if ((pUtf8Char[2] & 0xC0) != 0x80)	// 10xxxxxx
+				return 0;
+
+			// untested
+			return (((unsigned short)(pUtf8Char[0] & 0x1F)) << 12) + (((unsigned short)(pUtf8Char[1] & 0x3F)) << 6) + (pUtf8Char[2] & 0x3F);
+		}
+
+		//printf("%04X - %s\n", pUtf8Char[0], pUtf8Char);
+		Assert::Plz(false);
+
+		return 0;
+	}
+
+	int InternalString::EncodeChar(unsigned short nChar, unsigned char* pBuffer)
+	{
+		if (nChar <= 0x7F)
+		{
+			pBuffer[0] = (unsigned char)nChar;
+			return 1;
+		}
+
+		if (nChar <= 0x7FF)
+		{
+			pBuffer[0] = 0xC0 | ((nChar >> 6) & 0xFF);
+			pBuffer[1] = 0x80 | ((nChar >> 0) & 0x3F);
+			return 2;
+		}
+
+		if (nChar <= 0xFFFF)
+		{
+			pBuffer[0] = 0xE0 | ((nChar >> 12) & 0xFF);
+			pBuffer[1] = 0x80 | ((nChar >> 6) & 0x3F);
+			pBuffer[2] = 0x80 | ((nChar >> 0) & 0x3F);
+			return 3;
+		}
+
+		/*if (nChar <= 0x1FFFFF)
+			{
+			Resize(m_nByteLength+4);
+			m_nCharLength++;
+			m_szBuffer[m_nByteLength++] = 0xF0 | ((nChar >> 18) & 0xFF);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
+			m_szBuffer[m_nByteLength] = 0;
+			return;
+			}
+
+			if (nChar <= 0x3FFFFFF)
+			{
+			Resize(m_nByteLength+5);
+			m_nCharLength++;
+			m_szBuffer[m_nByteLength++] = 0xF8 | ((nChar >> 24) & 0xFF);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 18) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
+			m_szBuffer[m_nByteLength] = 0;
+			return;
+			}
+
+			if (nChar <= 0x7FFFFFFF)
+			{
+			Resize(m_nByteLength+6);
+			m_nCharLength++;
+			m_szBuffer[m_nByteLength++] = 0xFC | ((nChar >> 30) & 0xFF);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 24) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 18) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 12) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 6) & 0x3F);
+			m_szBuffer[m_nByteLength++] = 0x80 | ((nChar >> 0) & 0x3F);
+			m_szBuffer[m_nByteLength] = 0;
+			return;
+			}*/
+
+		Assert::Plz(false);
+		return 0;
+	}
+}}
+
 
 
 
 
 #include <math.h>
 
-namespace NumberDuck
+namespace NumberDuck { namespace Secret
 {
-	namespace Secret
+	double Utils::Pow(double fBase, double fExponent)
 	{
-		double Utils::Pow(double fBase, double fExponent)
-		{
-			return pow(fBase, fExponent);
-		}
-
-		double Utils::ByteConvertUint64ToDouble(uint64_t nValue)
-		{
-			return *(double*)(&nValue);
-		}
-
-		int32_t Utils::ByteConvertUint32ToInt32(uint32_t nValue)
-		{
-			return *(int32_t*)(&nValue);
-		}
-
-		uint32_t Utils::ByteConvertInt32ToUint32(int32_t nValue)
-		{
-			return *(uint32_t*)(&nValue);
-		}
-
-		void Utils::Indent(int nTabDepth, InternalString* sOut)
-		{
-			int i;
-			for (i = 0; i < nTabDepth; i++)
-				sOut->AppendChar('\t');
-		}
+		return pow(fBase, fExponent);
 	}
-}
+
+	double Utils::ByteConvertUint64ToDouble(uint64_t nValue)
+	{
+		return *(double*)(&nValue);
+	}
+
+	int32_t Utils::ByteConvertUint32ToInt32(uint32_t nValue)
+	{
+		return *(int32_t*)(&nValue);
+	}
+
+	uint32_t Utils::ByteConvertInt32ToUint32(int32_t nValue)
+	{
+		return *(uint32_t*)(&nValue);
+	}
+
+	void Utils::Indent(int nTabDepth, InternalString* sOut)
+	{
+		int i;
+		for (i = 0; i < nTabDepth; i++)
+			sOut->AppendChar('\t');
+	}
+}}
+
 
 /*
 Original code by Lee Thomason (www.grinninglizard.com)
@@ -16317,107 +17014,172 @@ bool XMLPrinter::Visit( const XMLUnknown& unknown )
 
 
 
-namespace NumberDuck
+namespace NumberDuck { namespace Secret
 {
-	namespace Secret
+	XmlNode::XmlNode(tinyxml2::XMLNode* pNode, XmlNode* pParent)
 	{
-		XmlNode::XmlNode(tinyxml2::XMLNode* pNode, XmlNode* pParent)
-		{
-			m_pNode = pNode;
-			m_pParent = pParent;
-			m_pChildNodeVector = new Vector<XmlNode*>();
-		}
+		m_pNode = pNode;
+		m_pParent = pParent;
+		m_pChildNodeVector = new Vector<XmlNode*>();
+	}
 
-		XmlNode::~XmlNode()
-		{
-			while (m_pChildNodeVector->GetSize())
-				delete m_pChildNodeVector->PopBack();
-			delete m_pChildNodeVector;
-		}
+	XmlNode::~XmlNode()
+	{
+		while (m_pChildNodeVector->GetSize())
+			delete m_pChildNodeVector->PopBack();
+		delete m_pChildNodeVector;
+	}
 
-		XmlNode* XmlNode::GetFirstChildElement(const char* szName)
-		{
-			tinyxml2::XMLElement* pTemp = m_pNode->FirstChildElement(szName);
-			if (!pTemp)
-				return NULL;
-
-			XmlNode* pChildNode = new XmlNode(pTemp, this);
-			m_pChildNodeVector->PushBack(pChildNode);
-			return pChildNode;
-		}
-
-		// super fucking hax
-		XmlNode* XmlNode::GetNextSiblingElement(const char* szName)
-		{
-			tinyxml2::XMLElement* pTemp = m_pNode->NextSiblingElement(szName);
-			if (!pTemp)
-				return NULL;
-
-			XmlNode* pSiblingNode = new XmlNode(pTemp, m_pParent);
-			m_pParent->m_pChildNodeVector->PushBack(pSiblingNode);
-			return pSiblingNode;
-		}
-
-		const char* XmlNode::GetValue()
-		{
-			return m_pNode->Value();
-		}
-
-		const char* XmlNode::GetText()
-		{
-			tinyxml2::XMLElement* pElement = m_pNode->ToElement();
-			if (pElement)
-				return pElement->GetText();
+	XmlNode* XmlNode::GetFirstChildElement(const char* szName)
+	{
+		tinyxml2::XMLElement* pTemp = m_pNode->FirstChildElement(szName);
+		if (!pTemp)
 			return NULL;
-		}
 
-		const char* XmlNode::GetAttribute(const char* szName)
-		{
-			tinyxml2::XMLElement* pElement = m_pNode->ToElement();
-			if (pElement)
-				return pElement->Attribute(szName);
+		XmlNode* pChildNode = new XmlNode(pTemp, this);
+		m_pChildNodeVector->PushBack(pChildNode);
+		return pChildNode;
+	}
+
+	// super fucking hax
+	XmlNode* XmlNode::GetNextSiblingElement(const char* szName)
+	{
+		tinyxml2::XMLElement* pTemp = m_pNode->NextSiblingElement(szName);
+		if (!pTemp)
 			return NULL;
-		}
 
-		XmlFile::XmlFile() : XmlNode(NULL, NULL)
+		XmlNode* pSiblingNode = new XmlNode(pTemp, m_pParent);
+		m_pParent->m_pChildNodeVector->PushBack(pSiblingNode);
+		return pSiblingNode;
+	}
+
+	const char* XmlNode::GetValue()
+	{
+		return m_pNode->Value();
+	}
+
+	const char* XmlNode::GetText()
+	{
+		tinyxml2::XMLElement* pElement = m_pNode->ToElement();
+		if (pElement)
+			return pElement->GetText();
+		return NULL;
+	}
+
+	const char* XmlNode::GetAttribute(const char* szName)
+	{
+		tinyxml2::XMLElement* pElement = m_pNode->ToElement();
+		if (pElement)
+			return pElement->Attribute(szName);
+		return NULL;
+	}
+
+	void XmlNode::SetAttribute(const char* szName, const char* szValue)
+	{
+		tinyxml2::XMLElement* pElement = m_pNode ? m_pNode->ToElement() : NULL;
+		if (pElement)
 		{
-			m_pDocument = NULL;
-		}
-
-		XmlFile::~XmlFile()
-		{
-			Cleanup();
-		}
-
-		bool XmlFile::Load(BlobView* pBlobView)
-		{
-			const char* szRawXml = (const char*)(pBlobView->GetBlob()->GetData() + pBlobView->GetStart() + pBlobView->GetOffset());
-			size_t nSize = (size_t)(pBlobView->GetSize() - pBlobView->GetOffset());
-			tinyxml2::XMLError error;
-
-			Cleanup();
-
-			m_pDocument = new tinyxml2::XMLDocument();
-			error = m_pDocument->Parse(szRawXml, nSize);
-			if (error != tinyxml2::XML_SUCCESS)
-			{
-				Cleanup();
-				return false;
-			}
-
-			m_pNode = m_pDocument;
-
-			return true;
-		}
-
-		void XmlFile::Cleanup()
-		{
-			if (m_pDocument)
-			{
-				delete m_pDocument;
-			}
+			pElement->SetAttribute(szName, szValue);
 		}
 	}
+
+	void XmlNode::SetText(const char* szText)
+	{
+		tinyxml2::XMLElement* pElement = m_pNode ? m_pNode->ToElement() : NULL;
+		if (pElement)
+		{
+			pElement->SetText(szText);
+		}
+	}
+
+	void XmlNode::AppendChild(XmlNode* pChild)
+	{
+		if (pChild && pChild->m_pNode && m_pNode)
+		{
+			m_pNode->InsertEndChild(pChild->m_pNode);
+		}
+	}
+
+	XmlFile::XmlFile() : XmlNode(NULL, NULL)
+	{
+		m_pDocument = new tinyxml2::XMLDocument();
+		m_pNode = m_pDocument;
+	}
+
+	XmlFile::~XmlFile()
+	{
+		Cleanup();
+	}
+
+	bool XmlFile::Load(BlobView* pBlobView)
+	{
+		const char* szRawXml = (const char*)(pBlobView->GetBlob()->GetData() + pBlobView->GetStart() + pBlobView->GetOffset());
+		size_t nSize = (size_t)(pBlobView->GetSize() - pBlobView->GetOffset());
+		tinyxml2::XMLError error;
+
+		Cleanup();
+
+		m_pDocument = new tinyxml2::XMLDocument();
+		error = m_pDocument->Parse(szRawXml, nSize);
+		if (error != tinyxml2::XML_SUCCESS)
+		{
+			Cleanup();
+			return false;
+		}
+
+		m_pNode = m_pDocument;
+
+		return true;
+	}
+
+	bool XmlFile::Save(BlobView* pBlobView)
+	{
+		if (!m_pDocument)
+			return false;
+
+		// Create a memory buffer to hold the XML
+		tinyxml2::XMLPrinter printer;
+		m_pDocument->Print(&printer);
+		
+		const char* szXml = printer.CStr();
+		int nSize = (int)strlen(szXml);
+		
+		// Ensure the blob has enough space
+		if (pBlobView->GetBlob()->GetSize() < pBlobView->GetStart() + nSize)
+		{
+			pBlobView->GetBlob()->Resize(pBlobView->GetStart() + nSize, true);
+		}
+		
+		// Copy the XML data to the blob
+		memcpy(pBlobView->GetBlob()->GetData() + pBlobView->GetStart(), szXml, nSize);
+		
+		return true;
+	}
+
+	void XmlFile::Cleanup()
+	{
+		if (m_pDocument)
+		{
+			delete m_pDocument;
+			m_pDocument = NULL;
+			m_pNode = NULL;
+		}
+	}
+
+	XmlNode* XmlFile::CreateElement(const char* szName)
+	{
+		if (!m_pDocument)
+			return NULL;
+
+		tinyxml2::XMLElement* pNewElement = m_pDocument->NewElement(szName);
+		if (!pNewElement)
+			return NULL;
+
+		XmlNode* pNewNode = new XmlNode(pNewElement, this);
+		m_pChildNodeVector->PushBack(pNewNode);
+		return pNewNode;
+	}
+}
 }
 
 
@@ -24261,159 +25023,349 @@ mz_bool mz_zip_end(mz_zip_archive *pZip)
 
 
 
-namespace NumberDuck
+namespace NumberDuck { namespace Secret
 {
-	namespace Secret
+	ZipFileInfo::ZipFileInfo()
 	{
-		ZipFileInfo::ZipFileInfo()
-		{
-			m_pFileStat = new mz_zip_archive_file_stat();
-		}
+		m_pFileStat = new mz_zip_archive_file_stat();
+	}
 
-		ZipFileInfo::~ZipFileInfo()
-		{
-			delete m_pFileStat;
-		}
+	ZipFileInfo::~ZipFileInfo()
+	{
+		delete m_pFileStat;
+	}
 
-		const char* ZipFileInfo::GetFileName()
-		{
-			return m_pFileStat->m_filename;
-		}
+	const char* ZipFileInfo::GetFileName()
+	{
+		return m_pFileStat->m_filename;
+	}
 
-		int ZipFileInfo::GetSize()
-		{
-			return (int)m_pFileStat->m_uncomp_size;
-		}
+	int ZipFileInfo::GetSize()
+	{
+		return (int)m_pFileStat->m_uncomp_size;
+	}
 
-		/*unsigned int ZipFileInfo :: GetCrc32()
-		   {
-			return (unsigned int)m_pFileStat->m_crc32;
-		   }*/
+	/*unsigned int ZipFileInfo :: GetCrc32()
+	   {
+		return (unsigned int)m_pFileStat->m_crc32;
+	   }*/
 
-		Zip::Zip()
-		{
-			m_pBlob = NULL;
-			m_pArchive = NULL;
-			m_pTempFileInfo = new ZipFileInfo();
-		}
+	Zip::Zip()
+	{
+		m_pBlob = NULL;
+		m_pArchive = NULL;
+		m_pTempFileInfo = new ZipFileInfo();
+	}
 
-		Zip::~Zip()
-		{
-			Cleanup();
-			delete m_pTempFileInfo;
-		}
+	Zip::~Zip()
+	{
+		Cleanup();
+		delete m_pTempFileInfo;
+	}
 
-		bool Zip::LoadBlobView(BlobView* pBlobView)
+	bool Zip::LoadBlobView(BlobView* pBlobView)
+	{
+		CleanupArchive();
+
+		mz_bool bResult;
+
+		m_pArchive = new mz_zip_archive();
+		mz_zip_zero_struct(m_pArchive);
+
+		bResult = mz_zip_reader_init_mem(m_pArchive, pBlobView->GetBlob()->GetData() + pBlobView->GetStart() + pBlobView->GetOffset(), pBlobView->GetSize() - pBlobView->GetOffset(), 0);
+
+		pBlobView->SetOffset(pBlobView->GetOffset() + (int)(m_pArchive->m_archive_size));
+
+		if (!bResult)
 		{
 			CleanupArchive();
+			return false;
+		}
 
+		return true;
+	}
+
+	bool Zip::LoadFile(const char* szFileName)
+	{
+		Cleanup();
+		m_pBlob = new Blob(false);
+
+		if (!m_pBlob->Load(szFileName) || !LoadBlobView(m_pBlob->GetBlobView()))
+		{
+			Cleanup();
+			return false;
+		}
+
+		return true;
+	}
+
+	bool Zip::SaveBlobView(BlobView* pBlobView)
+	{
+		// Create a separate archive for writing
+		mz_zip_archive writeArchive;
+		mz_zip_zero_struct(&writeArchive);
+		
+		// Initialize for writing to memory
+		if (!mz_zip_writer_init_heap(&writeArchive, 0, 0))
+		{
+			return false;
+		}
+
+		// Finalize the archive
+		void* pData = NULL;
+		size_t nSize = 0;
+		if (!mz_zip_writer_finalize_heap_archive(&writeArchive, &pData, &nSize))
+		{
+			mz_zip_writer_end(&writeArchive);
+			return false;
+		}
+
+		// Write the zip data to the blob view
+		pBlobView->PackData((uint8_t*)pData, (int)nSize);
+
+		// Clean up
+		mz_free(pData);
+		mz_zip_writer_end(&writeArchive);
+
+		return true;
+	}
+
+	int Zip::GetNumFile()
+	{
+		return mz_zip_reader_get_num_files(m_pArchive);
+	}
+
+	ZipFileInfo* Zip::GetFileInfo(int nIndex)
+	{
+		if (!mz_zip_reader_file_stat(m_pArchive, nIndex, m_pTempFileInfo->m_pFileStat))
+			return NULL;
+		return m_pTempFileInfo;
+	}
+
+	bool Zip::ExtractFileByIndex(int nIndex, BlobView* pOutBlobView)
+	{
+		// todo: write direct to blob instead of heap
+
+		size_t nSize = 0;
+		uint8_t* pData = (uint8_t*)mz_zip_reader_extract_to_heap(m_pArchive, nIndex, &nSize, 0);
+		if (!pData)
+			return false;
+
+		pOutBlobView->PackData(pData, (int)nSize);
+		pOutBlobView->SetOffset(0);
+
+		mz_free(pData);
+
+		return true;
+	}
+
+	bool Zip::ExtractFileByName(const char* szFileName, BlobView* pOutBlobView)
+	{
+		int nIndex = mz_zip_reader_locate_file(m_pArchive, szFileName, NULL, 0);
+		if (nIndex == -1)
+			return false;
+
+		return ExtractFileByIndex(nIndex, pOutBlobView);
+	}
+
+	bool Zip::ExtractFileByIndexToString(int nIndex, InternalString* sOut)
+	{
+		size_t nSize = 0;
+		uint8_t* pData = (uint8_t*)mz_zip_reader_extract_to_heap(m_pArchive, nIndex, &nSize, 0);
+		if (!pData)
+			return false;
+
+		sOut->AppendStringData(pData, (int)nSize);
+
+		mz_free(pData);
+
+		return true;
+	}
+
+	bool Zip::AddFileFromBlobView(const char* szFileName, BlobView* pBlobView)
+	{
+		// Create a separate archive for writing
+		mz_zip_archive writeArchive;
+		mz_zip_zero_struct(&writeArchive);
+		
+		// Initialize for writing to memory
+		if (!mz_zip_writer_init_heap(&writeArchive, 0, 0))
+		{
+			return false;
+		}
+
+		// Add the file from blob view
+		if (!mz_zip_writer_add_mem(&writeArchive, szFileName, 
+			pBlobView->GetBlob()->GetData() + pBlobView->GetStart() + pBlobView->GetOffset(), 
+			pBlobView->GetSize() - pBlobView->GetOffset(), MZ_DEFAULT_COMPRESSION))
+		{
+			mz_zip_writer_end(&writeArchive);
+			return false;
+		}
+
+		// Finalize the archive
+		void* pData = NULL;
+		size_t nSize = 0;
+		if (!mz_zip_writer_finalize_heap_archive(&writeArchive, &pData, &nSize))
+		{
+			mz_zip_writer_end(&writeArchive);
+			return false;
+		}
+
+		// Clean up the old archive if it exists
+		CleanupArchive();
+
+		// Create new archive for reading
+		m_pArchive = new mz_zip_archive();
+		mz_zip_zero_struct(m_pArchive);
+
+		// Initialize for reading from the new data
+		if (!mz_zip_reader_init_mem(m_pArchive, pData, nSize, 0))
+		{
+			mz_free(pData);
+			mz_zip_writer_end(&writeArchive);
+			CleanupArchive();
+			return false;
+		}
+
+		// Clean up
+		mz_free(pData);
+		mz_zip_writer_end(&writeArchive);
+
+		return true;
+	}
+
+	void Zip::CleanupArchive()
+	{
+		if (m_pArchive)
+		{
 			mz_bool bResult;
-
-			m_pArchive = new mz_zip_archive();
-			mz_zip_zero_struct(m_pArchive);
-
-			bResult = mz_zip_reader_init_mem(m_pArchive, pBlobView->GetBlob()->GetData() + pBlobView->GetStart() + pBlobView->GetOffset(), pBlobView->GetSize() - pBlobView->GetOffset(), 0);
-
-			pBlobView->SetOffset(pBlobView->GetOffset() + (int)(m_pArchive->m_archive_size));
-
-			if (!bResult)
-			{
-				CleanupArchive();
-				return false;
-			}
-
-			return true;
+			bResult = mz_zip_reader_end(m_pArchive);
+			Assert::Plz(bResult != 0);
+			delete m_pArchive;
+			m_pArchive = NULL;
 		}
+	}
 
-		bool Zip::LoadFile(const char* szFileName)
+	void Zip::Cleanup()
+	{
+		CleanupArchive();
+		if (m_pBlob)
 		{
-			Cleanup();
-			m_pBlob = new Blob(false);
-
-			if (!m_pBlob->Load(szFileName) || !LoadBlobView(m_pBlob->GetBlobView()))
-			{
-				Cleanup();
-				return false;
-			}
-
-			return true;
-		}
-
-		int Zip::GetNumFile()
-		{
-			return mz_zip_reader_get_num_files(m_pArchive);
-		}
-
-		ZipFileInfo* Zip::GetFileInfo(int nIndex)
-		{
-			if (!mz_zip_reader_file_stat(m_pArchive, nIndex, m_pTempFileInfo->m_pFileStat))
-				return NULL;
-			return m_pTempFileInfo;
-		}
-
-		bool Zip::ExtractFileByIndex(int nIndex, BlobView* pOutBlobView)
-		{
-			// todo: write direct to blob instead of heap
-
-			size_t nSize = 0;
-			uint8_t* pData = (uint8_t*)mz_zip_reader_extract_to_heap(m_pArchive, nIndex, &nSize, 0);
-			if (!pData)
-				return false;
-
-			pOutBlobView->PackData(pData, (int)nSize);
-			pOutBlobView->SetOffset(0);
-
-			mz_free(pData);
-
-			return true;
-		}
-
-		bool Zip::ExtractFileByName(const char* szFileName, BlobView* pOutBlobView)
-		{
-			int nIndex = mz_zip_reader_locate_file(m_pArchive, szFileName, NULL, 0);
-			if (nIndex == -1)
-				return false;
-
-			return ExtractFileByIndex(nIndex, pOutBlobView);
-		}
-
-		bool Zip::ExtractFileByIndexToString(int nIndex, InternalString* sOut)
-		{
-			size_t nSize = 0;
-			uint8_t* pData = (uint8_t*)mz_zip_reader_extract_to_heap(m_pArchive, nIndex, &nSize, 0);
-			if (!pData)
-				return false;
-
-			sOut->AppendStringData(pData, (int)nSize);
-
-			mz_free(pData);
-
-			return true;
-		}
-
-		void Zip::CleanupArchive()
-		{
-			if (m_pArchive)
-			{
-				mz_bool bResult;
-				bResult = mz_zip_reader_end(m_pArchive);
-				CLIFFY_ASSERT(bResult);
-				delete m_pArchive;
-				m_pArchive = NULL;
-			}
-		}
-
-		void Zip::Cleanup()
-		{
-			CleanupArchive();
-			if (m_pBlob)
-			{
-				delete m_pBlob;
-				m_pBlob = NULL;
-			}
+			delete m_pBlob;
+			m_pBlob = NULL;
 		}
 	}
 }
+}
+
+
+
+
+
+
+
+
+namespace NumberDuck { namespace Secret
+{
+    ZipEntry::ZipEntry(const char* szFileName, Blob* pBlob)
+	{
+		sFileName = new InternalString(szFileName);
+		this->pBlob = pBlob;
+	}
+
+	ZipEntry::~ZipEntry()
+	{
+		delete sFileName;
+		delete pBlob;
+	}
+
+	ZipWriter::ZipWriter()
+	{
+		m_pZipEntryVector = new Vector<ZipEntry*>();
+	}
+
+	ZipWriter::~ZipWriter()
+	{
+		while (m_pZipEntryVector->GetSize() > 0)
+		{
+			ZipEntry* pEntry = m_pZipEntryVector->PopBack();
+			delete pEntry;
+		}
+		delete m_pZipEntryVector;
+	}
+
+	bool ZipWriter::AddFileFromBlob(const char* szFileName, Blob* pBlob)
+	{
+		try
+		{
+			ZipEntry* pEntry = new ZipEntry(szFileName, pBlob);
+			m_pZipEntryVector->PushBack(pEntry);
+			return true;
+		}
+		catch (...)
+		{
+			return false;
+		}
+	}
+
+	bool ZipWriter::SaveBlobView(BlobView* pBlobView)
+	{
+		try
+		{
+			// Create a zip archive for writing to memory
+			mz_zip_archive zipArchive;
+			mz_zip_zero_struct(&zipArchive);
+			
+			// Initialize for writing to memory
+			if (!mz_zip_writer_init_heap(&zipArchive, 0, 0))
+			{
+				return false;
+			}
+
+			// Add all files to the zip archive
+			for (int i = 0; i < m_pZipEntryVector->GetSize(); i++)
+			{
+				ZipEntry* pEntry = m_pZipEntryVector->Get(i);
+				BlobView* pEntryBlobView = pEntry->pBlob->GetBlobView();
+				
+				pEntryBlobView->SetOffset(0);
+				
+				if (!mz_zip_writer_add_mem(&zipArchive, 
+					pEntry->sFileName->GetExternalString(),
+					pEntry->pBlob->GetData() + pEntryBlobView->GetStart() + pEntryBlobView->GetOffset(),
+					pEntryBlobView->GetSize() - pEntryBlobView->GetOffset(),
+					MZ_DEFAULT_COMPRESSION))
+				{
+					mz_zip_writer_end(&zipArchive);
+					return false;
+				}
+			}
+
+			// Finalize the archive
+			void* pData = NULL;
+			size_t nSize = 0;
+			if (!mz_zip_writer_finalize_heap_archive(&zipArchive, &pData, &nSize))
+			{
+				mz_zip_writer_end(&zipArchive);
+				return false;
+			}
+
+			// Write to blob view
+			pBlobView->PackDataAt(pBlobView->GetOffset(), (unsigned char*)pData, (int)nSize);
+
+			// Clean up
+			mz_free(pData);
+			mz_zip_writer_end(&zipArchive);
+			
+			return true;
+		}
+		catch (...)
+		{
+			return false;
+		}
+	}
+} }
 
 
 #include "NumberDuck.hpp"
@@ -24684,15 +25636,13 @@ namespace NumberDuck
 			m_pOfficeArtRecordVector = new OwnedVector<OfficeArtRecord*>();
 			if (m_bIsContainer)
 			{
-				NumbatLogic::Assert::Plz(m_pHeader->m_recVer == 0xF);
+				Assert::Plz(m_pHeader->m_recVer == 0xF);
 				while (pBlobView->GetOffset() < (int)(m_pHeader->m_recLen) && pBlobView->GetOffset() < pBlobView->GetSize())
 				{
 					OfficeArtRecord* pOfficeArtRecord = CreateOfficeArtRecord(pBlobView);
-					{
-						NumberDuck::Secret::OfficeArtRecord* __3533451309 = pOfficeArtRecord;
-						pOfficeArtRecord = 0;
-						m_pOfficeArtRecordVector->PushBack(__3533451309);
-					}
+					NumberDuck::Secret::OfficeArtRecord* __1894732266 = pOfficeArtRecord;
+					pOfficeArtRecord = 0;
+					m_pOfficeArtRecordVector->PushBack(__1894732266);
 					if (pOfficeArtRecord) delete pOfficeArtRecord;
 				}
 			}
@@ -24754,7 +25704,7 @@ namespace NumberDuck
 		{
 			int nBefore = pBlobView->GetOffset();
 			m_pHeader->BlobWrite(pBlobView);
-			NumbatLogic::Assert::Plz(pBlobView->GetOffset() - nBefore == OfficeArtRecordHeaderStruct::SIZE);
+			Assert::Plz(pBlobView->GetOffset() - nBefore == OfficeArtRecordHeaderStruct::SIZE);
 			if (m_bIsContainer)
 			{
 				for (int i = 0; i < m_pOfficeArtRecordVector->GetSize(); i++)
@@ -24764,35 +25714,35 @@ namespace NumberDuck
 			{
 				BlobWrite(pBlobView);
 			}
-			NumbatLogic::Assert::Plz(pBlobView->GetOffset() - nBefore == (int)(OfficeArtRecordHeaderStruct::SIZE + m_pHeader->m_recLen));
+			Assert::Plz(pBlobView->GetOffset() - nBefore == (int)(OfficeArtRecordHeaderStruct::SIZE + m_pHeader->m_recLen));
 		}
 
 		void OfficeArtRecord::BlobRead(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(false);
+			Assert::Plz(false);
 		}
 
 		void OfficeArtRecord::BlobWrite(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(false);
+			Assert::Plz(false);
 		}
 
 		unsigned short OfficeArtRecord::GetNumOfficeArtRecord()
 		{
-			NumbatLogic::Assert::Plz(m_bIsContainer);
+			Assert::Plz(m_bIsContainer);
 			return (unsigned short)(m_pOfficeArtRecordVector->GetSize());
 		}
 
 		OfficeArtRecord* OfficeArtRecord::GetOfficeArtRecordByIndex(unsigned short nIndex)
 		{
-			NumbatLogic::Assert::Plz(m_bIsContainer);
-			NumbatLogic::Assert::Plz(nIndex < m_pOfficeArtRecordVector->GetSize());
+			Assert::Plz(m_bIsContainer);
+			Assert::Plz(nIndex < m_pOfficeArtRecordVector->GetSize());
 			return m_pOfficeArtRecordVector->Get(nIndex);
 		}
 
 		OfficeArtRecord* OfficeArtRecord::FindOfficeArtRecordByType(Type eType)
 		{
-			NumbatLogic::Assert::Plz(m_bIsContainer);
+			Assert::Plz(m_bIsContainer);
 			for (int i = 0; i < m_pOfficeArtRecordVector->GetSize(); i++)
 			{
 				OfficeArtRecord* pOfficeArtRecord = m_pOfficeArtRecordVector->Get(i);
@@ -24810,14 +25760,14 @@ namespace NumberDuck
 
 		void OfficeArtRecord::AddOfficeArtRecord(OfficeArtRecord* pOfficeArtRecord)
 		{
-			NumbatLogic::Assert::Plz(m_bIsContainer);
+			Assert::Plz(m_bIsContainer);
 			m_pHeader->m_recLen += pOfficeArtRecord->GetRecursiveSize();
 			m_pOfficeArtRecordVector->PushBack(pOfficeArtRecord);
 		}
 
 		OfficeArtRecord* OfficeArtRecord::CreateOfficeArtRecord(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(pBlobView->GetOffset() < pBlobView->GetSize());
+			Assert::Plz(pBlobView->GetOffset() < pBlobView->GetSize());
 			if (pBlobView->GetSize() - pBlobView->GetOffset() < (int)(OfficeArtRecordHeaderStruct::SIZE))
 				return 0;
 			OfficeArtRecordHeaderStruct* pHeader = new OfficeArtRecordHeaderStruct();
@@ -24825,179 +25775,121 @@ namespace NumberDuck
 			if ((Type)(pHeader->m_recType) != Type::TYPE_OFFICE_ART_DG_CONTAINER && (Type)(pHeader->m_recType) != Type::TYPE_OFFICE_ART_SPGR_CONTAINER)
 				if (pBlobView->GetOffset() + (int)(pHeader->m_recLen) > pBlobView->GetSize())
 				{
-					{
-						if (pHeader) delete pHeader;
-						return 0;
-					}
+					if (pHeader) delete pHeader;
+					return 0;
 				}
 			switch ((Type)(pHeader->m_recType))
 			{
 				case Type::TYPE_OFFICE_ART_DGG_CONTAINER:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtDggContainerRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1815990042 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtDggContainerRecord(__1815990042, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_B_STORE_CONTAINER:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtBStoreContainerRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __3275607834 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtBStoreContainerRecord(__3275607834, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_DG_CONTAINER:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtDgContainerRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __842911669 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtDgContainerRecord(__842911669, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_SPGR_CONTAINER:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtSpgrContainerRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __2638073781 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtSpgrContainerRecord(__2638073781, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_SP_CONTAINER:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtSpContainerRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __2822622295 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtSpContainerRecord(__2822622295, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_FDGG_BLOCK:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtFDGGBlockRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __121490519 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtFDGGBlockRecord(__121490519, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_FBSE:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtFBSERecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __2067599519 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtFBSERecord(__2067599519, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_FDG:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtFDGRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __3560771743 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtFDGRecord(__3560771743, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_FSPGR:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtFSPGRRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __624758832 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtFSPGRRecord(__624758832, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_FSP:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtFSPRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __2319257648 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtFSPRecord(__2319257648, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_FOPT:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtFOPTRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __3342668225 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtFOPTRecord(__3342668225, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_TERTIARY_FOPT:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtTertiaryFOPTRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1748832705 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtTertiaryFOPTRecord(__1748832705, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_CLIENT_ANCHOR_SHEET:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtClientAnchorSheetRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __2570916206 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtClientAnchorSheetRecord(__2570916206, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_CLIENT_DATA:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtClientDataRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __909971822 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtClientDataRecord(__909971822, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_BLIP_EMF:
@@ -25009,50 +25901,34 @@ namespace NumberDuck
 				case Type::TYPE_OFFICE_ART_BLIP_TIFF:
 				case Type::TYPE_OFFICE_ART_BLIP_JPEG_CMYK:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtBlipRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __3426564114 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtBlipRecord(__3426564114, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_FRIT_CONTAINER:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtFRITContainerRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1664956434 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtFRITContainerRecord(__1664956434, pBlobView);
 				}
 
 				case Type::TYPE_OFFICE_ART_SPLIT_MENU_COLOR_CONTAINER:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtSplitMenuColorContainerRecord(__1199093386, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1446853616 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtSplitMenuColorContainerRecord(__1446853616, pBlobView);
 				}
 
 				default:
 				{
-					{
-						NumberDuck::Secret::OfficeArtRecordHeaderStruct* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new OfficeArtRecord(__1199093386, false, pBlobView);
-						}
-					}
+					NumberDuck::Secret::OfficeArtRecordHeaderStruct* __3510452839 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new OfficeArtRecord(__3510452839, false, pBlobView);
 				}
 
 			}
@@ -25261,12 +26137,12 @@ namespace NumberDuck
 
 		void ParsedExpressionRecord::BlobRead(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(false);
+			Assert::Plz(false);
 		}
 
 		void ParsedExpressionRecord::BlobWrite(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(false);
+			Assert::Plz(false);
 		}
 
 		ParsedExpressionRecord* ParsedExpressionRecord::CreateParsedExpressionRecord(BlobView* pBlobView)
@@ -25432,11 +26308,9 @@ namespace NumberDuck
 				}
 
 			}
-			{
-				NumberDuck::Secret::ParsedExpressionRecord* __3596419756 = pParsedExpressionRecord;
-				pParsedExpressionRecord = 0;
-				return __3596419756;
-			}
+			NumberDuck::Secret::ParsedExpressionRecord* __1507773489 = pParsedExpressionRecord;
+			pParsedExpressionRecord = 0;
+			return __1507773489;
 		}
 
 		BiffHeader::BiffHeader()
@@ -26760,10 +27634,8 @@ namespace NumberDuck
 							delete pSubHeader;
 							pSubHeader = 0;
 						}
-						{
-							if (pSubHeader) delete pSubHeader;
-							break;
-						}
+						if (pSubHeader) delete pSubHeader;
+						break;
 					}
 					pSubHeader->m_nType = (unsigned short)(Type::TYPE_CONTINUE);
 					if (m_pContinueBlob == 0)
@@ -26778,11 +27650,9 @@ namespace NumberDuck
 					}
 					unsigned short nTempType = pSubHeader->m_nType;
 					BiffRecord* pBiffRecord = 0;
-					{
-						NumberDuck::Secret::BiffHeader* __4098344237 = pSubHeader;
-						pSubHeader = 0;
-						pBiffRecord = new BiffRecord(__4098344237, pStream);
-					}
+					NumberDuck::Secret::BiffHeader* __3047187851 = pSubHeader;
+					pSubHeader = 0;
+					pBiffRecord = new BiffRecord(__3047187851, pStream);
 					Extend(pBiffRecord);
 					m_pContinueInfoVector->Get(m_pContinueInfoVector->GetSize() - 1)->m_nType = nTempType;
 					m_pContinueBlob->GetBlobView()->Pack(pBiffRecord->m_pBlobView, pBiffRecord->m_pBlobView->GetSize());
@@ -26835,1392 +27705,932 @@ namespace NumberDuck
 			{
 				case Type::TYPE_BOF:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new BofRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2322415649 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new BofRecord(__2322415649, pStream);
 				}
 
 				case Type::TYPE_INTERFACE_HDR:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new InterfaceHdr(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __627916833 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new InterfaceHdr(__627916833, pStream);
 				}
 
 				case Type::TYPE_MMS:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new Mms(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1751990736 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new Mms(__1751990736, pStream);
 				}
 
 				case Type::TYPE_INTERFACE_END:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new InterfaceEnd(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3345826256 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new InterfaceEnd(__3345826256, pStream);
 				}
 
 				case Type::TYPE_WRITE_ACCESS:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new WriteAccess(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __913129855 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new WriteAccess(__913129855, pStream);
 				}
 
 				case Type::TYPE_CODE_PAGE:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new CodePage(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2574074239 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new CodePage(__2574074239, pStream);
 				}
 
 				case Type::TYPE_DSF:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new DSF(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2892841629 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new DSF(__2892841629, pStream);
 				}
 
 				case Type::TYPE_EXCEL9_FILE:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new Excel9File(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __57492125 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new Excel9File(__57492125, pStream);
 				}
 
 				case Type::TYPE_RR_TAB_ID:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new RRTabId(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2171431410 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new RRTabId(__2171431410, pStream);
 				}
 
 				case Type::TYPE_BUILT_IN_FN_GROUP_COUNT:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new BuiltInFnGroupCount(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __778922482 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new BuiltInFnGroupCount(__778922482, pStream);
 				}
 
 				case Type::TYPE_WIN_PROTECT:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new WinProtect(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3748489565 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new WinProtect(__3748489565, pStream);
 				}
 
 				case Type::TYPE_PROTECT:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new ProtectRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1886218589 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new ProtectRecord(__1886218589, pStream);
 				}
 
 				case Type::TYPE_PASSWORD:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new PasswordRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1030580396 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new PasswordRecord(__1030580396, pStream);
 				}
 
 				case Type::TYPE_PROT_4_REV:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new Prot4RevRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2456643756 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new Prot4RevRecord(__2456643756, pStream);
 				}
 
 				case Type::TYPE_PROT_4_REV_PASS:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new Prot4RevPassRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1668114435 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new Prot4RevPassRecord(__1668114435, pStream);
 				}
 
 				case Type::TYPE_WINDOW1:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new Window1(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3429722115 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new Window1(__3429722115, pStream);
 				}
 
 				case Type::TYPE_BACKUP:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new Backup(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __4184697825 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new Backup(__4184697825, pStream);
 				}
 
 				case Type::TYPE_HIDE_OBJ:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new HideObj(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1450011617 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new HideObj(__1450011617, pStream);
 				}
 
 				case Type::TYPE_DATE_1904:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new Date1904(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2121077366 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new Date1904(__2121077366, pStream);
 				}
 
 				case Type::TYPE_CALC_PRECISION:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new CalcPrecision(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3513586294 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new CalcPrecision(__3513586294, pStream);
 				}
 
 				case Type::TYPE_REFRESH_ALL:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new RefreshAllRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __544019161 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new RefreshAllRecord(__544019161, pStream);
 				}
 
 				case Type::TYPE_BOOK_BOOL:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new BookBool(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2406290137 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new BookBool(__2406290137, pStream);
 				}
 
 				case Type::TYPE_FONT:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new FontRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1835864872 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new FontRecord(__1835864872, pStream);
 				}
 
 				case Type::TYPE_FORMAT:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new Format(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2624394119 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new Format(__2624394119, pStream);
 				}
 
 				case Type::TYPE_XF:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new XF(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __862786439 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new XF(__862786439, pStream);
 				}
 
 				case Type::TYPE_STYLE:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new StyleRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __107810917 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new StyleRecord(__107810917, pStream);
 				}
 
 				case Type::TYPE_MergeCells:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new MergeCellsRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2842497125 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new MergeCellsRecord(__2842497125, pStream);
 				}
 
 				case Type::TYPE_SST:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new SstRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __728578826 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new SstRecord(__728578826, pStream);
 				}
 
 				case Type::TYPE_BOUND_SHEET_8:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new BoundSheet8Record(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2221751050 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new BoundSheet8Record(__2221751050, pStream);
 				}
 
 				case Type::TYPE_PALETTE:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new PaletteRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1970092965 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new PaletteRecord(__1970092965, pStream);
 				}
 
 				case Type::TYPE_PrintRowCol:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new PrintRowColRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2540517972 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new PrintRowColRecord(__2540517972, pStream);
 				}
 
 				case Type::TYPE_PrintGrid:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new PrintGridRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __946682452 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new PrintGridRecord(__946682452, pStream);
 				}
 
 				case Type::TYPE_CALCCOUNT:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new CalcCountRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1718434555 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new CalcCountRecord(__1718434555, pStream);
 				}
 
 				case Type::TYPE_WSBOOL:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new WsBoolRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1399666969 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new WsBoolRecord(__1399666969, pStream);
 				}
 
 				case Type::TYPE_DIMENSION:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new DimensionRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __4235016473 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new DimensionRecord(__4235016473, pStream);
 				}
 
 				case Type::TYPE_DEFCOLWIDTH:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new DefColWidthRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __678211439 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new DefColWidthRecord(__678211439, pStream);
 				}
 
 				case Type::TYPE_DEFAULTROWHEIGHT:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new DefaultRowHeight(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2272046959 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new DefaultRowHeight(__2272046959, pStream);
 				}
 
 				case Type::TYPE_COLINFO:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new ColInfoRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1986834368 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new ColInfoRecord(__1986834368, pStream);
 				}
 
 				case Type::TYPE_ROW:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new RowRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3647778752 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new RowRecord(__3647778752, pStream);
 				}
 
 				case Type::TYPE_LABELSST:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new LabelSstRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2490150449 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new LabelSstRecord(__2490150449, pStream);
 				}
 
 				case Type::TYPE_RK:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new RkRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __996978225 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new RkRecord(__996978225, pStream);
 				}
 
 				case Type::TYPE_MULRK:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new MulRkRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3396120222 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new MulRkRecord(__3396120222, pStream);
 				}
 
 				case Type::TYPE_BLANK:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new Blank(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1701621406 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new Blank(__1701621406, pStream);
 				}
 
 				case Type::TYPE_MULBLANK:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new MulBlank(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1349299580 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new MulBlank(__1349299580, pStream);
 				}
 
 				case Type::TYPE_NUMBER:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new NumberRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __4285312380 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new NumberRecord(__4285312380, pStream);
 				}
 
 				case Type::TYPE_BOOLERR:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new BoolErrRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2104264211 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new BoolErrRecord(__2104264211, pStream);
 				}
 
 				case Type::TYPE_FORMULA:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new FormulaRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3530327571 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new FormulaRecord(__3530327571, pStream);
 				}
 
 				case Type::TYPE_WINDOW2:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new Window2Record(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2355922620 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new Window2Record(__2355922620, pStream);
 				}
 
 				case Type::TYPE_SELECTION:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new SelectionRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3245115213 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new SelectionRecord(__3245115213, pStream);
 				}
 
 				case Type::TYPE_XF_CRC:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new XFCRC(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2674690018 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new XFCRC(__2674690018, pStream);
 				}
 
 				case Type::TYPE_XF_EXT:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new XFExt(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __812419042 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new XFExt(__812419042, pStream);
 				}
 
 				case Type::TYPE_BOOK_EXT:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new BookExtRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __90997760 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new BookExtRecord(__90997760, pStream);
 				}
 
 				case Type::TYPE_THEME:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new Theme(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2859238400 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new Theme(__2859238400, pStream);
 				}
 
 				case Type::TYPE_SUP_BOOK:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new SupBookRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __209581524 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new SupBookRecord(__209581524, pStream);
 				}
 
 				case Type::TYPE_EXTERN_SHEET:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new ExternSheetRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __4252890491 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new ExternSheetRecord(__4252890491, pStream);
 				}
 
 				case Type::TYPE_CrtLink:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new CrtLinkRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __528348298 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new CrtLinkRecord(__528348298, pStream);
 				}
 
 				case Type::TYPE_Units:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new UnitsRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __4001231909 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new UnitsRecord(__4001231909, pStream);
 				}
 
 				case Type::TYPE_Chart:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new ChartRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3682465735 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new ChartRecord(__3682465735, pStream);
 				}
 
 				case Type::TYPE_Begin:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new BeginRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1954412487 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new BeginRecord(__1954412487, pStream);
 				}
 
 				case Type::TYPE_Frame:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new FrameRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __4135443624 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new FrameRecord(__4135443624, pStream);
 				}
 
 				case Type::TYPE_LineFormat:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new LineFormatRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1501420712 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new LineFormatRecord(__1501420712, pStream);
 				}
 
 				case Type::TYPE_AreaFormat:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new AreaFormatRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2826820615 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new AreaFormatRecord(__2826820615, pStream);
 				}
 
 				case Type::TYPE_Series:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new SeriesRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __125688839 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new SeriesRecord(__125688839, pStream);
 				}
 
 				case Type::TYPE_BRAI:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new BraiRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1249762806 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new BraiRecord(__1249762806, pStream);
 				}
 
 				case Type::TYPE_DataFormat:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new DataFormatRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3850231286 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new DataFormatRecord(__3850231286, pStream);
 				}
 
 				case Type::TYPE_MarkerFormat:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new MarkerFormatRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __343792985 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new MarkerFormatRecord(__343792985, pStream);
 				}
 
 				case Type::TYPE_SerToCrt:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new SerToCrtRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3145588057 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new SerToCrtRecord(__3145588057, pStream);
 				}
 
 				case Type::TYPE_ShtProps:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new ShtPropsRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2390613691 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new ShtPropsRecord(__2390613691, pStream);
 				}
 
 				case Type::TYPE_AxesUsed:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new AxesUsedRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __561897147 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new AxesUsedRecord(__561897147, pStream);
 				}
 
 				case Type::TYPE_AxisParent:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new AxisParentRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __159229740 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new AxisParentRecord(__159229740, pStream);
 				}
 
 				case Type::TYPE_Pos:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new PosRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2793252652 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new PosRecord(__2793252652, pStream);
 				}
 
 				case Type::TYPE_Axis:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new AxisRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1467852675 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new AxisRecord(__1467852675, pStream);
 				}
 
 				case Type::TYPE_CatSerRange:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new CatSerRangeRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __4168984451 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new CatSerRangeRecord(__4168984451, pStream);
 				}
 
 				case Type::TYPE_AxcExt:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new AxcExtRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3044910706 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new AxcExtRecord(__3044910706, pStream);
 				}
 
 				case Type::TYPE_Tick:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new TickRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __444442226 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new TickRecord(__444442226, pStream);
 				}
 
 				case Type::TYPE_FontX:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new FontXRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3950880477 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new FontXRecord(__3950880477, pStream);
 				}
 
 				case Type::TYPE_AxisLine:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new AxisLineRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1149085405 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new AxisLineRecord(__1149085405, pStream);
 				}
 
 				case Type::TYPE_ValueRange:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new ValueRangeRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1904059711 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new ValueRangeRecord(__1904059711, pStream);
 				}
 
 				case Type::TYPE_PlotArea:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new PlotAreaRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3732776255 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new PlotAreaRecord(__3732776255, pStream);
 				}
 
 				case Type::TYPE_ChartFormat:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new ChartFormatRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1551732304 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new ChartFormatRecord(__1551732304, pStream);
 				}
 
 				case Type::TYPE_Line:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new LineRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __4085091920 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new LineRecord(__4085091920, pStream);
 				}
 
 				case Type::TYPE_Bar:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new BarRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __41783039 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new BarRecord(__41783039, pStream);
 				}
 
 				case Type::TYPE_Area:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new AreaRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3766325006 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new AreaRecord(__3766325006, pStream);
 				}
 
 				case Type::TYPE_Scatter:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new ScatterRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1333628686 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new ScatterRecord(__1333628686, pStream);
 				}
 
 				case Type::TYPE_Legend:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new LegendRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3195899809 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new LegendRecord(__3195899809, pStream);
 				}
 
 				case Type::TYPE_Text:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new TextRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __293441441 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new TextRecord(__293441441, pStream);
 				}
 
 				case Type::TYPE_SeriesText:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new SeriesTextRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __612207683 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new SeriesTextRecord(__612207683, pStream);
 				}
 
 				case Type::TYPE_ObjectLink:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new ObjectLinkRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2340260931 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new ObjectLinkRecord(__2340260931, pStream);
 				}
 
 				case Type::TYPE_HCENTER:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new HCenterRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __4152184971 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new HCenterRecord(__4152184971, pStream);
 				}
 
 				case Type::TYPE_VCENTER:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new VCenterRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1484607627 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new VCenterRecord(__1484607627, pStream);
 				}
 
 				case Type::TYPE_LEFT_MARGIN:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new LeftMarginRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2843562020 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new LeftMarginRecord(__2843562020, pStream);
 				}
 
 				case Type::TYPE_RIGHT_MARGIN:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new RightMarginRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __108875812 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new RightMarginRecord(__108875812, pStream);
 				}
 
 				case Type::TYPE_TOP_MARGIN:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new TopMarginRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1266504149 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new TopMarginRecord(__1266504149, pStream);
 				}
 
 				case Type::TYPE_BOTTOM_MARGIN:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new BottomMarginRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3833418197 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new BottomMarginRecord(__3833418197, pStream);
 				}
 
 				case Type::TYPE_SETUP:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new SetupRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __360534394 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new SetupRecord(__360534394, pStream);
 				}
 
 				case Type::TYPE_PRINT_SIZE:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new PrintSizeRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3128775034 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new PrintSizeRecord(__3128775034, pStream);
 				}
 
 				case Type::TYPE_SCL:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new SclRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2407355032 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new SclRecord(__2407355032, pStream);
 				}
 
 				case Type::TYPE_PlotGrowth:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new PlotGrowthRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __545084056 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new PlotGrowthRecord(__545084056, pStream);
 				}
 
 				case Type::TYPE_SIIndex:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new SIIndexRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2726132215 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new SIIndexRecord(__2726132215, pStream);
 				}
 
 				case Type::TYPE_ChartFrtInfo:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new ChartFrtInfoRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __226327031 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new ChartFrtInfoRecord(__226327031, pStream);
 				}
 
 				case Type::TYPE_StartBlock:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new StartBlockRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __4236081496 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new StartBlockRecord(__4236081496, pStream);
 				}
 
 				case Type::TYPE_EndBlock:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new EndBlockRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1400731992 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new EndBlockRecord(__1400731992, pStream);
 				}
 
 				case Type::TYPE_ShapePropsStream:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new ShapePropsStreamRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __511539369 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new ShapePropsStreamRecord(__511539369, pStream);
 				}
 
 				case Type::TYPE_CrtLayout12A:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new CrtLayout12ARecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __2977790121 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new CrtLayout12ARecord(__2977790121, pStream);
 				}
 
 				case Type::TYPE_CrtMlFrt:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new CrtMlFrtRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1081964550 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new CrtMlFrtRecord(__1081964550, pStream);
 				}
 
 				case Type::TYPE_HeaderFooter:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new HeaderFooterRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __4017977350 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new HeaderFooterRecord(__4017977350, pStream);
 				}
 
 				case Type::TYPE_Chart3DBarShape:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new Chart3DBarShapeRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3665656804 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new Chart3DBarShapeRecord(__3665656804, pStream);
 				}
 
 				case Type::TYPE_PieFormat:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new PieFormatRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1971157988 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new PieFormatRecord(__1971157988, pStream);
 				}
 
 				case Type::TYPE_CatLab:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new CatLabRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1568473715 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new CatLabRecord(__1568473715, pStream);
 				}
 
 				case Type::TYPE_DefaultText:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new DefaultTextRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __4068278899 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new DefaultTextRecord(__4068278899, pStream);
 				}
 
 				case Type::TYPE_GelFrame:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new GelFrameRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __58524380 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new GelFrameRecord(__58524380, pStream);
 				}
 
 				case Type::TYPE_OBJ:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new ObjRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3783066413 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new ObjRecord(__3783066413, pStream);
 				}
 
 				case Type::TYPE_MSO_DRAWING_GROUP:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new MsoDrawingGroupRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __1316815661 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new MsoDrawingGroupRecord(__1316815661, pStream);
 				}
 
 				case Type::TYPE_MSO_DRAWING:
 				{
-					{
-						NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-						pHeader = 0;
-						{
-							if (pHeader) delete pHeader;
-							return new MsoDrawingRecord(__1199093386, pStream);
-						}
-					}
+					NumberDuck::Secret::BiffHeader* __3212641154 = pHeader;
+					pHeader = 0;
+					if (pHeader) delete pHeader;
+					return new MsoDrawingRecord(__3212641154, pStream);
 				}
 
 			}
-			{
-				NumberDuck::Secret::BiffHeader* __1199093386 = pHeader;
-				pHeader = 0;
-				{
-					if (pHeader) delete pHeader;
-					return new BiffRecord(__1199093386, pStream);
-				}
-			}
+			NumberDuck::Secret::BiffHeader* __2323447904 = pHeader;
+			pHeader = 0;
+			if (pHeader) delete pHeader;
+			return new BiffRecord(__2323447904, pStream);
 		}
 
 		void BiffRecord::Write(Stream* pStream, BlobView* pTempBlobView)
 		{
 			BlobWrite(pTempBlobView);
 			pTempBlobView->SetOffset(0);
-			NumbatLogic::Assert::Plz(pTempBlobView->GetSize() == (int)(m_pHeader->m_nSize));
+			Assert::Plz(pTempBlobView->GetSize() == (int)(m_pHeader->m_nSize));
 			m_pHeader->m_nSize = (unsigned int)(pTempBlobView->GetSize());
 			if (m_pContinueInfoVector->GetSize() == 0)
 			{
-				NumbatLogic::Assert::Plz(pTempBlobView->GetSize() <= MAX_DATA_SIZE);
+				Assert::Plz(pTempBlobView->GetSize() <= MAX_DATA_SIZE);
 				pStream->SizeToFit(SIZEOF_HEADER + pTempBlobView->GetSize());
 				BlobView* pStreamBlobView = pStream->GetSectorChain()->GetBlobView();
 				pStreamBlobView->PackUint16(m_pHeader->m_nType);
@@ -28235,7 +28645,7 @@ namespace NumberDuck
 				unsigned short nRecordSize;
 				{
 					BiffRecord_ContinueInfo* pContinueInfo = m_pContinueInfoVector->Get(nIndex);
-					NumbatLogic::Assert::Plz(pContinueInfo->m_nOffset <= MAX_DATA_SIZE);
+					Assert::Plz(pContinueInfo->m_nOffset <= MAX_DATA_SIZE);
 					nRecordSize = (unsigned short)(pContinueInfo->m_nOffset);
 				}
 				{
@@ -28256,12 +28666,12 @@ namespace NumberDuck
 					{
 						BiffRecord_ContinueInfo* pContinueInfo = m_pContinueInfoVector->Get(nIndex);
 						BiffRecord_ContinueInfo* pPreviousContinueInfo = m_pContinueInfoVector->Get(nIndex - 1);
-						NumbatLogic::Assert::Plz(pContinueInfo->m_nOffset - pPreviousContinueInfo->m_nOffset <= MAX_DATA_SIZE);
+						Assert::Plz(pContinueInfo->m_nOffset - pPreviousContinueInfo->m_nOffset <= MAX_DATA_SIZE);
 						nRecordSize = (unsigned short)(pContinueInfo->m_nOffset - pPreviousContinueInfo->m_nOffset);
 					}
 					else
 					{
-						NumbatLogic::Assert::Plz(nSize - nOffset <= MAX_DATA_SIZE);
+						Assert::Plz(nSize - nOffset <= MAX_DATA_SIZE);
 						nRecordSize = (unsigned short)(nSize - nOffset);
 					}
 					{
@@ -28279,7 +28689,7 @@ namespace NumberDuck
 
 		void BiffRecord::BlobRead(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(false);
+			Assert::Plz(false);
 		}
 
 		void BiffRecord::BlobWrite(BlobView* pBlobView)
@@ -28288,7 +28698,7 @@ namespace NumberDuck
 
 		void BiffRecord::Extend(BiffRecord* pBiffRecord)
 		{
-			NumbatLogic::Assert::Plz(pBiffRecord->GetType() == Type::TYPE_CONTINUE || pBiffRecord->GetType() == Type::TYPE_MSO_DRAWING_GROUP);
+			Assert::Plz(pBiffRecord->GetType() == Type::TYPE_CONTINUE || pBiffRecord->GetType() == Type::TYPE_MSO_DRAWING_GROUP);
 			m_pContinueInfoVector->PushBack(new BiffRecord_ContinueInfo((int)(m_pHeader->m_nSize), (int)(pBiffRecord->GetType())));
 			unsigned int nNewSize = m_pHeader->m_nSize + pBiffRecord->m_pHeader->m_nSize;
 			m_pHeader->m_nSize = nNewSize;
@@ -28322,8 +28732,8 @@ namespace NumberDuck
 			m_pBiffWorksheetStreamSizeVector = new OwnedVector<BiffWorksheetStreamSize*>();
 			m_pStyleVector = new OwnedVector<Style*>();
 			m_pHeaderFont = new Font();
-			m_pHeaderFont->SetName("Sans");
-			m_pHeaderFont->SetSize(13);
+			m_pHeaderFont->SetName("Calibri");
+			m_pHeaderFont->SetSize(14);
 			m_pHeaderFont->SetBold(false);
 			m_pHeaderFont->SetItalic(false);
 			m_pHeaderFont->SetUnderline(Font::Underline::UNDERLINE_NONE);
@@ -28373,19 +28783,21 @@ namespace NumberDuck
 			while (m_pWorksheetRangeVector->GetSize() > 0)
 			{
 				WorksheetRange* pWorksheetRange = m_pWorksheetRangeVector->PopBack();
-				{
-					delete pWorksheetRange;
-					pWorksheetRange = 0;
-				}
+				if (pWorksheetRange != 0)
+					{
+						delete pWorksheetRange;
+						pWorksheetRange = 0;
+					}
 				if (pWorksheetRange) delete pWorksheetRange;
 			}
 			while (m_pBiffWorksheetStreamSizeVector->GetSize() > 0)
 			{
 				BiffWorksheetStreamSize* pBiffWorksheetStreamSize = m_pBiffWorksheetStreamSizeVector->PopBack();
-				{
-					delete pBiffWorksheetStreamSize;
-					pBiffWorksheetStreamSize = 0;
-				}
+				if (pBiffWorksheetStreamSize != 0)
+					{
+						delete pBiffWorksheetStreamSize;
+						pBiffWorksheetStreamSize = 0;
+					}
 				if (pBiffWorksheetStreamSize) delete pBiffWorksheetStreamSize;
 			}
 		}
@@ -28394,11 +28806,9 @@ namespace NumberDuck
 		{
 			BiffWorksheetStreamSize* pStreamSize = new BiffWorksheetStreamSize();
 			pStreamSize->m_nSize = nStreamSize;
-			{
-				NumberDuck::Secret::BiffWorksheetStreamSize* __521035195 = pStreamSize;
-				pStreamSize = 0;
-				m_pBiffWorksheetStreamSizeVector->PushBack(__521035195);
-			}
+			NumberDuck::Secret::BiffWorksheetStreamSize* __2606260481 = pStreamSize;
+			pStreamSize = 0;
+			m_pBiffWorksheetStreamSizeVector->PushBack(__2606260481);
 			if (pStreamSize) delete pStreamSize;
 		}
 
@@ -28425,7 +28835,7 @@ namespace NumberDuck
 
 		WorksheetRange* WorkbookGlobals::GetWorksheetRangeByIndex(unsigned short nIndex)
 		{
-			NumbatLogic::Assert::Plz(nIndex <= (unsigned short)(m_pWorksheetRangeVector->GetSize()));
+			Assert::Plz(nIndex <= (unsigned short)(m_pWorksheetRangeVector->GetSize()));
 			return m_pWorksheetRangeVector->Get((int)(nIndex));
 		}
 
@@ -28440,11 +28850,9 @@ namespace NumberDuck
 			}
 			{
 				WorksheetRange* pWorksheetRange = new WorksheetRange(nFirst, nLast);
-				{
-					NumberDuck::Secret::WorksheetRange* __4286285562 = pWorksheetRange;
-					pWorksheetRange = 0;
-					m_pWorksheetRangeVector->PushBack(__4286285562);
-				}
+				NumberDuck::Secret::WorksheetRange* __2886469211 = pWorksheetRange;
+				pWorksheetRange = 0;
+				m_pWorksheetRangeVector->PushBack(__2886469211);
 				if (pWorksheetRange) delete pWorksheetRange;
 			}
 			return (unsigned short)(m_pWorksheetRangeVector->GetSize() - 1);
@@ -28462,7 +28870,7 @@ namespace NumberDuck
 			for (int i = 0; i < m_pStyleVector->GetSize(); i++)
 				if (m_pStyleVector->Get(i) == pStyle)
 					return (unsigned short)(i + 15);
-			NumbatLogic::Assert::Plz(false);
+			Assert::Plz(false);
 			return 0;
 		}
 
@@ -28475,15 +28883,11 @@ namespace NumberDuck
 		{
 			Style* pStyle = new Style();
 			Style* pTempStyle = pStyle;
-			{
-				NumberDuck::Style* __2188486757 = pStyle;
-				pStyle = 0;
-				m_pStyleVector->PushBack(__2188486757);
-			}
-			{
-				if (pStyle) delete pStyle;
-				return pTempStyle;
-			}
+			NumberDuck::Style* __1156890041 = pStyle;
+			pStyle = 0;
+			m_pStyleVector->PushBack(__1156890041);
+			if (pStyle) delete pStyle;
+			return pTempStyle;
 		}
 
 		const unsigned int BiffWorkbookGlobals::DEFAULT_COLOR[NUM_DEFAULT_PALETTE_ENTRY] = {0x000000, 0xFFFFFF, 0x0000FF, 0x00FF00, 0xFF0000, 0x00FFFF, 0xFF00FF, 0xFFFF00};
@@ -28539,6 +28943,9 @@ namespace NumberDuck
 					while (m_pWorksheetRangeVector->GetSize() > 0)
 					{
 						WorksheetRange* pWorksheetRange = m_pWorksheetRangeVector->PopBack();
+						if (pWorksheetRange != 0)
+						{
+						}
 						{
 							delete pWorksheetRange;
 							pWorksheetRange = 0;
@@ -28550,11 +28957,9 @@ namespace NumberDuck
 					{
 						XTIStruct* pXTI = pExternSheetRecord->GetXTIByIndex(j);
 						WorksheetRange* pWorksheetRange = new WorksheetRange((unsigned short)(pXTI->m_itabFirst), (unsigned short)(pXTI->m_itabLast));
-						{
-							NumberDuck::Secret::WorksheetRange* __4286285562 = pWorksheetRange;
-							pWorksheetRange = 0;
-							m_pWorksheetRangeVector->PushBack(__4286285562);
-						}
+						NumberDuck::Secret::WorksheetRange* __353129981 = pWorksheetRange;
+						pWorksheetRange = 0;
+						m_pWorksheetRangeVector->PushBack(__353129981);
 						if (pWorksheetRange) delete pWorksheetRange;
 					}
 				}
@@ -28953,11 +29358,9 @@ namespace NumberDuck
 			{
 				pBiffRecordContainer->AddBiffRecord(pXFVector->PopFront());
 			}
-			{
-				NumberDuck::Secret::XFCRC* __241720877 = pXFCRC;
-				pXFCRC = 0;
-				pBiffRecordContainer->AddBiffRecord(__241720877);
-			}
+			NumberDuck::Secret::XFCRC* __435572905 = pXFCRC;
+			pXFCRC = 0;
+			pBiffRecordContainer->AddBiffRecord(__435572905);
 			for (unsigned short i = 0; i < (unsigned short)(pWorkbookGlobals->m_pStyleVector->GetSize()); i++)
 			{
 				Style* pStyle = pWorkbookGlobals->m_pStyleVector->Get(i);
@@ -28969,11 +29372,9 @@ namespace NumberDuck
 				Worksheet* pWorksheet = pWorksheetVector->Get(i);
 				BoundSheet8Record* pBoundSheet8Record = new BoundSheet8Record(pWorksheet->GetName());
 				pBoundSheet8RecordVector->PushBack(pBoundSheet8Record);
-				{
-					NumberDuck::Secret::BoundSheet8Record* __3176075103 = pBoundSheet8Record;
-					pBoundSheet8Record = 0;
-					pBiffRecordContainer->AddBiffRecord(__3176075103);
-				}
+				NumberDuck::Secret::BoundSheet8Record* __2996386143 = pBoundSheet8Record;
+				pBoundSheet8Record = 0;
+				pBiffRecordContainer->AddBiffRecord(__2996386143);
 				if (pBoundSheet8Record) delete pBoundSheet8Record;
 			}
 			if (pWorkbookGlobals->m_pWorksheetRangeVector->GetSize() > 0)
@@ -28983,21 +29384,17 @@ namespace NumberDuck
 			}
 			{
 				MsoDrawingGroupRecord* pMsoDrawingGroupRecord = new MsoDrawingGroupRecord(pWorkbookGlobals->m_pSharedPictureVector);
-				{
-					NumberDuck::Secret::MsoDrawingGroupRecord* __355026241 = pMsoDrawingGroupRecord;
-					pMsoDrawingGroupRecord = 0;
-					pBiffRecordContainer->AddBiffRecord(__355026241);
-				}
+				NumberDuck::Secret::MsoDrawingGroupRecord* __298442449 = pMsoDrawingGroupRecord;
+				pMsoDrawingGroupRecord = 0;
+				pBiffRecordContainer->AddBiffRecord(__298442449);
 				if (pMsoDrawingGroupRecord) delete pMsoDrawingGroupRecord;
 			}
 			if (pWorkbookGlobals->m_pSharedStringContainer->GetSize() > 0)
 			{
 				SstRecord* pSstRecord = new SstRecord(pWorkbookGlobals->m_pSharedStringContainer);
-				{
-					NumberDuck::Secret::SstRecord* __1557921119 = pSstRecord;
-					pSstRecord = 0;
-					pBiffRecordContainer->AddBiffRecord(__1557921119);
-				}
+				NumberDuck::Secret::SstRecord* __173174426 = pSstRecord;
+				pSstRecord = 0;
+				pBiffRecordContainer->AddBiffRecord(__173174426);
 				if (pSstRecord) delete pSstRecord;
 			}
 			pBiffRecordContainer->AddBiffRecord(new BookExtRecord());
@@ -29036,7 +29433,7 @@ namespace NumberDuck
 
 		Style* BiffWorkbookGlobals::GetStyleByXfIndex(unsigned short nXfIndex)
 		{
-			NumbatLogic::Assert::Plz(nXfIndex >= 15);
+			Assert::Plz(nXfIndex >= 15);
 			Style* pStyle = GetStyleByIndex((unsigned short)(nXfIndex - 15));
 			return pStyle;
 		}
@@ -29072,7 +29469,7 @@ namespace NumberDuck
 
 		unsigned int BiffWorkbookGlobals::GetDefaultPaletteColorByIndex(unsigned short nIndex)
 		{
-			NumbatLogic::Assert::Plz(nIndex < NUM_DEFAULT_PALETTE_ENTRY + NUM_CUSTOM_PALETTE_ENTRY);
+			Assert::Plz(nIndex < NUM_DEFAULT_PALETTE_ENTRY + NUM_CUSTOM_PALETTE_ENTRY);
 			unsigned int nColor = 0;
 			if (nIndex < NUM_DEFAULT_PALETTE_ENTRY)
 				nColor = DEFAULT_COLOR[nIndex];
@@ -29083,7 +29480,7 @@ namespace NumberDuck
 
 		unsigned int BiffWorkbookGlobals::GetPaletteColorByIndex(unsigned short nIndex)
 		{
-			NumbatLogic::Assert::Plz(nIndex < NUM_DEFAULT_PALETTE_ENTRY + NUM_CUSTOM_PALETTE_ENTRY);
+			Assert::Plz(nIndex < NUM_DEFAULT_PALETTE_ENTRY + NUM_CUSTOM_PALETTE_ENTRY);
 			if (m_pPaletteRecord != 0 && nIndex >= NUM_DEFAULT_PALETTE_ENTRY)
 				return m_pPaletteRecord->GetColorByIndex((unsigned short)(nIndex - NUM_DEFAULT_PALETTE_ENTRY));
 			return GetDefaultPaletteColorByIndex(nIndex);
@@ -29221,7 +29618,7 @@ namespace NumberDuck
 			m_nSectorSize = 0;
 			m_pSectorVector = 0;
 			m_pBlob = 0;
-			NumbatLogic::Assert::Plz((nSectorSize & (nSectorSize - 1)) == 0);
+			Assert::Plz((nSectorSize & (nSectorSize - 1)) == 0);
 			m_nSectorSize = nSectorSize;
 			m_pBlob = new Blob(false);
 			m_pSectorVector = new Vector<Sector*>();
@@ -29234,7 +29631,7 @@ namespace NumberDuck
 
 		Sector* SectorChain::GetSectorByIndex(int nIndex)
 		{
-			NumbatLogic::Assert::Plz(nIndex < m_pSectorVector->GetSize());
+			Assert::Plz(nIndex < m_pSectorVector->GetSize());
 			return m_pSectorVector->Get(nIndex);
 		}
 
@@ -29340,7 +29737,7 @@ namespace NumberDuck
 			m_sNameTemp = 0;
 			m_pCompoundFile = 0;
 			int i;
-			NumbatLogic::Assert::Plz(pCompoundFile != 0);
+			Assert::Plz(pCompoundFile != 0);
 			m_pDataStruct = new StreamDataStruct();
 			m_pCompoundFile = pCompoundFile;
 			m_nStreamId = nStreamId;
@@ -29367,8 +29764,8 @@ namespace NumberDuck
 			m_pDataStruct->m_nStreamSize = m_pBlobView->UnpackUint32();
 			for (i = 0; i < 4; i++)
 				m_pDataStruct->m_pUnused[i] = m_pBlobView->UnpackUint8();
-			NumbatLogic::Assert::Plz(m_pBlobView->GetOffset() == m_pBlobView->GetSize());
-			NumbatLogic::Assert::Plz(m_pBlobView->GetOffset() == DATA_SIZE);
+			Assert::Plz(m_pBlobView->GetOffset() == m_pBlobView->GetSize());
+			Assert::Plz(m_pBlobView->GetOffset() == DATA_SIZE);
 			if (m_nStreamId == 0)
 			{
 				m_pDataStruct->m_nType = (unsigned char)(Type::TYPE_ROOT_STORAGE);
@@ -29380,9 +29777,9 @@ namespace NumberDuck
 
 		void Stream::Allocate(Type eType, int nStreamSize)
 		{
-			NumbatLogic::Assert::Plz(m_pSectorChain == 0);
-			NumbatLogic::Assert::Plz(m_pDataStruct->m_nType == (unsigned char)(Type::TYPE_EMPTY));
-			NumbatLogic::Assert::Plz(eType != Type::TYPE_ROOT_STORAGE);
+			Assert::Plz(m_pSectorChain == 0);
+			Assert::Plz(m_pDataStruct->m_nType == (unsigned char)(Type::TYPE_EMPTY));
+			Assert::Plz(eType != Type::TYPE_ROOT_STORAGE);
 			m_pDataStruct->m_nType = (unsigned char)(eType);
 			m_pSectorChain = new SectorChain(m_pCompoundFile->GetSectorSize(GetShortSector()));
 			Resize(nStreamSize);
@@ -29419,8 +29816,8 @@ namespace NumberDuck
 			m_pBlobView->PackUint32(m_pDataStruct->m_nStreamSize);
 			for (i = 0; i < 4; i++)
 				m_pBlobView->PackUint8(m_pDataStruct->m_pUnused[i]);
-			NumbatLogic::Assert::Plz(m_pBlobView->GetOffset() == m_pBlobView->GetSize());
-			NumbatLogic::Assert::Plz(m_pBlobView->GetOffset() == DATA_SIZE);
+			Assert::Plz(m_pBlobView->GetOffset() == m_pBlobView->GetSize());
+			Assert::Plz(m_pBlobView->GetOffset() == DATA_SIZE);
 		}
 
 		int Stream::GetStreamId()
@@ -29448,7 +29845,7 @@ namespace NumberDuck
 			int i;
 			m_sNameTemp->Set(sxName);
 			int nLength = m_sNameTemp->GetLength();
-			NumbatLogic::Assert::Plz(nLength < StreamDataStruct::MAX_NAME_LENGTH);
+			Assert::Plz(nLength < StreamDataStruct::MAX_NAME_LENGTH);
 			m_pDataStruct->m_nNameDataSize = (unsigned short)((nLength + 1) << 1);
 			for (i = 0; i < nLength; i++)
 				m_pDataStruct->m_pName[i] = m_sNameTemp->GetChar(i);
@@ -29538,11 +29935,9 @@ namespace NumberDuck
 					delete m_pSectorChain;
 					m_pSectorChain = 0;
 				}
-				{
-					NumberDuck::Secret::SectorChain* __175211134 = pSectorChain;
-					pSectorChain = 0;
-					m_pSectorChain = __175211134;
-				}
+				NumberDuck::Secret::SectorChain* __1581935802 = pSectorChain;
+				pSectorChain = 0;
+				m_pSectorChain = __1581935802;
 				if (pSectorChain) delete pSectorChain;
 			}
 			else
@@ -29585,7 +29980,7 @@ namespace NumberDuck
 
 		unsigned short Stream::GetNameUtf16(unsigned short nIndex)
 		{
-			NumbatLogic::Assert::Plz(nIndex < StreamDataStruct::MAX_NAME_LENGTH);
+			Assert::Plz(nIndex < StreamDataStruct::MAX_NAME_LENGTH);
 			return m_pDataStruct->m_pName[nIndex];
 		}
 
@@ -29600,7 +29995,7 @@ namespace NumberDuck
 		OfficeArtTertiaryFOPTRecord::OfficeArtTertiaryFOPTRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
 			m_pFoptVector = 0;
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_TERTIARY_FOPT);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_TERTIARY_FOPT);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -29656,11 +30051,9 @@ namespace NumberDuck
 			{
 				OfficeArtFOPTEStruct* pFOPTE = new OfficeArtFOPTEStruct();
 				pFOPTE->BlobRead(pBlobView);
-				{
-					NumberDuck::Secret::OfficeArtFOPTEStruct* __3616310584 = pFOPTE;
-					pFOPTE = 0;
-					m_pFoptVector->PushBack(__3616310584);
-				}
+				NumberDuck::Secret::OfficeArtFOPTEStruct* __3610500448 = pFOPTE;
+				pFOPTE = 0;
+				m_pFoptVector->PushBack(__3610500448);
 				if (pFOPTE) delete pFOPTE;
 			}
 			for (i = 0; i < m_pFoptVector->GetSize(); i++)
@@ -29677,18 +30070,16 @@ namespace NumberDuck
 
 		void OfficeArtTertiaryFOPTRecord::AddProperty(unsigned short opid, unsigned char fBid, int op)
 		{
-			NumbatLogic::Assert::Plz(opid <= 0x3FFF);
-			NumbatLogic::Assert::Plz(fBid <= 0x1);
+			Assert::Plz(opid <= 0x3FFF);
+			Assert::Plz(fBid <= 0x1);
 			OfficeArtFOPTEStruct* pFOPTE = new OfficeArtFOPTEStruct();
 			pFOPTE->m_opid->m_opid = opid;
 			pFOPTE->m_opid->m_fBid = fBid;
 			pFOPTE->m_opid->m_fComplex = 0x0;
 			pFOPTE->m_op = op;
-			{
-				NumberDuck::Secret::OfficeArtFOPTEStruct* __3616310584 = pFOPTE;
-				pFOPTE = 0;
-				m_pFoptVector->PushBack(__3616310584);
-			}
+			NumberDuck::Secret::OfficeArtFOPTEStruct* __657674732 = pFOPTE;
+			pFOPTE = 0;
+			m_pFoptVector->PushBack(__657674732);
 			m_pHeader->m_recInstance++;
 			m_pHeader->m_recLen += OfficeArtFOPTEStruct::SIZE;
 			if (pFOPTE) delete pFOPTE;
@@ -29717,7 +30108,7 @@ namespace NumberDuck
 			m_smca1 = 0;
 			m_smca2 = 0;
 			m_smca3 = 0;
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_SPLIT_MENU_COLOR_CONTAINER);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_SPLIT_MENU_COLOR_CONTAINER);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -29783,7 +30174,7 @@ namespace NumberDuck
 
 		OfficeArtSpgrContainerRecord::OfficeArtSpgrContainerRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_SPGR_CONTAINER);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_SPGR_CONTAINER);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -29808,7 +30199,7 @@ namespace NumberDuck
 
 		OfficeArtSpContainerRecord::OfficeArtSpContainerRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_SP_CONTAINER);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_SP_CONTAINER);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -29847,7 +30238,7 @@ namespace NumberDuck
 			m_fBackground = 0;
 			m_fHaveSpt = 0;
 			m_unused1 = 0;
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FSP);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FSP);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -29940,7 +30331,7 @@ namespace NumberDuck
 			m_yTop = 0;
 			m_xRight = 0;
 			m_yBottom = 0;
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FSPGR);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FSPGR);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -29983,7 +30374,7 @@ namespace NumberDuck
 		OfficeArtFRITContainerRecord::OfficeArtFRITContainerRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
 			m_pRgfritVector = 0;
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FRIT_CONTAINER);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FRIT_CONTAINER);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -30020,16 +30411,14 @@ namespace NumberDuck
 		void OfficeArtFRITContainerRecord::PostBlobRead(BlobView* pBlobView)
 		{
 			unsigned short i;
-			NumbatLogic::Assert::Plz(GetNumFRIT() == GetSize() / OfficeArtFRITStruct::SIZE);
+			Assert::Plz(GetNumFRIT() == GetSize() / OfficeArtFRITStruct::SIZE);
 			for (i = 0; i < m_pHeader->m_recInstance; i++)
 			{
 				OfficeArtFRITStruct* pFRIT = new OfficeArtFRITStruct();
 				pFRIT->BlobRead(pBlobView);
-				{
-					NumberDuck::Secret::OfficeArtFRITStruct* __2212815663 = pFRIT;
-					pFRIT = 0;
-					m_pRgfritVector->PushBack(__2212815663);
-				}
+				NumberDuck::Secret::OfficeArtFRITStruct* __710211254 = pFRIT;
+				pFRIT = 0;
+				m_pRgfritVector->PushBack(__710211254);
 				if (pFRIT) delete pFRIT;
 			}
 		}
@@ -30041,7 +30430,7 @@ namespace NumberDuck
 
 		OfficeArtFRITStruct* OfficeArtFRITContainerRecord::GetFRITByIndex(unsigned short nIndex)
 		{
-			NumbatLogic::Assert::Plz(nIndex >= GetNumFRIT());
+			Assert::Plz(nIndex >= GetNumFRIT());
 			return m_pRgfritVector->Get(nIndex);
 		}
 
@@ -30053,7 +30442,7 @@ namespace NumberDuck
 		OfficeArtFOPTRecord::OfficeArtFOPTRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
 			m_pFoptVector = 0;
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FOPT);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FOPT);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -30109,11 +30498,9 @@ namespace NumberDuck
 			{
 				OfficeArtFOPTEStruct* pFOPTE = new OfficeArtFOPTEStruct();
 				pFOPTE->BlobRead(pBlobView);
-				{
-					NumberDuck::Secret::OfficeArtFOPTEStruct* __3616310584 = pFOPTE;
-					pFOPTE = 0;
-					m_pFoptVector->PushBack(__3616310584);
-				}
+				NumberDuck::Secret::OfficeArtFOPTEStruct* __1043592514 = pFOPTE;
+				pFOPTE = 0;
+				m_pFoptVector->PushBack(__1043592514);
 				if (pFOPTE) delete pFOPTE;
 			}
 			for (i = 0; i < m_pFoptVector->GetSize(); i++)
@@ -30130,18 +30517,16 @@ namespace NumberDuck
 
 		void OfficeArtFOPTRecord::AddProperty(unsigned short opid, unsigned char fBid, int op)
 		{
-			NumbatLogic::Assert::Plz(opid <= 0x3FFF);
-			NumbatLogic::Assert::Plz(fBid <= 0x1);
+			Assert::Plz(opid <= 0x3FFF);
+			Assert::Plz(fBid <= 0x1);
 			OfficeArtFOPTEStruct* pFOPTE = new OfficeArtFOPTEStruct();
 			pFOPTE->m_opid->m_opid = opid;
 			pFOPTE->m_opid->m_fBid = fBid;
 			pFOPTE->m_opid->m_fComplex = 0x0;
 			pFOPTE->m_op = op;
-			{
-				NumberDuck::Secret::OfficeArtFOPTEStruct* __3616310584 = pFOPTE;
-				pFOPTE = 0;
-				m_pFoptVector->PushBack(__3616310584);
-			}
+			NumberDuck::Secret::OfficeArtFOPTEStruct* __1681074998 = pFOPTE;
+			pFOPTE = 0;
+			m_pFoptVector->PushBack(__1681074998);
 			m_pHeader->m_recInstance++;
 			m_pHeader->m_recLen += OfficeArtFOPTEStruct::SIZE;
 			if (pFOPTE) delete pFOPTE;
@@ -30149,7 +30534,7 @@ namespace NumberDuck
 
 		void OfficeArtFOPTRecord::AddStringProperty(unsigned short opid, const char* szString)
 		{
-			NumbatLogic::Assert::Plz((OfficeArtRecord::OPIDType)(opid) == OfficeArtRecord::OPIDType::OPID_WZ_NAME);
+			Assert::Plz((OfficeArtRecord::OPIDType)(opid) == OfficeArtRecord::OPIDType::OPID_WZ_NAME);
 			InternalString* sTemp = new InternalString(szString);
 			Blob* pBlob = new Blob(true);
 			BlobView* pBlobView = pBlob->GetBlobView();
@@ -30161,8 +30546,8 @@ namespace NumberDuck
 
 		void OfficeArtFOPTRecord::AddBlobProperty(unsigned short opid, unsigned char fBid, Blob* pBlob)
 		{
-			NumbatLogic::Assert::Plz(opid <= 0x3FFF);
-			NumbatLogic::Assert::Plz(fBid <= 0x1);
+			Assert::Plz(opid <= 0x3FFF);
+			Assert::Plz(fBid <= 0x1);
 			BlobView* pBlobView = pBlob->GetBlobView();
 			pBlobView->SetOffset(0);
 			OfficeArtFOPTEStruct* pFOPTE = new OfficeArtFOPTEStruct();
@@ -30175,11 +30560,9 @@ namespace NumberDuck
 			pFOPTE->m_pComplexData->GetBlobView()->Pack(pBlobView, pBlobView->GetSize());
 			m_pHeader->m_recInstance++;
 			m_pHeader->m_recLen += (unsigned int)(OfficeArtFOPTEStruct::SIZE + pFOPTE->m_op);
-			{
-				NumberDuck::Secret::OfficeArtFOPTEStruct* __3616310584 = pFOPTE;
-				pFOPTE = 0;
-				m_pFoptVector->PushBack(__3616310584);
-			}
+			NumberDuck::Secret::OfficeArtFOPTEStruct* __2701388849 = pFOPTE;
+			pFOPTE = 0;
+			m_pFoptVector->PushBack(__2701388849);
 			if (pFOPTE) delete pFOPTE;
 		}
 
@@ -30204,7 +30587,7 @@ namespace NumberDuck
 		{
 			m_csp = 0;
 			m_spidCur = 0;
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FDG);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FDG);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -30245,7 +30628,7 @@ namespace NumberDuck
 			m_cspSaved = 0;
 			m_cdgSaved = 0;
 			m_pRgidclVector = 0;
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FDGG_BLOCK);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FDGG_BLOCK);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -30292,11 +30675,9 @@ namespace NumberDuck
 			OfficeArtIDCLStruct* pIdcl = new OfficeArtIDCLStruct();
 			pIdcl->m_dgid = 1;
 			pIdcl->m_cspidCur = nNumPicture * 2;
-			{
-				NumberDuck::Secret::OfficeArtIDCLStruct* __1286637680 = pIdcl;
-				pIdcl = 0;
-				m_pRgidclVector->PushBack(__1286637680);
-			}
+			NumberDuck::Secret::OfficeArtIDCLStruct* __3112858502 = pIdcl;
+			pIdcl = 0;
+			m_pRgidclVector->PushBack(__3112858502);
 			if (pIdcl) delete pIdcl;
 		}
 
@@ -30321,11 +30702,9 @@ namespace NumberDuck
 			{
 				OfficeArtIDCLStruct* pIdcl = new OfficeArtIDCLStruct();
 				pIdcl->BlobRead(pBlobView);
-				{
-					NumberDuck::Secret::OfficeArtIDCLStruct* __1286637680 = pIdcl;
-					pIdcl = 0;
-					m_pRgidclVector->PushBack(__1286637680);
-				}
+				NumberDuck::Secret::OfficeArtIDCLStruct* __2206893932 = pIdcl;
+				pIdcl = 0;
+				m_pRgidclVector->PushBack(__2206893932);
 				if (pIdcl) delete pIdcl;
 			}
 		}
@@ -30349,7 +30728,7 @@ namespace NumberDuck
 			m_unused2 = 0;
 			m_unused3 = 0;
 			m_pEmbeddedBlip = 0;
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FBSE);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_FBSE);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -30444,24 +30823,26 @@ namespace NumberDuck
 				m_btMacOS = 6;
 				m_unused2 = 6;
 			}
-			else if (pPicture->GetFormat() == Picture::Format::JPEG)
-			{
-				m_pHeader->m_recInstance = 0x005;
-				m_btWin32 = 5;
-				m_btMacOS = 5;
-				m_unused2 = 2;
-			}
-			else if (pPicture->GetFormat() == Picture::Format::WMF)
-			{
-				m_pHeader->m_recInstance = 0x003;
-				m_btWin32 = 3;
-				m_btMacOS = 4;
-				m_unused2 = 0;
-			}
 			else
-			{
-				NumbatLogic::Assert::Plz(false);
-			}
+				if (pPicture->GetFormat() == Picture::Format::JPEG)
+				{
+					m_pHeader->m_recInstance = 0x005;
+					m_btWin32 = 5;
+					m_btMacOS = 5;
+					m_unused2 = 2;
+				}
+				else
+					if (pPicture->GetFormat() == Picture::Format::WMF)
+					{
+						m_pHeader->m_recInstance = 0x003;
+						m_btWin32 = 3;
+						m_btMacOS = 4;
+						m_unused2 = 0;
+					}
+					else
+					{
+						Assert::Plz(false);
+					}
 		}
 
 		void OfficeArtFBSERecord::PostSetDefaults()
@@ -30478,11 +30859,9 @@ namespace NumberDuck
 		{
 			pBlobView->SetOffset(pBlobView->GetOffset() + m_cbName);
 			OfficeArtRecord* pOfficeArtRecord = OfficeArtRecord::CreateOfficeArtRecord(pBlobView);
-			{
-				NumberDuck::Secret::OfficeArtRecord* __3533451309 = pOfficeArtRecord;
-				pOfficeArtRecord = 0;
-				m_pEmbeddedBlip = (OfficeArtBlipRecord*)(__3533451309);
-			}
+			NumberDuck::Secret::OfficeArtRecord* __1021285457 = pOfficeArtRecord;
+			pOfficeArtRecord = 0;
+			m_pEmbeddedBlip = (OfficeArtBlipRecord*)(__1021285457);
 			if (pOfficeArtRecord) delete pOfficeArtRecord;
 		}
 
@@ -30499,7 +30878,7 @@ namespace NumberDuck
 
 		OfficeArtDggContainerRecord::OfficeArtDggContainerRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_DGG_CONTAINER);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_DGG_CONTAINER);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -30524,7 +30903,7 @@ namespace NumberDuck
 
 		OfficeArtDgContainerRecord::OfficeArtDgContainerRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_DG_CONTAINER);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_DG_CONTAINER);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -30549,7 +30928,7 @@ namespace NumberDuck
 
 		OfficeArtClientDataRecord::OfficeArtClientDataRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_CLIENT_DATA);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_CLIENT_DATA);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -30589,7 +30968,7 @@ namespace NumberDuck
 			m_dxR = 0;
 			m_rwB = 0;
 			m_dyB = 0;
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_CLIENT_ANCHOR_SHEET);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_CLIENT_ANCHOR_SHEET);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -30763,22 +31142,24 @@ namespace NumberDuck
 				m_pHeader->m_recVer = 0x0;
 				m_pHeader->m_recInstance = 0x6E0;
 			}
-			else if (pPicture->GetFormat() == Picture::Format::JPEG)
-			{
-				m_pHeader->m_recType = (unsigned short)(OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_JPEG);
-				m_pHeader->m_recVer = 0x0;
-				m_pHeader->m_recInstance = 0x46A;
-			}
-			else if (pPicture->GetFormat() == Picture::Format::WMF)
-			{
-				m_pHeader->m_recType = (unsigned short)(OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_WMF);
-				m_pHeader->m_recVer = 0x0;
-				m_pHeader->m_recInstance = 0x216;
-			}
 			else
-			{
-				NumbatLogic::Assert::Plz(false);
-			}
+				if (pPicture->GetFormat() == Picture::Format::JPEG)
+				{
+					m_pHeader->m_recType = (unsigned short)(OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_JPEG);
+					m_pHeader->m_recVer = 0x0;
+					m_pHeader->m_recInstance = 0x46A;
+				}
+				else
+					if (pPicture->GetFormat() == Picture::Format::WMF)
+					{
+						m_pHeader->m_recType = (unsigned short)(OfficeArtRecord::Type::TYPE_OFFICE_ART_BLIP_WMF);
+						m_pHeader->m_recVer = 0x0;
+						m_pHeader->m_recInstance = 0x216;
+					}
+					else
+					{
+						Assert::Plz(false);
+					}
 			{
 				BlobView* pPictureBlobView = pPicture->GetBlob()->GetBlobView();
 				Blob* pBlob = new Blob(true);
@@ -30825,7 +31206,7 @@ namespace NumberDuck
 
 		void OfficeArtBlipRecord::PostBlobRead(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz((Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_EMF || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_WMF || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_PICT || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_JPEG || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_PNG || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_DIB || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_TIFF || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_JPEG_CMYK);
+			Assert::Plz((Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_EMF || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_WMF || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_PICT || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_JPEG || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_PNG || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_DIB || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_TIFF || (Type)(m_pHeader->m_recType) == Type::TYPE_OFFICE_ART_BLIP_JPEG_CMYK);
 			unsigned int nSize = m_pHeader->m_recLen - SIZE;
 			if (m_pHeader->m_recInstance == 0x46B || m_pHeader->m_recInstance == 0x6E3)
 			{
@@ -30856,7 +31237,7 @@ namespace NumberDuck
 
 		OfficeArtBStoreContainerRecord::OfficeArtBStoreContainerRecord(OfficeArtRecordHeaderStruct* pHeader, BlobView* pBlobView) : OfficeArtRecord(pHeader, IS_CONTAINER, pBlobView)
 		{
-			nbAssert::Assert((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_B_STORE_CONTAINER);
+			Assert::Plz((OfficeArtRecord::Type)(pHeader->m_recType) == OfficeArtRecord::Type::TYPE_OFFICE_ART_B_STORE_CONTAINER);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -30887,7 +31268,7 @@ namespace NumberDuck
 
 		void OfficeArtBStoreContainerRecord::AddOfficeArtRecord(OfficeArtRecord* pOfficeArtRecord)
 		{
-			NumbatLogic::Assert::Plz(pOfficeArtRecord->GetType() == OfficeArtRecord::Type::TYPE_OFFICE_ART_FBSE);
+			Assert::Plz(pOfficeArtRecord->GetType() == OfficeArtRecord::Type::TYPE_OFFICE_ART_FBSE);
 			OfficeArtRecord::AddOfficeArtRecord(pOfficeArtRecord);
 		}
 
@@ -30896,7 +31277,7 @@ namespace NumberDuck
 			m_ptg = 0;
 			m_reserved0 = 0;
 			m_string = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgStr);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgStr);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -30966,7 +31347,7 @@ namespace NumberDuck
 			m_type = 0;
 			m_reserved = 0;
 			m_loc = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgRef);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgRef);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -31016,14 +31397,10 @@ namespace NumberDuck
 		Token* PtgRefRecord::GetToken(WorkbookGlobals* pWorkbookGlobals)
 		{
 			Coordinate* pCoordinate = new Coordinate(m_loc->m_column->m_col, m_loc->m_row->m_rw, m_loc->m_column->m_colRelative == 0x1, m_loc->m_column->m_rowRelative == 0x1);
-			{
-				NumberDuck::Secret::Coordinate* __3642692973 = pCoordinate;
-				pCoordinate = 0;
-				{
-					if (pCoordinate) delete pCoordinate;
-					return new CoordinateToken(__3642692973);
-				}
-			}
+			NumberDuck::Secret::Coordinate* __2049084997 = pCoordinate;
+			pCoordinate = 0;
+			if (pCoordinate) delete pCoordinate;
+			return new CoordinateToken(__2049084997);
 		}
 
 		PtgRefRecord::~PtgRefRecord()
@@ -31038,7 +31415,7 @@ namespace NumberDuck
 			m_reserved = 0;
 			m_ixti = 0;
 			m_loc = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgRef3d);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgRef3d);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -31098,26 +31475,18 @@ namespace NumberDuck
 			WorksheetRange* pWorksheetRange = pWorkbookGlobals->GetWorksheetRangeByIndex(m_ixti);
 			Coordinate* pCoordinate = new Coordinate(m_loc->m_column->m_col, m_loc->m_row->m_rw, m_loc->m_column->m_colRelative == 0x1, m_loc->m_column->m_rowRelative == 0x1);
 			Coordinate3d* pCoordinate3d = 0;
-			{
-				NumberDuck::Secret::Coordinate* __3642692973 = pCoordinate;
-				pCoordinate = 0;
-				pCoordinate3d = new Coordinate3d(pWorksheetRange->m_nFirst, pWorksheetRange->m_nLast, __3642692973);
-			}
+			NumberDuck::Secret::Coordinate* __3139624944 = pCoordinate;
+			pCoordinate = 0;
+			pCoordinate3d = new Coordinate3d(pWorksheetRange->m_nFirst, pWorksheetRange->m_nLast, __3139624944);
 			Coordinate3dToken* pCoordinate3dToken = 0;
-			{
-				NumberDuck::Secret::Coordinate3d* __1094936853 = pCoordinate3d;
-				pCoordinate3d = 0;
-				pCoordinate3dToken = new Coordinate3dToken(__1094936853);
-			}
-			{
-				NumberDuck::Secret::Coordinate3dToken* __3867610451 = pCoordinate3dToken;
-				pCoordinate3dToken = 0;
-				{
-					if (pCoordinate) delete pCoordinate;
-					if (pCoordinate3d) delete pCoordinate3d;
-					return __3867610451;
-				}
-			}
+			NumberDuck::Secret::Coordinate3d* __4046632910 = pCoordinate3d;
+			pCoordinate3d = 0;
+			pCoordinate3dToken = new Coordinate3dToken(__4046632910);
+			NumberDuck::Secret::Coordinate3dToken* __829989520 = pCoordinate3dToken;
+			pCoordinate3dToken = 0;
+			if (pCoordinate) delete pCoordinate;
+			if (pCoordinate3d) delete pCoordinate3d;
+			return __829989520;
 		}
 
 		PtgRef3dRecord::~PtgRef3dRecord()
@@ -31136,7 +31505,7 @@ namespace NumberDuck
 		{
 			m_ptg = 0;
 			m_reserved0 = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgParen);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgParen);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -31243,7 +31612,7 @@ namespace NumberDuck
 
 				default:
 				{
-					NumbatLogic::Assert::Plz(false);
+					Assert::Plz(false);
 					break;
 				}
 
@@ -31329,7 +31698,7 @@ namespace NumberDuck
 
 				default:
 				{
-					NumbatLogic::Assert::Plz(false);
+					Assert::Plz(false);
 					break;
 				}
 
@@ -31452,7 +31821,7 @@ namespace NumberDuck
 
 				default:
 				{
-					NumbatLogic::Assert::Plz(false);
+					Assert::Plz(false);
 					break;
 				}
 
@@ -31538,7 +31907,7 @@ namespace NumberDuck
 
 				default:
 				{
-					NumbatLogic::Assert::Plz(false);
+					Assert::Plz(false);
 					break;
 				}
 
@@ -31615,7 +31984,7 @@ namespace NumberDuck
 				}
 
 			}
-			NumbatLogic::Assert::Plz(false);
+			Assert::Plz(false);
 			return 0;
 		}
 
@@ -31624,7 +31993,7 @@ namespace NumberDuck
 			m_ptg = 0;
 			m_reserved0 = 0;
 			m_value = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgNum);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgNum);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -31678,7 +32047,7 @@ namespace NumberDuck
 		{
 			m_ptg = 0;
 			m_reserved0 = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgMissArg);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgMissArg);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -31714,7 +32083,7 @@ namespace NumberDuck
 			m_ptg = 0;
 			m_reserved0 = 0;
 			m_integer = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgInt);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgInt);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -31765,7 +32134,7 @@ namespace NumberDuck
 			m_cparams = 0;
 			m_tab = 0;
 			m_fCeFunc = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgFuncVar);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgFuncVar);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -31848,7 +32217,7 @@ namespace NumberDuck
 			m_type = 0;
 			m_reserved0 = 0;
 			m_iftab = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgFunc);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgFunc);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -31934,7 +32303,7 @@ namespace NumberDuck
 			m_ptg = 0;
 			m_reserved0 = 0;
 			m_boolean = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgBool);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgBool);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -31996,7 +32365,7 @@ namespace NumberDuck
 			m_bitIf = 0;
 			m_reserved3 = 0;
 			m_unused = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrSum);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrSum);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -32050,7 +32419,7 @@ namespace NumberDuck
 			m_bitSpace = 0;
 			m_reserved3 = 0;
 			m_type = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrSpace);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrSpace);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -32131,7 +32500,7 @@ namespace NumberDuck
 			m_bitSemi = 0;
 			m_reserved2 = 0;
 			m_unused = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrSemi);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrSemi);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -32188,7 +32557,7 @@ namespace NumberDuck
 			m_bitIf = 0;
 			m_reserved3 = 0;
 			m_offset = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrIf);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrIf);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -32253,7 +32622,7 @@ namespace NumberDuck
 			m_bitGoto = 0;
 			m_reserved3 = 0;
 			m_unused = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrGoto);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgAttrGoto);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -32300,7 +32669,7 @@ namespace NumberDuck
 			m_type = 0;
 			m_reserved = 0;
 			m_area = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgArea);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgArea);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -32358,25 +32727,17 @@ namespace NumberDuck
 			Coordinate* pTopLeft = new Coordinate(m_area->m_columnFirst->m_col, m_area->m_rowFirst->m_rw, m_area->m_columnFirst->m_colRelative == 0x1, m_area->m_columnFirst->m_rowRelative == 0x1);
 			Coordinate* pBottomRight = new Coordinate(m_area->m_columnLast->m_col, m_area->m_rowLast->m_rw, m_area->m_columnLast->m_colRelative == 0x1, m_area->m_columnLast->m_rowRelative == 0x1);
 			Area* pArea = 0;
-			{
-				NumberDuck::Secret::Coordinate* __2706830545 = pTopLeft;
-				pTopLeft = 0;
-				{
-					NumberDuck::Secret::Coordinate* __2652773404 = pBottomRight;
-					pBottomRight = 0;
-					pArea = new Area(__2706830545, __2652773404);
-				}
-			}
-			{
-				NumberDuck::Secret::Area* __4245081970 = pArea;
-				pArea = 0;
-				{
-					if (pTopLeft) delete pTopLeft;
-					if (pBottomRight) delete pBottomRight;
-					if (pArea) delete pArea;
-					return new AreaToken(__4245081970);
-				}
-			}
+			NumberDuck::Secret::Coordinate* __373746207 = pTopLeft;
+			pTopLeft = 0;
+			NumberDuck::Secret::Coordinate* __51587115 = pBottomRight;
+			pBottomRight = 0;
+			pArea = new Area(__373746207, __51587115);
+			NumberDuck::Secret::Area* __2089259203 = pArea;
+			pArea = 0;
+			if (pTopLeft) delete pTopLeft;
+			if (pBottomRight) delete pBottomRight;
+			if (pArea) delete pArea;
+			return new AreaToken(__2089259203);
 		}
 
 		PtgAreaRecord::~PtgAreaRecord()
@@ -32391,7 +32752,7 @@ namespace NumberDuck
 			m_reserved = 0;
 			m_ixti = 0;
 			m_area = 0;
-			nbAssert::Assert((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgArea3d);
+			Assert::Plz((ParsedExpressionRecord::Type)(m_eType) == ParsedExpressionRecord::Type::TYPE_PtgArea3d);
 			SetDefaults();
 			BlobRead(pBlobView);
 		}
@@ -32456,32 +32817,22 @@ namespace NumberDuck
 			Coordinate* pTopLeft = new Coordinate(m_area->m_columnFirst->m_col, m_area->m_rowFirst->m_rw, m_area->m_columnFirst->m_colRelative == 0x1, m_area->m_columnFirst->m_rowRelative == 0x1);
 			Coordinate* pBottomRight = new Coordinate(m_area->m_columnLast->m_col, m_area->m_rowLast->m_rw, m_area->m_columnLast->m_colRelative == 0x1, m_area->m_columnLast->m_rowRelative == 0x1);
 			Area* pArea = 0;
-			{
-				NumberDuck::Secret::Coordinate* __2706830545 = pTopLeft;
-				pTopLeft = 0;
-				{
-					NumberDuck::Secret::Coordinate* __2652773404 = pBottomRight;
-					pBottomRight = 0;
-					pArea = new Area(__2706830545, __2652773404);
-				}
-			}
+			NumberDuck::Secret::Coordinate* __172366921 = pTopLeft;
+			pTopLeft = 0;
+			NumberDuck::Secret::Coordinate* __521395837 = pBottomRight;
+			pBottomRight = 0;
+			pArea = new Area(__172366921, __521395837);
 			Area3d* pArea3d = 0;
-			{
-				NumberDuck::Secret::Area* __4245081970 = pArea;
-				pArea = 0;
-				pArea3d = new Area3d(pWorksheetRange->m_nFirst, pWorksheetRange->m_nLast, __4245081970);
-			}
-			{
-				NumberDuck::Secret::Area3d* __2738670685 = pArea3d;
-				pArea3d = 0;
-				{
-					if (pTopLeft) delete pTopLeft;
-					if (pBottomRight) delete pBottomRight;
-					if (pArea) delete pArea;
-					if (pArea3d) delete pArea3d;
-					return new Area3dToken(__2738670685);
-				}
-			}
+			NumberDuck::Secret::Area* __2441569850 = pArea;
+			pArea = 0;
+			pArea3d = new Area3d(pWorksheetRange->m_nFirst, pWorksheetRange->m_nLast, __2441569850);
+			NumberDuck::Secret::Area3d* __926008710 = pArea3d;
+			pArea3d = 0;
+			if (pTopLeft) delete pTopLeft;
+			if (pBottomRight) delete pBottomRight;
+			if (pArea) delete pArea;
+			if (pArea3d) delete pArea3d;
+			return new Area3dToken(__926008710);
 		}
 
 		PtgArea3dRecord::~PtgArea3dRecord()
@@ -32532,10 +32883,11 @@ namespace NumberDuck
 				m_fS = m_fL > 0.5 ? fDiff / (2.0 - fMax - fMin) : fDiff / (fMax + fMin);
 				if (fMax == fR)
 					m_fH = (fG - fB) / fDiff + (fG < fB ? 6 : 0);
-				else if (fMax == fG)
-					m_fH = (fB - fR) / fDiff + 2;
 				else
-					m_fH = (fR - fG) / fDiff + 4;
+					if (fMax == fG)
+						m_fH = (fB - fR) / fDiff + 2;
+					else
+						m_fH = (fR - fG) / fDiff + 4;
 				m_fH = m_fH / 6.0;
 			}
 		}
@@ -32581,7 +32933,7 @@ namespace NumberDuck
 			m_cexts = 0;
 			m_pTempColor = 0;
 			m_pExtPropVector = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_XF_EXT);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_XF_EXT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -32648,11 +33000,9 @@ namespace NumberDuck
 				pExtProp->m_pFullColorExt->m_unusedF = 42;
 				pExtProp->m_pFullColorExt->m_unusedG = 32;
 				pExtProp->m_pFullColorExt->m_unusedH = 34;
-				{
-					NumberDuck::Secret::ExtPropStruct* __1075823487 = pExtProp;
-					pExtProp = 0;
-					m_pExtPropVector->PushBack(__1075823487);
-				}
+				NumberDuck::Secret::ExtPropStruct* __3290795502 = pExtProp;
+				pExtProp = 0;
+				m_pExtPropVector->PushBack(__3290795502);
 				if (pExtProp) delete pExtProp;
 			}
 			{
@@ -32673,11 +33023,9 @@ namespace NumberDuck
 				pExtProp->m_pFullColorExt->m_unusedF = 20;
 				pExtProp->m_pFullColorExt->m_unusedG = 0;
 				pExtProp->m_pFullColorExt->m_unusedH = 2;
-				{
-					NumberDuck::Secret::ExtPropStruct* __1075823487 = pExtProp;
-					pExtProp = 0;
-					m_pExtPropVector->PushBack(__1075823487);
-				}
+				NumberDuck::Secret::ExtPropStruct* __1361410308 = pExtProp;
+				pExtProp = 0;
+				m_pExtPropVector->PushBack(__1361410308);
 				if (pExtProp) delete pExtProp;
 			}
 			{
@@ -32698,11 +33046,9 @@ namespace NumberDuck
 				pExtProp->m_pFullColorExt->m_unusedF = 32;
 				pExtProp->m_pFullColorExt->m_unusedG = 32;
 				pExtProp->m_pFullColorExt->m_unusedH = 32;
-				{
-					NumberDuck::Secret::ExtPropStruct* __1075823487 = pExtProp;
-					pExtProp = 0;
-					m_pExtPropVector->PushBack(__1075823487);
-				}
+				NumberDuck::Secret::ExtPropStruct* __790936970 = pExtProp;
+				pExtProp = 0;
+				m_pExtPropVector->PushBack(__790936970);
 				if (pExtProp) delete pExtProp;
 			}
 		}
@@ -32716,24 +33062,22 @@ namespace NumberDuck
 		void XFExt::PostBlobRead(BlobView* pBlobView)
 		{
 			unsigned short i;
-			NumbatLogic::Assert::Plz(m_pExtPropVector == 0);
+			Assert::Plz(m_pExtPropVector == 0);
 			m_pExtPropVector = new OwnedVector<ExtPropStruct*>();
 			for (i = 0; i < m_cexts; i++)
 			{
 				ExtPropStruct* pExtProp = new ExtPropStruct();
 				pExtProp->BlobRead(pBlobView);
-				{
-					NumberDuck::Secret::ExtPropStruct* __1075823487 = pExtProp;
-					pExtProp = 0;
-					m_pExtPropVector->PushBack(__1075823487);
-				}
+				NumberDuck::Secret::ExtPropStruct* __322293692 = pExtProp;
+				pExtProp = 0;
+				m_pExtPropVector->PushBack(__322293692);
 				if (pExtProp) delete pExtProp;
 			}
 		}
 
 		void XFExt::PostBlobWrite(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(m_cexts == m_pExtPropVector->GetSize());
+			Assert::Plz(m_cexts == m_pExtPropVector->GetSize());
 			int i;
 			for (i = 0; i < m_pExtPropVector->GetSize(); i++)
 			{
@@ -32790,7 +33134,7 @@ namespace NumberDuck
 
 					case BiffStruct::XColorType::XCLRTHEMED:
 					{
-						NumbatLogic::Assert::Plz(pTheme != 0);
+						Assert::Plz(pTheme != 0);
 						unsigned int nColor = pTheme->GetColorByIndex((int)(pExtProp->m_pFullColorExt->m_xclrValue));
 						unsigned int nR = (nColor >> 16) & 0xFF;
 						unsigned int nG = (nColor >> 8) & 0xFF;
@@ -32828,7 +33172,7 @@ namespace NumberDuck
 			m_reserved = 0;
 			m_cxfs = 0;
 			m_crc = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_XF_CRC);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_XF_CRC);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -32899,10 +33243,8 @@ namespace NumberDuck
 						nCrcValue = nCrcValue << 1;
 				}
 			}
-			{
-				if (pBlob) delete pBlob;
-				return nCrcValue;
-			}
+			if (pBlob) delete pBlob;
+			return nCrcValue;
 		}
 
 		unsigned int XFCRC::ComputateCrc(Vector<XF*>* pXFVector)
@@ -32925,10 +33267,8 @@ namespace NumberDuck
 						nCrcValue = nCrcValue << 1;
 				}
 			}
-			{
-				if (pBlob) delete pBlob;
-				return nCrcValue;
-			}
+			if (pBlob) delete pBlob;
+			return nCrcValue;
 		}
 
 		XFCRC::~XFCRC()
@@ -32978,7 +33318,7 @@ namespace NumberDuck
 			m_icvBack = 0;
 			m_fsxButton = 0;
 			m_reserved3 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_XF);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_XF);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -33385,8 +33725,8 @@ namespace NumberDuck
 				}
 
 			}
-			NumbatLogic::Assert::Plz(nBackgroundColourIndex >= BiffWorkbookGlobals::NUM_DEFAULT_PALETTE_ENTRY && nBackgroundColourIndex < BiffWorkbookGlobals::NUM_DEFAULT_PALETTE_ENTRY + BiffWorkbookGlobals::NUM_CUSTOM_PALETTE_ENTRY || nBackgroundColourIndex == BiffWorkbookGlobals::PALETTE_INDEX_DEFAULT_FOREGROUND);
-			NumbatLogic::Assert::Plz(nFillPatternColourIndex >= BiffWorkbookGlobals::NUM_DEFAULT_PALETTE_ENTRY && nFillPatternColourIndex < BiffWorkbookGlobals::NUM_DEFAULT_PALETTE_ENTRY + BiffWorkbookGlobals::NUM_CUSTOM_PALETTE_ENTRY || nFillPatternColourIndex == BiffWorkbookGlobals::PALETTE_INDEX_DEFAULT_BACKGROUND);
+			Assert::Plz(nBackgroundColourIndex >= BiffWorkbookGlobals::NUM_DEFAULT_PALETTE_ENTRY && nBackgroundColourIndex < BiffWorkbookGlobals::NUM_DEFAULT_PALETTE_ENTRY + BiffWorkbookGlobals::NUM_CUSTOM_PALETTE_ENTRY || nBackgroundColourIndex == BiffWorkbookGlobals::PALETTE_INDEX_DEFAULT_FOREGROUND);
+			Assert::Plz(nFillPatternColourIndex >= BiffWorkbookGlobals::NUM_DEFAULT_PALETTE_ENTRY && nFillPatternColourIndex < BiffWorkbookGlobals::NUM_DEFAULT_PALETTE_ENTRY + BiffWorkbookGlobals::NUM_CUSTOM_PALETTE_ENTRY || nFillPatternColourIndex == BiffWorkbookGlobals::PALETTE_INDEX_DEFAULT_BACKGROUND);
 			{
 				m_fls = fls;
 				m_icvFore = nBackgroundColourIndex;
@@ -33743,7 +34083,7 @@ namespace NumberDuck
 		WsBoolRecord::WsBoolRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_haxFlags = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WSBOOL);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WSBOOL);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -33766,7 +34106,7 @@ namespace NumberDuck
 		WriteAccess::WriteAccess(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_userName = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WRITE_ACCESS);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WRITE_ACCESS);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -33831,7 +34171,7 @@ namespace NumberDuck
 			m_wScaleNormal = 0;
 			m_unused = 0;
 			m_reserved3 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WINDOW2);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WINDOW2);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -33966,7 +34306,7 @@ namespace NumberDuck
 			m_itabFirst = 0;
 			m_ctabSel = 0;
 			m_wTabRatio = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WINDOW1);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WINDOW1);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -34078,7 +34418,7 @@ namespace NumberDuck
 		WinProtect::WinProtect(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_fLockWn = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WIN_PROTECT);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_WIN_PROTECT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -34133,7 +34473,7 @@ namespace NumberDuck
 			m_fReversed = 0;
 			m_fMaxCross = 0;
 			m_unused = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ValueRange);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ValueRange);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -34198,7 +34538,7 @@ namespace NumberDuck
 		VCenterRecord::VCenterRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_vcenter = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_VCENTER);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_VCENTER);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -34234,7 +34574,7 @@ namespace NumberDuck
 		UnitsRecord::UnitsRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_unused = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Units);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Units);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -34257,7 +34597,7 @@ namespace NumberDuck
 		TopMarginRecord::TopMarginRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_num = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_TOP_MARGIN);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_TOP_MARGIN);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -34303,7 +34643,7 @@ namespace NumberDuck
 			m_iReadingOrder = 0;
 			m_icv = 0;
 			m_trot = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Tick);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Tick);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -34407,7 +34747,7 @@ namespace NumberDuck
 			m_frtHeader = 0;
 			m_dwThemeVersion = 0;
 			m_nColorVector = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_THEME);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_THEME);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -34515,19 +34855,19 @@ namespace NumberDuck
 
 		void Theme::PostBlobWrite(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(false);
+			Assert::Plz(false);
 		}
 
 		unsigned int Theme::GetColorByIndex(int nIndex)
 		{
 			if (m_dwThemeVersion == 0)
 			{
-				NumbatLogic::Assert::Plz(nIndex < m_nColorVector->GetSize());
+				Assert::Plz(nIndex < m_nColorVector->GetSize());
 				return m_nColorVector->Get(nIndex);
 			}
 			else
 			{
-				NumbatLogic::Assert::Plz(nIndex < 12);
+				Assert::Plz(nIndex < 12);
 				unsigned int nDefaultArray[12] = {0xFFFFFF, 0x000000, 0xEEECE1, 0x1F497D, 0x4F81BD, 0xC0504D, 0x9BBB59, 0x8064A2, 0x4BACC6, 0xF79646, 0x0000FF, 0x800080};
 				return nDefaultArray[nIndex];
 			}
@@ -34568,7 +34908,7 @@ namespace NumberDuck
 			m_unused3 = 0;
 			m_iReadingOrder = 0;
 			m_trot = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Text);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Text);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -34724,7 +35064,7 @@ namespace NumberDuck
 		{
 			m_ctab = 0;
 			m_cch = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SUP_BOOK);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SUP_BOOK);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -34763,7 +35103,7 @@ namespace NumberDuck
 			m_fBuiltIn = 0;
 			m_builtInData = 0;
 			m_user = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_STYLE);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_STYLE);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -34854,7 +35194,7 @@ namespace NumberDuck
 			m_iObjectContext = 0;
 			m_iObjectInstance1 = 0;
 			m_iObjectInstance2 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_StartBlock);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_StartBlock);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -34917,7 +35257,7 @@ namespace NumberDuck
 			m_cstUnique = 0;
 			m_pHaxBlob = 0;
 			m_pRgb = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SST);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SST);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -34958,11 +35298,9 @@ namespace NumberDuck
 			{
 				XLUnicodeRichExtendedString* pXLUnicodeRichExtendedString = new XLUnicodeRichExtendedString(pSharedStringContainer->Get(i));
 				pXLUnicodeRichExtendedString->ContinueAwareBlobWrite(pHaxBlobView, m_pContinueInfoVector);
-				{
-					NumberDuck::Secret::XLUnicodeRichExtendedString* __555132520 = pXLUnicodeRichExtendedString;
-					pXLUnicodeRichExtendedString = 0;
-					m_pRgb->PushBack(__555132520);
-				}
+				NumberDuck::Secret::XLUnicodeRichExtendedString* __1737470176 = pXLUnicodeRichExtendedString;
+				pXLUnicodeRichExtendedString = 0;
+				m_pRgb->PushBack(__1737470176);
 				if (pXLUnicodeRichExtendedString) delete pXLUnicodeRichExtendedString;
 			}
 			m_pHeader->m_nSize += (unsigned int)(pHaxBlobView->GetSize());
@@ -34980,11 +35318,9 @@ namespace NumberDuck
 			{
 				XLUnicodeRichExtendedString* pXLUnicodeRichExtendedString = new XLUnicodeRichExtendedString();
 				pXLUnicodeRichExtendedString->ContinueAwareBlobRead(pBlobView, m_pContinueInfoVector);
-				{
-					NumberDuck::Secret::XLUnicodeRichExtendedString* __555132520 = pXLUnicodeRichExtendedString;
-					pXLUnicodeRichExtendedString = 0;
-					m_pRgb->PushBack(__555132520);
-				}
+				NumberDuck::Secret::XLUnicodeRichExtendedString* __729550762 = pXLUnicodeRichExtendedString;
+				pXLUnicodeRichExtendedString = 0;
+				m_pRgb->PushBack(__729550762);
 				if (pXLUnicodeRichExtendedString) delete pXLUnicodeRichExtendedString;
 			}
 		}
@@ -35034,7 +35370,7 @@ namespace NumberDuck
 			m_reserved1 = 0;
 			m_mdBlank = 0;
 			m_reserved2 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ShtProps);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ShtProps);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35086,7 +35422,7 @@ namespace NumberDuck
 			m_dwChecksum = 0;
 			m_cb = 0;
 			m_rgb = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ShapePropsStream);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ShapePropsStream);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35177,7 +35513,7 @@ namespace NumberDuck
 			m_numHdr = 0;
 			m_numFtr = 0;
 			m_iCopies = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SETUP);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SETUP);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35301,7 +35637,7 @@ namespace NumberDuck
 		{
 			m_reserved = 0;
 			m_stText = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SeriesText);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SeriesText);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35357,7 +35693,7 @@ namespace NumberDuck
 			m_cValy = 0;
 			m_sdtBSize = 0;
 			m_cValBSize = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Series);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Series);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35395,7 +35731,7 @@ namespace NumberDuck
 		SerToCrtRecord::SerToCrtRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_id = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SerToCrt);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SerToCrt);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35447,7 +35783,7 @@ namespace NumberDuck
 			m_rwLast = 0;
 			m_colFirst = 0;
 			m_colLast = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SELECTION);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SELECTION);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35502,7 +35838,7 @@ namespace NumberDuck
 		{
 			m_nscl = 0;
 			m_dscl = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SCL);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SCL);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35533,7 +35869,7 @@ namespace NumberDuck
 			m_fShowNegBubbles = 0;
 			m_fHasShadow = 0;
 			m_reserved = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Scatter);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Scatter);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35580,7 +35916,7 @@ namespace NumberDuck
 			m_fHasShadow = 0;
 			m_reserved = 0;
 			SetDefaults();
-			NumbatLogic::Assert::Plz(eType == Chart::Type::TYPE_SCATTER);
+			Assert::Plz(eType == Chart::Type::TYPE_SCATTER);
 		}
 
 		Chart::Type ScatterRecord::GetChartType()
@@ -35591,7 +35927,7 @@ namespace NumberDuck
 		SIIndexRecord::SIIndexRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_numIndex = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SIIndex);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_SIIndex);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35642,7 +35978,7 @@ namespace NumberDuck
 			m_bTopThick = false;
 			m_bBottomMedium = false;
 			m_bBottomThick = false;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ROW);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ROW);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35811,7 +36147,7 @@ namespace NumberDuck
 			m_nColumnIndex = 0;
 			m_nXfIndex = 0;
 			m_nRkValue = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_RK);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_RK);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35863,7 +36199,7 @@ namespace NumberDuck
 		RightMarginRecord::RightMarginRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_num = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_RIGHT_MARGIN);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_RIGHT_MARGIN);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35898,7 +36234,7 @@ namespace NumberDuck
 		RefreshAllRecord::RefreshAllRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_refreshAll = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_REFRESH_ALL);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_REFRESH_ALL);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35921,7 +36257,7 @@ namespace NumberDuck
 		RRTabId::RRTabId(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_nNumWorksheet = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_RR_TAB_ID);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_RR_TAB_ID);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35968,7 +36304,7 @@ namespace NumberDuck
 		ProtectRecord::ProtectRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_fLock = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PROTECT);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PROTECT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -35997,7 +36333,7 @@ namespace NumberDuck
 		Prot4RevRecord::Prot4RevRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_fRevLock = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PROT_4_REV);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PROT_4_REV);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36026,7 +36362,7 @@ namespace NumberDuck
 		Prot4RevPassRecord::Prot4RevPassRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_protPwdRev = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PROT_4_REV_PASS);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PROT_4_REV_PASS);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36055,7 +36391,7 @@ namespace NumberDuck
 		PrintSizeRecord::PrintSizeRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_printSize = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PRINT_SIZE);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PRINT_SIZE);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36084,7 +36420,7 @@ namespace NumberDuck
 		PrintRowColRecord::PrintRowColRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_printRwCol = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PrintRowCol);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PrintRowCol);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36108,7 +36444,7 @@ namespace NumberDuck
 		{
 			m_fPrintGrid = 0;
 			m_unused = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PrintGrid);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PrintGrid);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36160,7 +36496,7 @@ namespace NumberDuck
 			m_unused3 = 0;
 			m_y2 = 0;
 			m_unused4 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Pos);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Pos);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36238,7 +36574,7 @@ namespace NumberDuck
 		{
 			m_dxPlotGrowth = 0;
 			m_dyPlotGrowth = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PlotGrowth);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PlotGrowth);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36268,7 +36604,7 @@ namespace NumberDuck
 
 		PlotAreaRecord::PlotAreaRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PlotArea);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PlotArea);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36294,7 +36630,7 @@ namespace NumberDuck
 		PieFormatRecord::PieFormatRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_pcExplode = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PieFormat);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PieFormat);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36323,7 +36659,7 @@ namespace NumberDuck
 		PasswordRecord::PasswordRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_wPassword = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PASSWORD);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PASSWORD);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36347,7 +36683,7 @@ namespace NumberDuck
 		{
 			m_ccv = 0;
 			for (int _x = 0; _x < BiffWorkbookGlobals::NUM_CUSTOM_PALETTE_ENTRY; _x++) m_rgColor[_x] = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PALETTE);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_PALETTE);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36398,7 +36734,7 @@ namespace NumberDuck
 
 		unsigned int PaletteRecord::GetColorByIndex(unsigned short nIndex)
 		{
-			NumbatLogic::Assert::Plz(nIndex <= m_ccv);
+			Assert::Plz(nIndex <= m_ccv);
 			return m_rgColor[nIndex];
 		}
 
@@ -36407,7 +36743,7 @@ namespace NumberDuck
 			m_wLinkObj = 0;
 			m_wLinkVar1 = 0;
 			m_wLinkVar2 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ObjectLink);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ObjectLink);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36449,7 +36785,7 @@ namespace NumberDuck
 			m_cmo = 0;
 			m_pictFormat = 0;
 			m_pictFlags = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_OBJ);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_OBJ);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36478,7 +36814,7 @@ namespace NumberDuck
 			m_pictFormat = 0;
 			m_pictFlags = 0;
 			SetDefaults();
-			NumbatLogic::Assert::Plz(eType == FtCmoStruct::ObjType::OBJ_TYPE_PICTURE || eType == FtCmoStruct::ObjType::OBJ_TYPE_CHART);
+			Assert::Plz(eType == FtCmoStruct::ObjType::OBJ_TYPE_PICTURE || eType == FtCmoStruct::ObjType::OBJ_TYPE_CHART);
 			m_cmo->m_ft = 0x15;
 			m_cmo->m_cb = 0x12;
 			m_cmo->m_ot = (unsigned short)(eType);
@@ -36538,7 +36874,7 @@ namespace NumberDuck
 		{
 			m_cell = 0;
 			m_num = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_NUMBER);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_NUMBER);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36603,7 +36939,7 @@ namespace NumberDuck
 			m_col = 0;
 			m_pRkRecVector = 0;
 			m_colLast = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MULRK);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MULRK);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36642,11 +36978,9 @@ namespace NumberDuck
 			{
 				RkRecStruct* pRkRec = new RkRecStruct();
 				pRkRec->BlobRead(pBlobView);
-				{
-					NumberDuck::Secret::RkRecStruct* __3209674599 = pRkRec;
-					pRkRec = 0;
-					m_pRkRecVector->PushBack(__3209674599);
-				}
+				NumberDuck::Secret::RkRecStruct* __1838888207 = pRkRec;
+				pRkRec = 0;
+				m_pRkRecVector->PushBack(__1838888207);
 				if (pRkRec) delete pRkRec;
 			}
 			m_colLast = pBlobView->UnpackUint16();
@@ -36697,7 +37031,7 @@ namespace NumberDuck
 			m_col = 0;
 			m_pIXFCellVector = 0;
 			m_colLast = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MULBLANK);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MULBLANK);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36730,18 +37064,16 @@ namespace NumberDuck
 			m_pIXFCellVector = 0;
 			m_colLast = 0;
 			SetDefaults();
-			NumbatLogic::Assert::Plz(pXfIndexVector->GetSize() > 1);
+			Assert::Plz(pXfIndexVector->GetSize() > 1);
 			m_rw->m_rw = nY;
 			m_col->m_col = nX;
 			for (int i = 0; i < pXfIndexVector->GetSize(); i++)
 			{
 				IXFCellStruct* pIXFCell = new IXFCellStruct();
 				pIXFCell->m_ixfe = (unsigned short)(pXfIndexVector->Get(i));
-				{
-					NumberDuck::Secret::IXFCellStruct* __62881043 = pIXFCell;
-					pIXFCell = 0;
-					m_pIXFCellVector->PushBack(__62881043);
-				}
+				NumberDuck::Secret::IXFCellStruct* __686053620 = pIXFCell;
+				pIXFCell = 0;
+				m_pIXFCellVector->PushBack(__686053620);
 				if (pIXFCell) delete pIXFCell;
 			}
 			m_colLast = (unsigned short)(m_col->m_col + pXfIndexVector->GetSize() - 1);
@@ -36760,11 +37092,9 @@ namespace NumberDuck
 			{
 				IXFCellStruct* pIXFCell = new IXFCellStruct();
 				pIXFCell->BlobRead(pBlobView);
-				{
-					NumberDuck::Secret::IXFCellStruct* __62881043 = pIXFCell;
-					pIXFCell = 0;
-					m_pIXFCellVector->PushBack(__62881043);
-				}
+				NumberDuck::Secret::IXFCellStruct* __2195982860 = pIXFCell;
+				pIXFCell = 0;
+				m_pIXFCellVector->PushBack(__2195982860);
 				if (pIXFCell) delete pIXFCell;
 			}
 			m_colLast = pBlobView->UnpackUint16();
@@ -36822,7 +37152,7 @@ namespace NumberDuck
 			m_pOfficeArtRecord = 0;
 			m_pPosition = 0;
 			m_pBlob = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MSO_DRAWING);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MSO_DRAWING);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36875,7 +37205,7 @@ namespace NumberDuck
 
 		void MsoDrawingRecord::PostBlobRead(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(m_pOfficeArtRecord == 0);
+			Assert::Plz(m_pOfficeArtRecord == 0);
 			m_pOfficeArtRecord = OfficeArtRecord::CreateOfficeArtRecord(pBlobView);
 		}
 
@@ -36930,7 +37260,7 @@ namespace NumberDuck
 		MsoDrawingGroupRecord::MsoDrawingGroupRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_pOfficeArtDggContainerRecord = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MSO_DRAWING_GROUP);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MSO_DRAWING_GROUP);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -36959,20 +37289,16 @@ namespace NumberDuck
 			OfficeArtBStoreContainerRecord* pOfficeArtBStoreContainerRecord = new OfficeArtBStoreContainerRecord();
 			for (int i = 0; i < pPictureVector->GetSize(); i++)
 				pOfficeArtBStoreContainerRecord->AddOfficeArtRecord(new OfficeArtFBSERecord(pPictureVector->Get(i)));
-			{
-				NumberDuck::Secret::OfficeArtBStoreContainerRecord* __3451512242 = pOfficeArtBStoreContainerRecord;
-				pOfficeArtBStoreContainerRecord = 0;
-				m_pOfficeArtDggContainerRecord->AddOfficeArtRecord(__3451512242);
-			}
+			NumberDuck::Secret::OfficeArtBStoreContainerRecord* __660295027 = pOfficeArtBStoreContainerRecord;
+			pOfficeArtBStoreContainerRecord = 0;
+			m_pOfficeArtDggContainerRecord->AddOfficeArtRecord(__660295027);
 			OfficeArtFOPTRecord* pOfficeArtFOPTRecord = new OfficeArtFOPTRecord();
 			pOfficeArtFOPTRecord->AddProperty((unsigned short)(OfficeArtRecord::OPIDType::OPID_TEXT_BOOLEAN_PROPERTIES), 0, 524296);
 			pOfficeArtFOPTRecord->AddProperty((unsigned short)(OfficeArtRecord::OPIDType::OPID_FILL_COLOR), 0, 134217793);
 			pOfficeArtFOPTRecord->AddProperty((unsigned short)(OfficeArtRecord::OPIDType::OPID_LINE_COLOR), 0, 134217792);
-			{
-				NumberDuck::Secret::OfficeArtFOPTRecord* __1214438724 = pOfficeArtFOPTRecord;
-				pOfficeArtFOPTRecord = 0;
-				m_pOfficeArtDggContainerRecord->AddOfficeArtRecord(__1214438724);
-			}
+			NumberDuck::Secret::OfficeArtFOPTRecord* __2203768672 = pOfficeArtFOPTRecord;
+			pOfficeArtFOPTRecord = 0;
+			m_pOfficeArtDggContainerRecord->AddOfficeArtRecord(__2203768672);
 			m_pOfficeArtDggContainerRecord->AddOfficeArtRecord(new OfficeArtSplitMenuColorContainerRecord());
 			m_pHeader->m_nSize = m_pOfficeArtDggContainerRecord->GetRecursiveSize();
 			unsigned int nOffset = MAX_DATA_SIZE;
@@ -36992,14 +37318,12 @@ namespace NumberDuck
 
 		void MsoDrawingGroupRecord::PostBlobRead(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(m_pOfficeArtDggContainerRecord == 0);
+			Assert::Plz(m_pOfficeArtDggContainerRecord == 0);
 			OfficeArtRecord* pOfficeArtRecord = OfficeArtRecord::CreateOfficeArtRecord(pBlobView);
-			NumbatLogic::Assert::Plz(pOfficeArtRecord->GetType() == OfficeArtRecord::Type::TYPE_OFFICE_ART_DGG_CONTAINER);
-			{
-				NumberDuck::Secret::OfficeArtRecord* __3533451309 = pOfficeArtRecord;
-				pOfficeArtRecord = 0;
-				m_pOfficeArtDggContainerRecord = (OfficeArtDggContainerRecord*)(__3533451309);
-			}
+			Assert::Plz(pOfficeArtRecord->GetType() == OfficeArtRecord::Type::TYPE_OFFICE_ART_DGG_CONTAINER);
+			NumberDuck::Secret::OfficeArtRecord* __3136235916 = pOfficeArtRecord;
+			pOfficeArtRecord = 0;
+			m_pOfficeArtDggContainerRecord = (OfficeArtDggContainerRecord*)(__3136235916);
 			if (pOfficeArtRecord) delete pOfficeArtRecord;
 		}
 
@@ -37029,7 +37353,7 @@ namespace NumberDuck
 		{
 			m_reserved1 = 0;
 			m_reserved2 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MMS);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MMS);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -37056,7 +37380,7 @@ namespace NumberDuck
 		{
 			m_cmcs = 0;
 			m_pRef8Vector = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MergeCells);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MergeCells);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -37099,11 +37423,9 @@ namespace NumberDuck
 				if (nTemp > 0xFF)
 					nTemp = 0xFF;
 				pRef8->m_colLast = (unsigned short)(nTemp);
-				{
-					NumberDuck::Secret::Ref8Struct* __2933356801 = pRef8;
-					pRef8 = 0;
-					m_pRef8Vector->PushBack(__2933356801);
-				}
+				NumberDuck::Secret::Ref8Struct* __831650909 = pRef8;
+				pRef8 = 0;
+				m_pRef8Vector->PushBack(__831650909);
 				if (pRef8) delete pRef8;
 			}
 		}
@@ -37119,11 +37441,9 @@ namespace NumberDuck
 			{
 				Ref8Struct* pRef8 = new Ref8Struct();
 				pRef8->BlobRead(pBlobView);
-				{
-					NumberDuck::Secret::Ref8Struct* __2933356801 = pRef8;
-					pRef8 = 0;
-					m_pRef8Vector->PushBack(__2933356801);
-				}
+				NumberDuck::Secret::Ref8Struct* __3996904455 = pRef8;
+				pRef8 = 0;
+				m_pRef8Vector->PushBack(__3996904455);
 				if (pRef8) delete pRef8;
 			}
 		}
@@ -37141,7 +37461,7 @@ namespace NumberDuck
 
 		const Ref8Struct* MergeCellsRecord::GetMergedCell(unsigned short nIndex)
 		{
-			NumbatLogic::Assert::Plz(nIndex < m_cmcs);
+			Assert::Plz(nIndex < m_cmcs);
 			return m_pRef8Vector->Get(nIndex);
 		}
 
@@ -37163,7 +37483,7 @@ namespace NumberDuck
 			m_icvFore = 0;
 			m_icvBack = 0;
 			m_miSize = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MarkerFormat);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_MarkerFormat);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -37295,7 +37615,7 @@ namespace NumberDuck
 
 				default:
 				{
-					NumbatLogic::Assert::Plz(false);
+					Assert::Plz(false);
 					break;
 				}
 
@@ -37409,7 +37729,7 @@ namespace NumberDuck
 			m_f100 = 0;
 			m_fHasShadow = 0;
 			m_reserved = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Line);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Line);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -37448,7 +37768,7 @@ namespace NumberDuck
 			m_fHasShadow = 0;
 			m_reserved = 0;
 			SetDefaults();
-			NumbatLogic::Assert::Plz(eType == Chart::Type::TYPE_LINE || eType == Chart::Type::TYPE_LINE_STACKED || eType == Chart::Type::TYPE_LINE_STACKED_100);
+			Assert::Plz(eType == Chart::Type::TYPE_LINE || eType == Chart::Type::TYPE_LINE_STACKED || eType == Chart::Type::TYPE_LINE_STACKED_100);
 			if (eType == Chart::Type::TYPE_LINE_STACKED || eType == Chart::Type::TYPE_LINE_STACKED_100)
 				m_fStacked = 0x1;
 			if (eType == Chart::Type::TYPE_LINE_STACKED_100)
@@ -37476,7 +37796,7 @@ namespace NumberDuck
 			m_fAutoCo = 0;
 			m_reserved2 = 0;
 			m_icv = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_LineFormat);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_LineFormat);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -37780,7 +38100,7 @@ namespace NumberDuck
 			m_fVert = 0;
 			m_fWasDataTable = 0;
 			m_reserved2 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Legend);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Legend);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -37855,7 +38175,7 @@ namespace NumberDuck
 			m_fWasDataTable = 0;
 			m_reserved2 = 0;
 			SetDefaults();
-			NumbatLogic::Assert::Plz(!pLegend->GetHidden());
+			Assert::Plz(!pLegend->GetHidden());
 		}
 
 		void LegendRecord::ModifyLegend(Legend* pLegend, BiffWorkbookGlobals* pBiffWorkbookGlobals)
@@ -37866,7 +38186,7 @@ namespace NumberDuck
 		LeftMarginRecord::LeftMarginRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_num = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_LEFT_MARGIN);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_LEFT_MARGIN);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -37899,7 +38219,7 @@ namespace NumberDuck
 			m_nColumnIndex = 0;
 			m_nXfIndex = 0;
 			m_nSstIndex = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_LABELSST);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_LABELSST);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -37970,7 +38290,7 @@ namespace NumberDuck
 		InterfaceHdr::InterfaceHdr(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_codePage = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_INTERFACE_HDR);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_INTERFACE_HDR);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -37997,7 +38317,7 @@ namespace NumberDuck
 
 		InterfaceEnd::InterfaceEnd(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_INTERFACE_END);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_INTERFACE_END);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -38023,7 +38343,7 @@ namespace NumberDuck
 		HideObj::HideObj(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_hideObj = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_HIDE_OBJ);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_HIDE_OBJ);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -38102,7 +38422,7 @@ namespace NumberDuck
 			m_cchFooterEven = 0;
 			m_cchHeaderFirst = 0;
 			m_cchFooterFirst = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_HeaderFooter);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_HeaderFooter);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -38214,7 +38534,7 @@ namespace NumberDuck
 		HCenterRecord::HCenterRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_hcenter = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_HCENTER);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_HCENTER);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -38246,7 +38566,7 @@ namespace NumberDuck
 		{
 			m_OPT1 = 0;
 			m_OPT2 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_GelFrame);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_GelFrame);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -38271,8 +38591,8 @@ namespace NumberDuck
 			m_OPT1 = 0;
 			m_OPT2 = 0;
 			SetDefaults();
-			NumbatLogic::Assert::Plz(pFill != 0);
-			NumbatLogic::Assert::Plz(pWorkbookGlobals != 0);
+			Assert::Plz(pFill != 0);
+			Assert::Plz(pWorkbookGlobals != 0);
 			m_OPT1 = new OfficeArtFOPTRecord();
 			{
 				Color* pColor = pFill->GetForegroundColor();
@@ -38303,24 +38623,20 @@ namespace NumberDuck
 		void GelFrameRecord::PostBlobRead(BlobView* pBlobView)
 		{
 			OfficeArtRecord* pOfficeArtRecord = 0;
-			NumbatLogic::Assert::Plz(m_OPT1 == 0);
+			Assert::Plz(m_OPT1 == 0);
 			pOfficeArtRecord = OfficeArtRecord::CreateOfficeArtRecord(pBlobView);
-			NumbatLogic::Assert::Plz(pOfficeArtRecord != 0);
-			NumbatLogic::Assert::Plz(pOfficeArtRecord->GetType() == OfficeArtRecord::Type::TYPE_OFFICE_ART_FOPT);
-			{
-				NumberDuck::Secret::OfficeArtRecord* __3533451309 = pOfficeArtRecord;
-				pOfficeArtRecord = 0;
-				m_OPT1 = (OfficeArtFOPTRecord*)(__3533451309);
-			}
-			NumbatLogic::Assert::Plz(m_OPT2 == 0);
+			Assert::Plz(pOfficeArtRecord != 0);
+			Assert::Plz(pOfficeArtRecord->GetType() == OfficeArtRecord::Type::TYPE_OFFICE_ART_FOPT);
+			NumberDuck::Secret::OfficeArtRecord* __1257219328 = pOfficeArtRecord;
+			pOfficeArtRecord = 0;
+			m_OPT1 = (OfficeArtFOPTRecord*)(__1257219328);
+			Assert::Plz(m_OPT2 == 0);
 			pOfficeArtRecord = OfficeArtRecord::CreateOfficeArtRecord(pBlobView);
-			NumbatLogic::Assert::Plz(pOfficeArtRecord != 0);
-			NumbatLogic::Assert::Plz(pOfficeArtRecord->GetType() == OfficeArtRecord::Type::TYPE_OFFICE_ART_TERTIARY_FOPT);
-			{
-				NumberDuck::Secret::OfficeArtRecord* __3533451309 = pOfficeArtRecord;
-				pOfficeArtRecord = 0;
-				m_OPT2 = (OfficeArtTertiaryFOPTRecord*)(__3533451309);
-			}
+			Assert::Plz(pOfficeArtRecord != 0);
+			Assert::Plz(pOfficeArtRecord->GetType() == OfficeArtRecord::Type::TYPE_OFFICE_ART_TERTIARY_FOPT);
+			NumberDuck::Secret::OfficeArtRecord* __166715354 = pOfficeArtRecord;
+			pOfficeArtRecord = 0;
+			m_OPT2 = (OfficeArtTertiaryFOPTRecord*)(__166715354);
 			if (pOfficeArtRecord) delete pOfficeArtRecord;
 		}
 
@@ -38357,7 +38673,7 @@ namespace NumberDuck
 			m_fAutoSize = 0;
 			m_fAutoPosition = 0;
 			m_reserved = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Frame);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Frame);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -38429,7 +38745,7 @@ namespace NumberDuck
 			m_reserved3 = 0;
 			m_chn = 0;
 			m_formula = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_FORMULA);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_FORMULA);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -38500,7 +38816,7 @@ namespace NumberDuck
 			m_cell->m_rw->m_rw = nY;
 			m_cell->m_ixfe->m_ixfe = nXfIndex;
 			m_fAlwaysCalc = 0x1;
-			NumbatLogic::Assert::Plz(m_formula == 0);
+			Assert::Plz(m_formula == 0);
 			m_formula = new CellParsedFormulaStruct(pFormula, pWorkbookGlobals);
 			m_pHeader->m_nSize += (unsigned short)(m_formula->GetSize());
 		}
@@ -38512,7 +38828,7 @@ namespace NumberDuck
 
 		void FormulaRecord::PostBlobRead(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(m_formula == 0);
+			Assert::Plz(m_formula == 0);
 			m_formula = new CellParsedFormulaStruct();
 			m_formula->BlobRead(pBlobView);
 		}
@@ -38553,7 +38869,7 @@ namespace NumberDuck
 		{
 			m_ifmt = 0;
 			m_stFormat = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_FORMAT);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_FORMAT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -38581,7 +38897,7 @@ namespace NumberDuck
 			m_ifmt = 0;
 			m_stFormat = 0;
 			SetDefaults();
-			NumbatLogic::Assert::Plz(ifmt >= 5 && ifmt <= 8 || ifmt >= 23 && ifmt <= 26 || ifmt >= 41 && ifmt <= 44 || ifmt >= 63 && ifmt <= 66 || ifmt >= 164 && ifmt <= 382 || ifmt >= 383 && ifmt <= 392);
+			Assert::Plz(ifmt >= 5 && ifmt <= 8 || ifmt >= 23 && ifmt <= 26 || ifmt >= 41 && ifmt <= 44 || ifmt >= 63 && ifmt <= 66 || ifmt >= 164 && ifmt <= 382 || ifmt >= 383 && ifmt <= 392);
 			m_ifmt = ifmt;
 			m_stFormat->m_rgb->Set(szFormat);
 			m_pHeader->m_nSize += (unsigned int)(m_stFormat->GetDynamicSize());
@@ -38611,7 +38927,7 @@ namespace NumberDuck
 		FontXRecord::FontXRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_iFont = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_FontX);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_FontX);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -38651,7 +38967,7 @@ namespace NumberDuck
 			m_bCharSet = 0;
 			m_unused3 = 0;
 			m_fontName = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_FONT);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_FONT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -38750,7 +39066,7 @@ namespace NumberDuck
 			m_unused1 = unused1;
 			if (bItalic)
 				m_fItalic = 0x1;
-			NumbatLogic::Assert::Plz(nColourIndex >= BiffWorkbookGlobals::NUM_DEFAULT_PALETTE_ENTRY && nColourIndex < BiffWorkbookGlobals::NUM_DEFAULT_PALETTE_ENTRY + BiffWorkbookGlobals::NUM_CUSTOM_PALETTE_ENTRY || nColourIndex == BiffWorkbookGlobals::PALETTE_INDEX_DEFAULT_TOOL_TIP_TEXT || nColourIndex == BiffWorkbookGlobals::PALETTE_INDEX_DEFAULT_FONT_AUTOMATIC);
+			Assert::Plz(nColourIndex >= BiffWorkbookGlobals::NUM_DEFAULT_PALETTE_ENTRY && nColourIndex < BiffWorkbookGlobals::NUM_DEFAULT_PALETTE_ENTRY + BiffWorkbookGlobals::NUM_CUSTOM_PALETTE_ENTRY || nColourIndex == BiffWorkbookGlobals::PALETTE_INDEX_DEFAULT_TOOL_TIP_TEXT || nColourIndex == BiffWorkbookGlobals::PALETTE_INDEX_DEFAULT_FONT_AUTOMATIC);
 			m_icv->m_icv = nColourIndex;
 			if (bBold)
 				m_bls = 700;
@@ -38859,7 +39175,7 @@ namespace NumberDuck
 		{
 			m_cXTI = 0;
 			m_pXTIVector = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_EXTERN_SHEET);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_EXTERN_SHEET);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -38888,7 +39204,7 @@ namespace NumberDuck
 			m_pXTIVector = 0;
 			SetDefaults();
 			m_cXTI = (unsigned short)(pWorksheetRangeVector->GetSize());
-			NumbatLogic::Assert::Plz(m_pXTIVector == 0);
+			Assert::Plz(m_pXTIVector == 0);
 			m_pXTIVector = new OwnedVector<XTIStruct*>();
 			for (unsigned short i = 0; i < m_cXTI; i++)
 			{
@@ -38897,11 +39213,9 @@ namespace NumberDuck
 				pXTI->m_iSupBook = 0;
 				pXTI->m_itabFirst = (short)(pWorksheetRange->m_nFirst);
 				pXTI->m_itabLast = (short)(pWorksheetRange->m_nLast);
-				{
-					NumberDuck::Secret::XTIStruct* __2160298696 = pXTI;
-					pXTI = 0;
-					m_pXTIVector->PushBack(__2160298696);
-				}
+				NumberDuck::Secret::XTIStruct* __278724498 = pXTI;
+				pXTI = 0;
+				m_pXTIVector->PushBack(__278724498);
 				if (pXTI) delete pXTI;
 			}
 		}
@@ -38913,17 +39227,15 @@ namespace NumberDuck
 
 		void ExternSheetRecord::PostBlobRead(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(m_pXTIVector == 0);
+			Assert::Plz(m_pXTIVector == 0);
 			m_pXTIVector = new OwnedVector<XTIStruct*>();
 			for (unsigned short i = 0; i < m_cXTI; i++)
 			{
 				XTIStruct* pXTI = new XTIStruct();
 				pXTI->BlobRead(pBlobView);
-				{
-					NumberDuck::Secret::XTIStruct* __2160298696 = pXTI;
-					pXTI = 0;
-					m_pXTIVector->PushBack(__2160298696);
-				}
+				NumberDuck::Secret::XTIStruct* __3746685345 = pXTI;
+				pXTI = 0;
+				m_pXTIVector->PushBack(__3746685345);
 				if (pXTI) delete pXTI;
 			}
 		}
@@ -38941,7 +39253,7 @@ namespace NumberDuck
 
 		XTIStruct* ExternSheetRecord::GetXTIByIndex(unsigned short nIndex)
 		{
-			NumbatLogic::Assert::Plz(nIndex < m_cXTI);
+			Assert::Plz(nIndex < m_cXTI);
 			return m_pXTIVector->Get(nIndex);
 		}
 
@@ -38957,7 +39269,7 @@ namespace NumberDuck
 
 		Excel9File::Excel9File(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_EXCEL9_FILE);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_EXCEL9_FILE);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -38981,7 +39293,7 @@ namespace NumberDuck
 			m_unused1 = 0;
 			m_unused2 = 0;
 			m_unused3 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_EndBlock);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_EndBlock);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39037,7 +39349,7 @@ namespace NumberDuck
 			m_nFirstUsedColumn = 0;
 			m_nLastUsedColumn = 0;
 			m_nUnused = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DIMENSION);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DIMENSION);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39087,7 +39399,7 @@ namespace NumberDuck
 		DefaultTextRecord::DefaultTextRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_id = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DefaultText);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DefaultText);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39123,7 +39435,7 @@ namespace NumberDuck
 			m_reserved = 0;
 			m_miyRw = 0;
 			m_miyRwHidden = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DEFAULTROWHEIGHT);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DEFAULTROWHEIGHT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39169,7 +39481,7 @@ namespace NumberDuck
 			m_reserved = 0;
 			m_miyRw = 0;
 			m_miyRwHidden = 0;
-			NumbatLogic::Assert::Plz(nRowHeight > 0);
+			Assert::Plz(nRowHeight > 0);
 			SetDefaults();
 			m_fUnsynced = 1;
 			m_miyRw = nRowHeight;
@@ -39201,7 +39513,7 @@ namespace NumberDuck
 		DefColWidthRecord::DefColWidthRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_cchdefColWidth = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DEFCOLWIDTH);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DEFCOLWIDTH);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39242,7 +39554,7 @@ namespace NumberDuck
 		Date1904::Date1904(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_f1904DateSystem = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DATE_1904);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DATE_1904);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39269,7 +39581,7 @@ namespace NumberDuck
 			m_iss = 0;
 			m_fXL4iss = 0;
 			m_reserved = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DataFormat);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DataFormat);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39325,7 +39637,7 @@ namespace NumberDuck
 		DSF::DSF(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_reserved = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DSF);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_DSF);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39349,7 +39661,7 @@ namespace NumberDuck
 		{
 			m_frtHeader = 0;
 			m_cb = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CrtMlFrt);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CrtMlFrt);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39400,7 +39712,7 @@ namespace NumberDuck
 			m_unused2 = 0;
 			m_unused3 = 0;
 			m_unused4 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CrtLink);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CrtLink);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39473,7 +39785,7 @@ namespace NumberDuck
 			m_dx = 0;
 			m_dy = 0;
 			m_reserved2 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CrtLayout12A);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CrtLayout12A);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39570,7 +39882,7 @@ namespace NumberDuck
 			m_unused1 = 0;
 			m_fCollapsed = 0;
 			m_reserved2 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_COLINFO);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_COLINFO);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39687,7 +39999,7 @@ namespace NumberDuck
 		CodePage::CodePage(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_cv = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CODE_PAGE);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CODE_PAGE);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39722,7 +40034,7 @@ namespace NumberDuck
 			m_y = 0;
 			m_dx = 0;
 			m_dy = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Chart);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Chart);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39802,7 +40114,7 @@ namespace NumberDuck
 			m_hax6 = 0;
 			m_hax7 = 0;
 			m_hax8 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ChartFrtInfo);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ChartFrtInfo);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39887,7 +40199,7 @@ namespace NumberDuck
 			m_fVaried = 0;
 			m_reserved5 = 0;
 			m_icrt = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ChartFormat);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_ChartFormat);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39939,7 +40251,7 @@ namespace NumberDuck
 		{
 			m_riser = 0;
 			m_taper = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Chart3DBarShape);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Chart3DBarShape);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -39983,7 +40295,7 @@ namespace NumberDuck
 			m_fMaxCross = 0;
 			m_fReverse = 0;
 			m_reserved = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CatSerRange);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CatSerRange);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40043,7 +40355,7 @@ namespace NumberDuck
 			m_cAutoCatLabelReal = 0;
 			m_unused = 0;
 			m_reserved = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CatLab);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CatLab);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40101,7 +40413,7 @@ namespace NumberDuck
 		CalcPrecision::CalcPrecision(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_fFullPrec = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CALC_PRECISION);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CALC_PRECISION);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40130,7 +40442,7 @@ namespace NumberDuck
 		CalcCountRecord::CalcCountRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_nMaxNumIteration = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CALCCOUNT);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_CALCCOUNT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40159,7 +40471,7 @@ namespace NumberDuck
 		BuiltInFnGroupCount::BuiltInFnGroupCount(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_count = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BUILT_IN_FN_GROUP_COUNT);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BUILT_IN_FN_GROUP_COUNT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40187,7 +40499,7 @@ namespace NumberDuck
 			m_reserved = 0;
 			m_ifmt = 0;
 			m_formula = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BRAI);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BRAI);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40239,7 +40551,7 @@ namespace NumberDuck
 			m_fUnlinkedIfmt = 0x0;
 			if (fUnlinkedIfmt)
 				m_fUnlinkedIfmt = 0x1;
-			NumbatLogic::Assert::Plz(m_formula == 0);
+			Assert::Plz(m_formula == 0);
 			m_formula = new CellParsedFormulaStruct(pFormula, pWorkbookGlobals);
 			m_pHeader->m_nSize += (unsigned short)(m_formula->GetSize());
 		}
@@ -40251,7 +40563,7 @@ namespace NumberDuck
 
 		void BraiRecord::PostBlobRead(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(m_formula == 0);
+			Assert::Plz(m_formula == 0);
 			m_formula = new CellParsedFormulaStruct();
 			m_formula->BlobRead(pBlobView);
 		}
@@ -40288,7 +40600,7 @@ namespace NumberDuck
 			m_reserved = 0;
 			m_dt = 0;
 			m_stName = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOUND_SHEET_8);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOUND_SHEET_8);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40353,7 +40665,7 @@ namespace NumberDuck
 		BottomMarginRecord::BottomMarginRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_num = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOTTOM_MARGIN);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOTTOM_MARGIN);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40385,7 +40697,7 @@ namespace NumberDuck
 			m_cell = 0;
 			m_bBoolErr = 0;
 			m_fError = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOOLERR);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOOLERR);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40471,7 +40783,7 @@ namespace NumberDuck
 			m_reserved = 0;
 			m_grbit1 = 0;
 			m_grbit2 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOOK_EXT);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOOK_EXT);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40598,7 +40910,7 @@ namespace NumberDuck
 			m_unused = 0;
 			m_fHideBorderUnselLists = 0;
 			m_reserved2 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOOK_BOOL);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOOK_BOOL);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40653,7 +40965,7 @@ namespace NumberDuck
 			m_rupYear = 0;
 			m_nFileHistoryFlags = 0;
 			m_nMinimumExcelVersion = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOF);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BOF);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40708,7 +41020,7 @@ namespace NumberDuck
 		Blank::Blank(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_cell = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BLANK);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BLANK);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40772,7 +41084,7 @@ namespace NumberDuck
 
 		BeginRecord::BeginRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Begin);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Begin);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40798,7 +41110,7 @@ namespace NumberDuck
 			m_f100 = 0;
 			m_fHasShadow = 0;
 			m_reserved = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Bar);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Bar);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40848,7 +41160,7 @@ namespace NumberDuck
 			m_f100 = 0;
 			m_fHasShadow = 0;
 			m_reserved = 0;
-			NumbatLogic::Assert::Plz(eType == Chart::Type::TYPE_COLUMN || eType == Chart::Type::TYPE_COLUMN_STACKED || eType == Chart::Type::TYPE_COLUMN_STACKED_100 || eType == Chart::Type::TYPE_BAR || eType == Chart::Type::TYPE_BAR_STACKED || eType == Chart::Type::TYPE_BAR_STACKED_100);
+			Assert::Plz(eType == Chart::Type::TYPE_COLUMN || eType == Chart::Type::TYPE_COLUMN_STACKED || eType == Chart::Type::TYPE_COLUMN_STACKED_100 || eType == Chart::Type::TYPE_BAR || eType == Chart::Type::TYPE_BAR_STACKED || eType == Chart::Type::TYPE_BAR_STACKED_100);
 			SetDefaults();
 			if (eType == Chart::Type::TYPE_BAR || eType == Chart::Type::TYPE_BAR_STACKED || eType == Chart::Type::TYPE_BAR_STACKED_100)
 				m_fTranspose = 0x1;
@@ -40888,7 +41200,7 @@ namespace NumberDuck
 		Backup::Backup(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_fBackup = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BACKUP);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_BACKUP);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40915,7 +41227,7 @@ namespace NumberDuck
 			m_reserved2 = 0;
 			m_reserved3 = 0;
 			m_reserved4 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Axis);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Axis);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -40980,7 +41292,7 @@ namespace NumberDuck
 			m_unused2 = 0;
 			m_unused3 = 0;
 			m_unused4 = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AxisParent);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AxisParent);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -41015,7 +41327,7 @@ namespace NumberDuck
 		AxisLineRecord::AxisLineRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_id = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AxisLine);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AxisLine);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -41056,7 +41368,7 @@ namespace NumberDuck
 		AxesUsedRecord::AxesUsedRecord(BiffHeader* pHeader, Stream* pStream) : BiffRecord(pHeader, pStream)
 		{
 			m_cAxes = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AxesUsed);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AxesUsed);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -41117,7 +41429,7 @@ namespace NumberDuck
 			m_fAutoCross = 0;
 			m_fAutoDate = 0;
 			m_reserved = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AxcExt);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AxcExt);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -41194,7 +41506,7 @@ namespace NumberDuck
 			m_f100 = 0;
 			m_fHasShadow = 0;
 			m_reserved = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Area);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_Area);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -41232,7 +41544,7 @@ namespace NumberDuck
 			m_f100 = 0;
 			m_fHasShadow = 0;
 			m_reserved = 0;
-			NumbatLogic::Assert::Plz(eType == Chart::Type::TYPE_AREA || eType == Chart::Type::TYPE_AREA_STACKED || eType == Chart::Type::TYPE_AREA_STACKED_100);
+			Assert::Plz(eType == Chart::Type::TYPE_AREA || eType == Chart::Type::TYPE_AREA_STACKED || eType == Chart::Type::TYPE_AREA_STACKED_100);
 			SetDefaults();
 			if (eType == Chart::Type::TYPE_AREA_STACKED || eType == Chart::Type::TYPE_AREA_STACKED_100)
 				m_fStacked = 1;
@@ -41260,7 +41572,7 @@ namespace NumberDuck
 			m_reserved = 0;
 			m_icvFore = 0;
 			m_icvBack = 0;
-			nbAssert::Assert((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AreaFormat);
+			Assert::Plz((BiffRecord::Type)(m_pHeader->m_nType) == BiffRecord::Type::TYPE_AreaFormat);
 			SetDefaults();
 			BlobRead(m_pBlobView);
 		}
@@ -41621,11 +41933,9 @@ namespace NumberDuck
 							pContinueInfo->m_nOffset = pBlobView->GetOffset();
 							pContinueInfo->m_fHighByte = pBlobView->UnpackUint8();
 							fHighByte = pContinueInfo->m_fHighByte;
-							{
-								NumberDuck::Secret::XLUnicodeRichExtendedString_ContinueInfo* __2394809829 = pContinueInfo;
-								pContinueInfo = 0;
-								m_pContinueInfoVector->PushBack(__2394809829);
-							}
+							NumberDuck::Secret::XLUnicodeRichExtendedString_ContinueInfo* __1666248665 = pContinueInfo;
+							pContinueInfo = 0;
+							m_pContinueInfoVector->PushBack(__1666248665);
 							nNextContinueIndex++;
 							if (pContinueInfo) delete pContinueInfo;
 						}
@@ -41692,13 +42002,13 @@ namespace NumberDuck
 			if (nContinueOffset + SIZE > BiffRecord::MAX_DATA_SIZE)
 			{
 				pContinueInfoVector->PushBack(new BiffRecord_ContinueInfo(nOffset, 0));
-				NumbatLogic::Assert::Plz(nContinueOffset <= BiffRecord::MAX_DATA_SIZE);
+				Assert::Plz(nContinueOffset <= BiffRecord::MAX_DATA_SIZE);
 				nContinueOffset = 0;
 			}
 			BlobWrite(pBlobView);
 			nOffset = nOffset + (int)(SIZE);
 			nContinueOffset = nContinueOffset + (int)(SIZE);
-			NumbatLogic::Assert::Plz(m_cch == m_rgb->GetLength());
+			Assert::Plz(m_cch == m_rgb->GetLength());
 			if (m_cch > 0)
 			{
 				Blob* pDataBlob = new Blob(true);
@@ -41732,7 +42042,7 @@ namespace NumberDuck
 					if (pDataBlobView->GetOffset() < pDataBlobView->GetSize())
 					{
 						pContinueInfoVector->PushBack(new BiffRecord_ContinueInfo(nOffset, 0));
-						NumbatLogic::Assert::Plz(nContinueOffset <= BiffRecord::MAX_DATA_SIZE);
+						Assert::Plz(nContinueOffset <= BiffRecord::MAX_DATA_SIZE);
 						nContinueOffset = 0;
 					}
 				}
@@ -41944,11 +42254,9 @@ namespace NumberDuck
 			{
 				ParsedExpressionRecord* pParsedExpressionRecord = ParsedExpressionRecord::CreateParsedExpressionRecord(pBlobView);
 				ParsedExpressionRecord::Type eTemp = pParsedExpressionRecord->GetType();
-				{
-					NumberDuck::Secret::ParsedExpressionRecord* __3596419756 = pParsedExpressionRecord;
-					pParsedExpressionRecord = 0;
-					m_pParsedExpressionRecordVector->PushBack(__3596419756);
-				}
+				NumberDuck::Secret::ParsedExpressionRecord* __1275220832 = pParsedExpressionRecord;
+				pParsedExpressionRecord = 0;
+				m_pParsedExpressionRecordVector->PushBack(__1275220832);
 				if (eTemp == ParsedExpressionRecord::Type::TYPE_UNKNOWN)
 				{
 					if (pParsedExpressionRecord) delete pParsedExpressionRecord;
@@ -42697,8 +43005,8 @@ namespace NumberDuck
 
 		void HyperlinkObjectStruct::PostBlobWrite(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(m_haxUrl != 0);
-			NumbatLogic::Assert::Plz(m_hlstmfHasMoniker > 0 && m_hlstmfMonikerSavedAsStr == 0);
+			Assert::Plz(m_haxUrl != 0);
+			Assert::Plz(m_hlstmfHasMoniker > 0 && m_hlstmfMonikerSavedAsStr == 0);
 			pBlobView->PackUint8(0xE0);
 			pBlobView->PackUint8(0xC9);
 			pBlobView->PackUint8(0xEA);
@@ -43090,7 +43398,7 @@ namespace NumberDuck
 
 		void ExtPropStruct::PostBlobRead(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(m_pFullColorExt == 0);
+			Assert::Plz(m_pFullColorExt == 0);
 			switch (m_extType)
 			{
 				case 0x0004:
@@ -43118,7 +43426,7 @@ namespace NumberDuck
 
 		void ExtPropStruct::PreBlobWrite(BlobView* pBlobView)
 		{
-			NumbatLogic::Assert::Plz(m_pFullColorExt != 0);
+			Assert::Plz(m_pFullColorExt != 0);
 			m_cb = SIZE + FullColorExtStruct::SIZE;
 		}
 
@@ -43255,7 +43563,7 @@ namespace NumberDuck
 			SetDefaults();
 			if (pFormula != 0)
 			{
-				NumbatLogic::Assert::Plz(pWorkbookGlobals != 0);
+				Assert::Plz(pWorkbookGlobals != 0);
 				pFormula->ToRgce(m_rgce, pWorkbookGlobals);
 			}
 		}
@@ -43269,7 +43577,7 @@ namespace NumberDuck
 		{
 			int nStart = pBlobView->GetStart() + pBlobView->GetOffset();
 			int nEnd = nStart + m_cce;
-			NumbatLogic::Assert::Plz(nEnd <= pBlobView->GetEnd());
+			Assert::Plz(nEnd <= pBlobView->GetEnd());
 			BlobView* pTempBlobView = new BlobView(pBlobView->GetBlob(), nStart, nEnd);
 			m_rgce->BlobRead(pTempBlobView);
 			pBlobView->SetOffset(pBlobView->GetOffset() + pTempBlobView->GetOffset());
@@ -43594,7 +43902,7 @@ namespace NumberDuck
 
 																default:
 																{
-																	NumbatLogic::Assert::Plz(false);
+																	Assert::Plz(false);
 																	break;
 																}
 
@@ -43623,11 +43931,9 @@ namespace NumberDuck
 															pPicture->SetWidth((unsigned short)(nWidth));
 															pPicture->SetHeight((unsigned short)(nHeight));
 															pPicture->SetUrl(sUrl->GetExternalString());
-															{
-																NumberDuck::Picture* __417512960 = pPicture;
-																pPicture = 0;
-																m_pImpl->m_pPictureVector->PushBack(__417512960);
-															}
+															NumberDuck::Picture* __712015281 = pPicture;
+															pPicture = 0;
+															m_pImpl->m_pPictureVector->PushBack(__712015281);
 															{
 																delete sUrl;
 																sUrl = 0;
@@ -43667,35 +43973,44 @@ namespace NumberDuck
 																pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(j);
 																if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Bar)
 																	pChart = new Chart(this, ((BarRecord*)(pBiffRecord))->GetChartType());
-																else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Line)
-																	pChart = new Chart(this, ((LineRecord*)(pBiffRecord))->GetChartType());
-																else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Area)
-																	pChart = new Chart(this, ((AreaRecord*)(pBiffRecord))->GetChartType());
-																else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Scatter)
-																	pChart = new Chart(this, ((ScatterRecord*)(pBiffRecord))->GetChartType());
-																else if (pChart != 0 && pBiffRecord->GetType() == BiffRecord::Type::TYPE_DataFormat && m_pBiffRecordContainer->m_pBiffRecordVector->Get(j + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
-																{
-																	j++;
-																	while (true)
-																	{
-																		j++;
-																		pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(j);
-																		if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_LineFormat)
-																			pDefaultLineFormatRecord = (LineFormatRecord*)(pBiffRecord);
-																		if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AreaFormat)
-																			pDefaultAreaFormatRecord = (AreaFormatRecord*)(pBiffRecord);
-																		else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_MarkerFormat)
-																			pDefaultMarkerFormatRecord = (MarkerFormatRecord*)(pBiffRecord);
-																		else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
-																			j = LoopToEnd(j, m_pBiffRecordContainer);
-																		else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
-																			break;
-																	}
-																}
-																else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
-																	j = LoopToEnd(j, m_pBiffRecordContainer);
-																else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
-																	break;
+																else
+																	if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Line)
+																		pChart = new Chart(this, ((LineRecord*)(pBiffRecord))->GetChartType());
+																	else
+																		if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Area)
+																			pChart = new Chart(this, ((AreaRecord*)(pBiffRecord))->GetChartType());
+																		else
+																			if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Scatter)
+																				pChart = new Chart(this, ((ScatterRecord*)(pBiffRecord))->GetChartType());
+																			else
+																				if (pChart != 0 && pBiffRecord->GetType() == BiffRecord::Type::TYPE_DataFormat && m_pBiffRecordContainer->m_pBiffRecordVector->Get(j + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
+																				{
+																					j++;
+																					while (true)
+																					{
+																						j++;
+																						pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(j);
+																						if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_LineFormat)
+																							pDefaultLineFormatRecord = (LineFormatRecord*)(pBiffRecord);
+																						if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AreaFormat)
+																							pDefaultAreaFormatRecord = (AreaFormatRecord*)(pBiffRecord);
+																						else
+																							if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_MarkerFormat)
+																								pDefaultMarkerFormatRecord = (MarkerFormatRecord*)(pBiffRecord);
+																							else
+																								if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
+																									j = LoopToEnd(j, m_pBiffRecordContainer);
+																								else
+																									if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+																										break;
+																					}
+																				}
+																				else
+																					if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
+																						j = LoopToEnd(j, m_pBiffRecordContainer);
+																					else
+																						if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+																							break;
 															}
 														}
 													}
@@ -43733,259 +44048,290 @@ namespace NumberDuck
 																				pLineFormat = (LineFormatRecord*)(pBiffRecord);
 																				pLineFormat->ModifyLine(pChart->GetFrameBorderLine(), pBiffWorkbookGlobals);
 																			}
-																			else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AreaFormat)
-																			{
-																				pAreaFormat = (AreaFormatRecord*)(pBiffRecord);
-																				pAreaFormat->ModifyFill(pChart->GetFrameFill(), pBiffWorkbookGlobals);
-																			}
-																			else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
-																				i = LoopToEnd(i, m_pBiffRecordContainer);
-																			else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_ShapePropsStream)
-																			{
-																			}
-																			else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
-																				break;
+																			else
+																				if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AreaFormat)
+																				{
+																					pAreaFormat = (AreaFormatRecord*)(pBiffRecord);
+																					pAreaFormat->ModifyFill(pChart->GetFrameFill(), pBiffWorkbookGlobals);
+																				}
+																				else
+																					if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
+																						i = LoopToEnd(i, m_pBiffRecordContainer);
+																					else
+																						if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_ShapePropsStream)
+																						{
+																						}
+																						else
+																							if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+																								break;
 																		}
 																	}
-																	else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Series && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
-																	{
-																		i++;
-																		Formula* pNameFormula = 0;
-																		Formula* pValuesFormula = 0;
-																		Formula* pCategoriesFormula = 0;
-																		int k = i;
-																		while (true)
-																		{
-																			k++;
-																			pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(k);
-																			if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_BRAI)
-																			{
-																				BraiRecord* pBraiRecord = (BraiRecord*)(pBiffRecord);
-																				if (pBraiRecord->GetRt() == 0x02)
-																				{
-																					if (pBraiRecord->GetId() == 0x00)
-																						pNameFormula = pBraiRecord->GetFormula(pBiffWorkbookGlobals);
-																					else if (pBraiRecord->GetId() == 0x01)
-																						pValuesFormula = pBraiRecord->GetFormula(pBiffWorkbookGlobals);
-																					else if (pBraiRecord->GetId() == 0x02)
-																						pCategoriesFormula = pBraiRecord->GetFormula(pBiffWorkbookGlobals);
-																				}
-																			}
-																			else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
-																				k = LoopToEnd(k, m_pBiffRecordContainer);
-																			else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
-																				break;
-																		}
-																		if (pValuesFormula != 0)
-																		{
-																			Series* pSeries = 0;
-																			{
-																				NumberDuck::Secret::Formula* __310527988 = pValuesFormula;
-																				pValuesFormula = 0;
-																				pSeries = pChart->m_pImpl->CreateSeries(__310527988);
-																			}
-																			if (pNameFormula != 0)
-																			{
-																				NumberDuck::Secret::Formula* __4039636097 = pNameFormula;
-																				pNameFormula = 0;
-																				pSeries->m_pImpl->SetNameFormula(__4039636097);
-																			}
-																			if (pCategoriesFormula != 0)
-																			{
-																				NumberDuck::Secret::Formula* __3225269424 = pCategoriesFormula;
-																				pCategoriesFormula = 0;
-																				pChart->m_pImpl->SetCategoriesFormula(__3225269424);
-																			}
-																			pSeries->m_pImpl->SetClassicStyle(pChart->GetType(), (unsigned short)(pChart->GetNumSeries() - 1));
-																			if (pDefaultLineFormatRecord != 0)
-																				pDefaultLineFormatRecord->ModifyLine(pSeries->GetLine(), pBiffWorkbookGlobals);
-																			if (pDefaultAreaFormatRecord != 0)
-																				pDefaultAreaFormatRecord->ModifyFill(pSeries->GetFill(), pBiffWorkbookGlobals);
-																			if (pDefaultMarkerFormatRecord != 0)
-																				pDefaultMarkerFormatRecord->ModifyMarker(pSeries->GetMarker(), pBiffWorkbookGlobals);
-																			while (true)
-																			{
-																				i++;
-																				pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
-																				if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_DataFormat && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
-																				{
-																					i++;
-																					while (true)
-																					{
-																						i++;
-																						pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
-																						if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_LineFormat)
-																							((LineFormatRecord*)(pBiffRecord))->ModifyLine(pSeries->GetLine(), pBiffWorkbookGlobals);
-																						else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AreaFormat)
-																							((AreaFormatRecord*)(pBiffRecord))->ModifyFill(pSeries->GetFill(), pBiffWorkbookGlobals);
-																						else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_MarkerFormat)
-																							((MarkerFormatRecord*)(pBiffRecord))->ModifyMarker(pSeries->GetMarker(), pBiffWorkbookGlobals);
-																						else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
-																							i = LoopToEnd(i, m_pBiffRecordContainer);
-																						else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
-																							break;
-																					}
-																				}
-																				else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
-																					i = LoopToEnd(i, m_pBiffRecordContainer);
-																				else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
-																					break;
-																			}
-																		}
-																		else
-																		{
-																			{
-																				delete pNameFormula;
-																				pNameFormula = 0;
-																			}
-																			{
-																				delete pValuesFormula;
-																				pValuesFormula = 0;
-																			}
-																			{
-																				delete pCategoriesFormula;
-																				pCategoriesFormula = 0;
-																			}
-																			i = LoopToEnd(i, m_pBiffRecordContainer);
-																		}
-																		if (pNameFormula) delete pNameFormula;
-																		if (pValuesFormula) delete pValuesFormula;
-																		if (pCategoriesFormula) delete pCategoriesFormula;
-																	}
-																	else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AxisParent && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
-																	{
-																		i++;
-																		while (true)
+																	else
+																		if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Series && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
 																		{
 																			i++;
-																			pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
-																			if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Axis && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
+																			Formula* pNameFormula = 0;
+																			Formula* pValuesFormula = 0;
+																			Formula* pCategoriesFormula = 0;
+																			int k = i;
+																			while (true)
 																			{
-																				i++;
-																				unsigned short nType = ((AxisRecord*)(pBiffRecord))->GetType();
-																				if (nType == 0x0000 || nType == 0x0001)
+																				k++;
+																				pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(k);
+																				if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_BRAI)
 																				{
-																					Line* pAxisLine = pChart->GetHorizontalAxisLine();
-																					Line* pGridLine = pChart->GetHorizontalGridLine();
-																					if (((AxisRecord*)(pBiffRecord))->GetType() == 0x0001)
+																					BraiRecord* pBraiRecord = (BraiRecord*)(pBiffRecord);
+																					if (pBraiRecord->GetRt() == 0x02)
 																					{
-																						pAxisLine = pChart->GetVerticalAxisLine();
-																						pGridLine = pChart->GetVerticalGridLine();
+																						if (pBraiRecord->GetId() == 0x00)
+																							pNameFormula = pBraiRecord->GetFormula(pBiffWorkbookGlobals);
+																						else
+																							if (pBraiRecord->GetId() == 0x01)
+																								pValuesFormula = pBraiRecord->GetFormula(pBiffWorkbookGlobals);
+																							else
+																								if (pBraiRecord->GetId() == 0x02)
+																									pCategoriesFormula = pBraiRecord->GetFormula(pBiffWorkbookGlobals);
 																					}
-																					while (true)
-																					{
-																						i++;
-																						pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
-																						if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AxisLine && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_LineFormat)
-																						{
-																							switch (((AxisLineRecord*)(pBiffRecord))->GetId())
-																							{
-																								case 0x0000:
-																								{
-																									i++;
-																									pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
-																									((LineFormatRecord*)(pBiffRecord))->ModifyLine(pAxisLine, pBiffWorkbookGlobals);
-																									break;
-																								}
-
-																								case 0x0001:
-																								{
-																									i++;
-																									pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
-																									((LineFormatRecord*)(pBiffRecord))->ModifyLine(pGridLine, pBiffWorkbookGlobals);
-																									break;
-																								}
-
-																							}
-																						}
-																						else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
-																							i = LoopToEnd(i, m_pBiffRecordContainer);
-																						else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+																				}
+																				else
+																					if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
+																						k = LoopToEnd(k, m_pBiffRecordContainer);
+																					else
+																						if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
 																							break;
-																					}
-																				}
 																			}
-																			else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_PlotArea && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Frame && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 2)->GetType() == BiffRecord::Type::TYPE_Begin)
+																			if (pValuesFormula != 0)
 																			{
-																				i += 2;
+																				Series* pSeries = 0;
+																				NumberDuck::Secret::Formula* __169641457 = pValuesFormula;
+																				pValuesFormula = 0;
+																				pSeries = pChart->m_pImpl->CreateSeries(__169641457);
+																				if (pNameFormula != 0)
+																				{
+																					NumberDuck::Secret::Formula* __2958736552 = pNameFormula;
+																					pNameFormula = 0;
+																					pSeries->m_pImpl->SetNameFormula(__2958736552);
+																				}
+																				if (pCategoriesFormula != 0)
+																				{
+																					NumberDuck::Secret::Formula* __1497865396 = pCategoriesFormula;
+																					pCategoriesFormula = 0;
+																					pChart->m_pImpl->SetCategoriesFormula(__1497865396);
+																				}
+																				pSeries->m_pImpl->SetClassicStyle(pChart->GetType(), (unsigned short)(pChart->GetNumSeries() - 1));
+																				if (pDefaultLineFormatRecord != 0)
+																					pDefaultLineFormatRecord->ModifyLine(pSeries->GetLine(), pBiffWorkbookGlobals);
+																				if (pDefaultAreaFormatRecord != 0)
+																					pDefaultAreaFormatRecord->ModifyFill(pSeries->GetFill(), pBiffWorkbookGlobals);
+																				if (pDefaultMarkerFormatRecord != 0)
+																					pDefaultMarkerFormatRecord->ModifyMarker(pSeries->GetMarker(), pBiffWorkbookGlobals);
 																				while (true)
 																				{
 																					i++;
 																					pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
-																					if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_LineFormat)
-																						((LineFormatRecord*)(pBiffRecord))->ModifyLine(pChart->GetPlotBorderLine(), pBiffWorkbookGlobals);
-																					else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AreaFormat)
-																						((AreaFormatRecord*)(pBiffRecord))->ModifyFill(pChart->GetPlotFill(), pBiffWorkbookGlobals);
-																					else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
-																						i = LoopToEnd(i, m_pBiffRecordContainer);
-																					else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
-																						break;
-																				}
-																			}
-																			else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_ChartFormat && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
-																			{
-																				i++;
-																				while (true)
-																				{
-																					i++;
-																					pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
-																					if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Legend && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
+																					if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_DataFormat && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
 																					{
-																						((LegendRecord*)(pBiffRecord))->ModifyLegend(pChart->GetLegend(), pBiffWorkbookGlobals);
 																						i++;
 																						while (true)
 																						{
 																							i++;
 																							pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
-																							if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Frame && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
+																							if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_LineFormat)
+																								((LineFormatRecord*)(pBiffRecord))->ModifyLine(pSeries->GetLine(), pBiffWorkbookGlobals);
+																							else
+																								if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AreaFormat)
+																									((AreaFormatRecord*)(pBiffRecord))->ModifyFill(pSeries->GetFill(), pBiffWorkbookGlobals);
+																								else
+																									if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_MarkerFormat)
+																										((MarkerFormatRecord*)(pBiffRecord))->ModifyMarker(pSeries->GetMarker(), pBiffWorkbookGlobals);
+																									else
+																										if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
+																											i = LoopToEnd(i, m_pBiffRecordContainer);
+																										else
+																											if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+																												break;
+																						}
+																					}
+																					else
+																						if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
+																							i = LoopToEnd(i, m_pBiffRecordContainer);
+																						else
+																							if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+																								break;
+																				}
+																			}
+																			else
+																			{
+																				{
+																					delete pNameFormula;
+																					pNameFormula = 0;
+																				}
+																				{
+																					delete pValuesFormula;
+																					pValuesFormula = 0;
+																				}
+																				{
+																					delete pCategoriesFormula;
+																					pCategoriesFormula = 0;
+																				}
+																				i = LoopToEnd(i, m_pBiffRecordContainer);
+																			}
+																			if (pNameFormula) delete pNameFormula;
+																			if (pValuesFormula) delete pValuesFormula;
+																			if (pCategoriesFormula) delete pCategoriesFormula;
+																		}
+																		else
+																			if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AxisParent && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
+																			{
+																				i++;
+																				while (true)
+																				{
+																					i++;
+																					pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
+																					if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Axis && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
+																					{
+																						i++;
+																						unsigned short nType = ((AxisRecord*)(pBiffRecord))->GetType();
+																						if (nType == 0x0000 || nType == 0x0001)
+																						{
+																							Line* pAxisLine = pChart->GetHorizontalAxisLine();
+																							Line* pGridLine = pChart->GetHorizontalGridLine();
+																							if (((AxisRecord*)(pBiffRecord))->GetType() == 0x0001)
+																							{
+																								pAxisLine = pChart->GetVerticalAxisLine();
+																								pGridLine = pChart->GetVerticalGridLine();
+																							}
+																							while (true)
+																							{
+																								i++;
+																								pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
+																								if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AxisLine && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_LineFormat)
+																								{
+																									switch (((AxisLineRecord*)(pBiffRecord))->GetId())
+																									{
+																										case 0x0000:
+																										{
+																											i++;
+																											pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
+																											((LineFormatRecord*)(pBiffRecord))->ModifyLine(pAxisLine, pBiffWorkbookGlobals);
+																											break;
+																										}
+
+																										case 0x0001:
+																										{
+																											i++;
+																											pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
+																											((LineFormatRecord*)(pBiffRecord))->ModifyLine(pGridLine, pBiffWorkbookGlobals);
+																											break;
+																										}
+
+																									}
+																								}
+																								else
+																									if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
+																										i = LoopToEnd(i, m_pBiffRecordContainer);
+																									else
+																										if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+																											break;
+																							}
+																						}
+																					}
+																					else
+																						if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_PlotArea && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Frame && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 2)->GetType() == BiffRecord::Type::TYPE_Begin)
+																						{
+																							i += 2;
+																							while (true)
+																							{
+																								i++;
+																								pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
+																								if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_LineFormat)
+																									((LineFormatRecord*)(pBiffRecord))->ModifyLine(pChart->GetPlotBorderLine(), pBiffWorkbookGlobals);
+																								else
+																									if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AreaFormat)
+																										((AreaFormatRecord*)(pBiffRecord))->ModifyFill(pChart->GetPlotFill(), pBiffWorkbookGlobals);
+																									else
+																										if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
+																											i = LoopToEnd(i, m_pBiffRecordContainer);
+																										else
+																											if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+																												break;
+																							}
+																						}
+																						else
+																							if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_ChartFormat && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
 																							{
 																								i++;
 																								while (true)
 																								{
 																									i++;
 																									pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
-																									if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_LineFormat)
-																										((LineFormatRecord*)(pBiffRecord))->ModifyLine(pChart->GetLegend()->GetBorderLine(), pBiffWorkbookGlobals);
-																									else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AreaFormat)
-																										((AreaFormatRecord*)(pBiffRecord))->ModifyFill(pChart->GetLegend()->GetFill(), pBiffWorkbookGlobals);
-																									else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
-																										i = LoopToEnd(i, m_pBiffRecordContainer);
-																									else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
-																										break;
+																									if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Legend && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
+																									{
+																										((LegendRecord*)(pBiffRecord))->ModifyLegend(pChart->GetLegend(), pBiffWorkbookGlobals);
+																										i++;
+																										while (true)
+																										{
+																											i++;
+																											pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
+																											if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Frame && m_pBiffRecordContainer->m_pBiffRecordVector->Get(i + 1)->GetType() == BiffRecord::Type::TYPE_Begin)
+																											{
+																												i++;
+																												while (true)
+																												{
+																													i++;
+																													pBiffRecord = m_pBiffRecordContainer->m_pBiffRecordVector->Get(i);
+																													if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_LineFormat)
+																														((LineFormatRecord*)(pBiffRecord))->ModifyLine(pChart->GetLegend()->GetBorderLine(), pBiffWorkbookGlobals);
+																													else
+																														if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_AreaFormat)
+																															((AreaFormatRecord*)(pBiffRecord))->ModifyFill(pChart->GetLegend()->GetFill(), pBiffWorkbookGlobals);
+																														else
+																															if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
+																																i = LoopToEnd(i, m_pBiffRecordContainer);
+																															else
+																																if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+																																	break;
+																												}
+																											}
+																											else
+																												if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
+																													i = LoopToEnd(i, m_pBiffRecordContainer);
+																												else
+																													if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+																														break;
+																										}
+																									}
+																									else
+																										if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
+																											i = LoopToEnd(i, m_pBiffRecordContainer);
+																										else
+																											if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+																												break;
 																								}
 																							}
-																							else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
-																								i = LoopToEnd(i, m_pBiffRecordContainer);
-																							else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
-																								break;
-																						}
-																					}
-																					else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
-																						i = LoopToEnd(i, m_pBiffRecordContainer);
-																					else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
-																						break;
+																							else
+																								if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
+																									i = LoopToEnd(i, m_pBiffRecordContainer);
+																								else
+																									if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+																										break;
 																				}
 																			}
-																			else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
-																				i = LoopToEnd(i, m_pBiffRecordContainer);
-																			else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
-																				break;
-																		}
-																	}
-																	else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
-																		i = LoopToEnd(i, m_pBiffRecordContainer);
-																	else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
-																		break;
+																			else
+																				if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
+																					i = LoopToEnd(i, m_pBiffRecordContainer);
+																				else
+																					if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+																						break;
 																}
 															}
-															else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_EOF)
-																break;
+															else
+																if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_EOF)
+																	break;
 														}
-														{
-															NumberDuck::Chart* __477487748 = pChart;
-															pChart = 0;
-															m_pImpl->m_pChartVector->PushBack(__477487748);
-														}
+														NumberDuck::Chart* __1687521994 = pChart;
+														pChart = 0;
+														m_pImpl->m_pChartVector->PushBack(__1687521994);
 													}
 													if (pChart) delete pChart;
 												}
@@ -44013,7 +44359,7 @@ namespace NumberDuck
 						for (unsigned short j = 0; j < pMergeCellsRecord->GetNumMergedCell(); j++)
 						{
 							const Ref8Struct* pRef8 = pMergeCellsRecord->GetMergedCell(j);
-							MergedCell* pMergedCell = CreateMergedCell(pRef8->m_colFirst, pRef8->m_rwFirst, (unsigned short)(pRef8->m_colLast - pRef8->m_colFirst + 1), (unsigned short)(pRef8->m_rwLast - pRef8->m_rwFirst + 1));
+							CreateMergedCell(pRef8->m_colFirst, pRef8->m_rwFirst, (unsigned short)(pRef8->m_colLast - pRef8->m_colFirst + 1), (unsigned short)(pRef8->m_rwLast - pRef8->m_rwFirst + 1));
 						}
 						break;
 					}
@@ -44049,11 +44395,9 @@ namespace NumberDuck
 				}
 			}
 			DefColWidthRecord* pDefColWidth = new DefColWidthRecord(8);
-			{
-				NumberDuck::Secret::DefColWidthRecord* __2009045423 = pDefColWidth;
-				pDefColWidth = 0;
-				pBiffRecordContainer->AddBiffRecord(__2009045423);
-			}
+			NumberDuck::Secret::DefColWidthRecord* __3271316325 = pDefColWidth;
+			pDefColWidth = 0;
+			pBiffRecordContainer->AddBiffRecord(__3271316325);
 			{
 				int i = 0;
 				while (true)
@@ -44062,7 +44406,6 @@ namespace NumberDuck
 						break;
 					TableElement<ColumnInfo*>* pCurrent = pWorksheet->m_pImpl->m_pColumnInfoTable->GetByIndex(i);
 					TableElement<ColumnInfo*>* pLast = pWorksheet->m_pImpl->m_pColumnInfoTable->GetByIndex(i);
-					int nNextIndex = i;
 					while (true)
 					{
 						if (i == pWorksheet->m_pImpl->m_pColumnInfoTable->GetSize() - 1)
@@ -44076,11 +44419,9 @@ namespace NumberDuck
 						i++;
 					}
 					ColInfoRecord* pColInfo = new ColInfoRecord((unsigned short)(pCurrent->m_nColumn), (unsigned short)(pLast->m_nColumn), (unsigned short)((unsigned int)(pCurrent->m_xObject->m_nWidth) * 65426 / 1789), pCurrent->m_xObject->m_bHidden);
-					{
-						NumberDuck::Secret::ColInfoRecord* __4169651391 = pColInfo;
-						pColInfo = 0;
-						pBiffRecordContainer->AddBiffRecord(__4169651391);
-					}
+					NumberDuck::Secret::ColInfoRecord* __1539927052 = pColInfo;
+					pColInfo = 0;
+					pBiffRecordContainer->AddBiffRecord(__1539927052);
 					i++;
 					if (pColInfo) delete pColInfo;
 				}
@@ -44115,11 +44456,9 @@ namespace NumberDuck
 									pLastRow = pCurrentRow;
 									RowRecord* pOwnedRowRecord = new RowRecord((unsigned short)(pRowElement->m_nRow), (unsigned short)((unsigned int)(pRowElement->m_xObject->m_nHeight) * 8190 / 546));
 									pCurrentRow = pOwnedRowRecord;
-									{
-										NumberDuck::Secret::RowRecord* __3618893028 = pOwnedRowRecord;
-										pOwnedRowRecord = 0;
-										pRowRecordVector->PushBack(__3618893028);
-									}
+									NumberDuck::Secret::RowRecord* __1024030321 = pOwnedRowRecord;
+									pOwnedRowRecord = 0;
+									pRowRecordVector->PushBack(__1024030321);
 									if (pLastRow != 0 && pCurrentRow->GetRow() == pLastRow->GetRow() + 1 && pLastRow->GetBottomThick())
 										pCurrentRow->SetTopThick();
 									if (pOwnedRowRecord) delete pOwnedRowRecord;
@@ -44131,11 +44470,9 @@ namespace NumberDuck
 								pLastRow = pCurrentRow;
 								RowRecord* pOwnedRowRecord = new RowRecord((unsigned short)(pElement->m_nRow), (unsigned short)(DEFAULT_ROW_HEIGHT * 8190 / 546));
 								pCurrentRow = pOwnedRowRecord;
-								{
-									NumberDuck::Secret::RowRecord* __3618893028 = pOwnedRowRecord;
-									pOwnedRowRecord = 0;
-									pRowRecordVector->PushBack(__3618893028);
-								}
+								NumberDuck::Secret::RowRecord* __2131329160 = pOwnedRowRecord;
+								pOwnedRowRecord = 0;
+								pRowRecordVector->PushBack(__2131329160);
 								if (pLastRow != 0 && pCurrentRow->GetRow() == pLastRow->GetRow() + 1 && pLastRow->GetBottomThick())
 									pCurrentRow->SetTopThick();
 								if (pOwnedRowRecord) delete pOwnedRowRecord;
@@ -44216,10 +44553,8 @@ namespace NumberDuck
 									delete pXFIndexVector;
 									pXFIndexVector = 0;
 								}
-								{
-									if (pXFIndexVector) delete pXFIndexVector;
-									break;
-								}
+								if (pXFIndexVector) delete pXFIndexVector;
+								break;
 							}
 
 							case Value::Type::TYPE_STRING:
@@ -44248,10 +44583,8 @@ namespace NumberDuck
 									delete pFormula;
 									pFormula = 0;
 								}
-								{
-									if (pFormula) delete pFormula;
-									break;
-								}
+								if (pFormula) delete pFormula;
+								break;
 							}
 
 						}
@@ -44272,11 +44605,9 @@ namespace NumberDuck
 							pLastRow = pCurrentRow;
 							RowRecord* pOwnedRowRecord = new RowRecord((unsigned short)(pRowElement->m_nRow), (unsigned short)((unsigned int)(pRowElement->m_xObject->m_nHeight) * 8190 / 546));
 							pCurrentRow = pOwnedRowRecord;
-							{
-								NumberDuck::Secret::RowRecord* __3618893028 = pOwnedRowRecord;
-								pOwnedRowRecord = 0;
-								pRowRecordVector->PushBack(__3618893028);
-							}
+							NumberDuck::Secret::RowRecord* __4112012816 = pOwnedRowRecord;
+							pOwnedRowRecord = 0;
+							pRowRecordVector->PushBack(__4112012816);
 							if (pLastRow != 0 && pCurrentRow->GetRow() == pLastRow->GetRow() + 1 && pLastRow->GetBottomThick())
 								pCurrentRow->SetTopThick();
 							if (pOwnedRowRecord) delete pOwnedRowRecord;
@@ -44310,11 +44641,9 @@ namespace NumberDuck
 				OfficeArtSpContainerRecord* pOfficeArtSpContainerRecord = new OfficeArtSpContainerRecord();
 				pOfficeArtSpContainerRecord->AddOfficeArtRecord(new OfficeArtFSPGRRecord());
 				pOfficeArtSpContainerRecord->AddOfficeArtRecord(new OfficeArtFSPRecord(0, 1024, 1, 1, 0, 0));
-				{
-					NumberDuck::Secret::OfficeArtSpContainerRecord* __1049470179 = pOfficeArtSpContainerRecord;
-					pOfficeArtSpContainerRecord = 0;
-					pOfficeArtSpgrContainerRecord->AddOfficeArtRecord(__1049470179);
-				}
+				NumberDuck::Secret::OfficeArtSpContainerRecord* __4290075639 = pOfficeArtSpContainerRecord;
+				pOfficeArtSpContainerRecord = 0;
+				pOfficeArtSpgrContainerRecord->AddOfficeArtRecord(__4290075639);
 				nIndex = 0;
 				for (unsigned short i = 0; i < pWorksheet->GetNumPicture(); i++)
 				{
@@ -44366,11 +44695,9 @@ namespace NumberDuck
 					{
 						pOfficeArtFOPTRecord->AddProperty((unsigned short)(OfficeArtRecord::OPIDType::OPID_GROUP_SHAPE_BOOLEAN_PROPERTIES), 0, 131072);
 					}
-					{
-						NumberDuck::Secret::OfficeArtFOPTRecord* __1214438724 = pOfficeArtFOPTRecord;
-						pOfficeArtFOPTRecord = 0;
-						pOfficeArtSpContainerRecord->AddOfficeArtRecord(__1214438724);
-					}
+					NumberDuck::Secret::OfficeArtFOPTRecord* __1066641846 = pOfficeArtFOPTRecord;
+					pOfficeArtFOPTRecord = 0;
+					pOfficeArtSpContainerRecord->AddOfficeArtRecord(__1066641846);
 					OfficeArtDimensions* pDimensions = ComputeDimensions(pWorksheet, (unsigned short)(pPicture->GetX()), (unsigned short)(pPicture->GetSubX()), (unsigned short)(pPicture->GetWidth()), (unsigned short)(pPicture->GetY()), (unsigned short)(pPicture->GetSubY()), (unsigned short)(pPicture->GetHeight()));
 					pOfficeArtSpContainerRecord->AddOfficeArtRecord(new OfficeArtClientAnchorSheetRecord(pDimensions->m_nCellX1, pDimensions->m_nSubCellX1, pDimensions->m_nCellY1, pDimensions->m_nSubCellY1, pDimensions->m_nCellX2, pDimensions->m_nSubCellX2, pDimensions->m_nCellY2, pDimensions->m_nSubCellY2));
 					{
@@ -44379,11 +44706,9 @@ namespace NumberDuck
 					}
 					pOfficeArtSpContainerRecord->AddOfficeArtRecord(new OfficeArtClientDataRecord());
 					pOfficeArtSpContainerRecordVector->PushBack(pOfficeArtSpContainerRecord);
-					{
-						NumberDuck::Secret::OfficeArtSpContainerRecord* __1049470179 = pOfficeArtSpContainerRecord;
-						pOfficeArtSpContainerRecord = 0;
-						pOfficeArtSpgrContainerRecord->AddOfficeArtRecord(__1049470179);
-					}
+					NumberDuck::Secret::OfficeArtSpContainerRecord* __4139018850 = pOfficeArtSpContainerRecord;
+					pOfficeArtSpContainerRecord = 0;
+					pOfficeArtSpgrContainerRecord->AddOfficeArtRecord(__4139018850);
 					if (nIndex == 0)
 						nFirstOffset = pOfficeArtDgContainerRecord->GetRecursiveSize() + pOfficeArtSpgrContainerRecord->GetRecursiveSize();
 					nIndex++;
@@ -44402,11 +44727,9 @@ namespace NumberDuck
 					pOfficeArtFOPTRecord->AddProperty((unsigned short)(OfficeArtRecord::OPIDType::OPID_FILL_STYLE_BOOLEAN_PROPERTIES), 0, 1048592);
 					pOfficeArtFOPTRecord->AddStringProperty((unsigned short)(OfficeArtRecord::OPIDType::OPID_WZ_NAME), "Chart 1");
 					pOfficeArtFOPTRecord->AddProperty((unsigned short)(OfficeArtRecord::OPIDType::OPID_GROUP_SHAPE_BOOLEAN_PROPERTIES), 0, 131072);
-					{
-						NumberDuck::Secret::OfficeArtFOPTRecord* __1214438724 = pOfficeArtFOPTRecord;
-						pOfficeArtFOPTRecord = 0;
-						pOfficeArtSpContainerRecord->AddOfficeArtRecord(__1214438724);
-					}
+					NumberDuck::Secret::OfficeArtFOPTRecord* __1082302810 = pOfficeArtFOPTRecord;
+					pOfficeArtFOPTRecord = 0;
+					pOfficeArtSpContainerRecord->AddOfficeArtRecord(__1082302810);
 					OfficeArtDimensions* pDimensions = ComputeDimensions(pWorksheet, (unsigned short)(pChart->GetX()), (unsigned short)(pChart->GetSubX()), (unsigned short)(pChart->GetWidth()), (unsigned short)(pChart->GetY()), (unsigned short)(pChart->GetSubY()), (unsigned short)(pChart->GetHeight()));
 					pOfficeArtSpContainerRecord->AddOfficeArtRecord(new OfficeArtClientAnchorSheetRecord(pDimensions->m_nCellX1, pDimensions->m_nSubCellX1, pDimensions->m_nCellY1, pDimensions->m_nSubCellY1, pDimensions->m_nCellX2, pDimensions->m_nSubCellX2, pDimensions->m_nCellY2, pDimensions->m_nSubCellY2));
 					{
@@ -44415,22 +44738,18 @@ namespace NumberDuck
 					}
 					pOfficeArtSpContainerRecord->AddOfficeArtRecord(new OfficeArtClientDataRecord());
 					pOfficeArtSpContainerRecordVector->PushBack(pOfficeArtSpContainerRecord);
-					{
-						NumberDuck::Secret::OfficeArtSpContainerRecord* __1049470179 = pOfficeArtSpContainerRecord;
-						pOfficeArtSpContainerRecord = 0;
-						pOfficeArtSpgrContainerRecord->AddOfficeArtRecord(__1049470179);
-					}
+					NumberDuck::Secret::OfficeArtSpContainerRecord* __3617940001 = pOfficeArtSpContainerRecord;
+					pOfficeArtSpContainerRecord = 0;
+					pOfficeArtSpgrContainerRecord->AddOfficeArtRecord(__3617940001);
 					if (nIndex == 0)
 						nFirstOffset = pOfficeArtDgContainerRecord->GetRecursiveSize() + pOfficeArtSpgrContainerRecord->GetRecursiveSize();
 					nIndex++;
 					if (pOfficeArtFOPTRecord) delete pOfficeArtFOPTRecord;
 					if (pDimensions) delete pDimensions;
 				}
-				{
-					NumberDuck::Secret::OfficeArtSpgrContainerRecord* __2757789752 = pOfficeArtSpgrContainerRecord;
-					pOfficeArtSpgrContainerRecord = 0;
-					pOfficeArtDgContainerRecord->AddOfficeArtRecord(__2757789752);
-				}
+				NumberDuck::Secret::OfficeArtSpgrContainerRecord* __3771744244 = pOfficeArtSpgrContainerRecord;
+				pOfficeArtSpgrContainerRecord = 0;
+				pOfficeArtDgContainerRecord->AddOfficeArtRecord(__3771744244);
 				nIndex = 0;
 				for (unsigned short i = 0; i < pWorksheet->GetNumPicture(); i++)
 				{
@@ -44612,7 +44931,7 @@ namespace NumberDuck
 
 						default:
 						{
-							NumbatLogic::Assert::Plz(false);
+							Assert::Plz(false);
 							break;
 						}
 
@@ -44719,11 +45038,9 @@ namespace NumberDuck
 				nRowHeight = pWorksheet->GetRowHeight(pDimensions->m_nCellY2);
 			}
 			pDimensions->m_nSubCellY2 = (unsigned short)((pDimensions->m_nSubCellY2 * 256 + nRowHeight / 2) / nRowHeight);
-			{
-				NumberDuck::Secret::OfficeArtDimensions* __2049702641 = pDimensions;
-				pDimensions = 0;
-				return __2049702641;
-			}
+			NumberDuck::Secret::OfficeArtDimensions* __2448664441 = pDimensions;
+			pDimensions = 0;
+			return __2448664441;
 		}
 
 		int BiffWorksheet::LoopToEnd(int i, BiffRecordContainer* pBiffRecordContainer)
@@ -44735,8 +45052,9 @@ namespace NumberDuck
 				BiffRecord* pBiffRecord = pBiffRecordContainer->m_pBiffRecordVector->Get(i);
 				if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_Begin)
 					nDepth++;
-				else if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
-					nDepth--;
+				else
+					if (pBiffRecord->GetType() == BiffRecord::Type::TYPE_End)
+						nDepth--;
 			}
 			return i;
 		}
@@ -44785,11 +45103,9 @@ namespace NumberDuck
 			{
 				BiffRecord* pBiffRecord = BiffRecord::CreateBiffRecord(pStream);
 				BiffRecord::Type eType = pBiffRecord->GetType();
-				{
-					NumberDuck::Secret::BiffRecord* __3036547922 = pBiffRecord;
-					pBiffRecord = 0;
-					AddBiffRecord(__3036547922);
-				}
+				NumberDuck::Secret::BiffRecord* __4035559897 = pBiffRecord;
+				pBiffRecord = 0;
+				AddBiffRecord(__4035559897);
 				if (eType == BiffRecord::Type::TYPE_BOF)
 				{
 					nDepth++;
@@ -44840,7 +45156,7 @@ namespace NumberDuck
 
 		void StreamDirectoryImplementation::AppendStream(Stream* pStream)
 		{
-			NumbatLogic::Assert::Plz(m_pStreamVector->GetSize() == pStream->GetStreamId());
+			Assert::Plz(m_pStreamVector->GetSize() == pStream->GetStreamId());
 			m_pStreamVector->PushBack(pStream);
 		}
 
@@ -44850,8 +45166,9 @@ namespace NumberDuck
 			Stream* pStreamB = (Stream*)(pObjectB);
 			if (pStreamA->GetNameLengthUtf16() > pStreamB->GetNameLengthUtf16())
 				return -1;
-			else if (pStreamA->GetNameLengthUtf16() < pStreamB->GetNameLengthUtf16())
-				return 1;
+			else
+				if (pStreamA->GetNameLengthUtf16() < pStreamB->GetNameLengthUtf16())
+					return 1;
 			unsigned short nLength = pStreamA->GetNameLengthUtf16();
 			for (unsigned short i = 0; i < nLength; i++)
 			{
@@ -44859,8 +45176,9 @@ namespace NumberDuck
 				unsigned short b = pStreamB->GetNameUtf16(i);
 				if (a > b)
 					return -1;
-				else if (a < b)
-					return 1;
+				else
+					if (a < b)
+						return 1;
 			}
 			return 0;
 		}
@@ -44925,8 +45243,8 @@ namespace NumberDuck
 
 		Stream* StreamDirectory::GetStreamByIndex(int nStreamDirectoryId)
 		{
-			NumbatLogic::Assert::Plz(nStreamDirectoryId >= 0);
-			NumbatLogic::Assert::Plz(nStreamDirectoryId < GetNumStream());
+			Assert::Plz(nStreamDirectoryId >= 0);
+			Assert::Plz(nStreamDirectoryId < GetNumStream());
 			return m_pImpl->m_pStreamVector->Get(nStreamDirectoryId);
 		}
 
@@ -44984,7 +45302,7 @@ namespace NumberDuck
 			{
 				Stream* pStream = m_pImpl->m_pStreamVector->Get(i);
 				if (pStream->GetType() != Stream::Type::TYPE_EMPTY)
-					NumbatLogic::Assert::Plz(pRedBlackTree->AddObject(pStream));
+					Assert::Plz(pRedBlackTree->AddObject(pStream));
 			}
 			m_pImpl->RedBlackTreeWalk(pRedBlackTree->GetRootNode(), m_pImpl->m_pStreamVector->Get(0));
 			{
@@ -45017,8 +45335,8 @@ namespace NumberDuck
 
 		int SectorAllocationTable::GetSectorId(int nIndex)
 		{
-			NumbatLogic::Assert::Plz(nIndex >= 0);
-			NumbatLogic::Assert::Plz(nIndex < GetNumSectorId());
+			Assert::Plz(nIndex >= 0);
+			Assert::Plz(nIndex < GetNumSectorId());
 			BlobView* pBlobView = GetBlobView();
 			pBlobView->SetOffset(nIndex << 2);
 			return pBlobView->UnpackInt32();
@@ -45027,8 +45345,8 @@ namespace NumberDuck
 		void SectorAllocationTable::SetSectorId(int nIndex, int nSectorId)
 		{
 			BlobView* pBlobView = GetBlobView();
-			NumbatLogic::Assert::Plz(nIndex >= 0);
-			NumbatLogic::Assert::Plz(nIndex < GetNumSectorId());
+			Assert::Plz(nIndex >= 0);
+			Assert::Plz(nIndex < GetNumSectorId());
 			int nLastSectorId = pBlobView->UnpackInt32At(nIndex << 2);
 			if (nSectorId != nLastSectorId)
 			{
@@ -45087,8 +45405,8 @@ namespace NumberDuck
 		Sector::Sector(int nSectorId, BlobView* pBlobView, int nDataSize)
 		{
 			m_pImpl = 0;
-			NumbatLogic::Assert::Plz(pBlobView != 0);
-			NumbatLogic::Assert::Plz(((nDataSize & (nDataSize - 1)) == 0));
+			Assert::Plz(pBlobView != 0);
+			Assert::Plz(((nDataSize & (nDataSize - 1)) == 0));
 			m_pImpl = new SectorImplementation();
 			m_pImpl->m_nSectorId = nSectorId;
 			m_pImpl->m_pBlobView = new BlobView(pBlobView->GetBlob(), pBlobView->GetOffset(), pBlobView->GetOffset() + nDataSize);
@@ -45162,7 +45480,7 @@ namespace NumberDuck
 
 		int MasterSectorAllocationTable::GetInternalSectorId(int nIndex)
 		{
-			NumbatLogic::Assert::Plz(nIndex >= 0);
+			Assert::Plz(nIndex >= 0);
 			if (nIndex < INITIAL_SECTOR_ID_ARRAY_SIZE)
 				return m_pHeader->m_pMasterSectorAllocationTable[nIndex];
 			else
@@ -45171,7 +45489,7 @@ namespace NumberDuck
 
 		void MasterSectorAllocationTable::SetInternalSectorId(int nIndex, int nSectorId)
 		{
-			NumbatLogic::Assert::Plz(nIndex >= 0);
+			Assert::Plz(nIndex >= 0);
 			if (nIndex < INITIAL_SECTOR_ID_ARRAY_SIZE)
 				m_pHeader->m_pMasterSectorAllocationTable[nIndex] = nSectorId;
 			else
@@ -45180,7 +45498,7 @@ namespace NumberDuck
 
 		int MasterSectorAllocationTable::TranslateIndex(int nIndex)
 		{
-			NumbatLogic::Assert::Plz(nIndex >= 0);
+			Assert::Plz(nIndex >= 0);
 			if (nIndex >= INITIAL_SECTOR_ID_ARRAY_SIZE)
 			{
 				int nSectorIndex = nIndex - INITIAL_SECTOR_ID_ARRAY_SIZE;
@@ -45200,7 +45518,7 @@ namespace NumberDuck
 
 		void MasterSectorAllocationTable::AppendSector(Sector* pSector)
 		{
-			NumbatLogic::Assert::Plz(GetSectorIdToAppend() == pSector->GetSectorId());
+			Assert::Plz(GetSectorIdToAppend() == pSector->GetSectorId());
 			SectorAllocationTable::AppendSector(pSector);
 		}
 
@@ -45354,8 +45672,8 @@ namespace NumberDuck
 			m_pStreamDirectory = 0;
 			m_pSectorVector = 0;
 			m_pShortSectorVector = 0;
-			NumbatLogic::Assert::Plz(nSectorSize >= Sector::MINIMUM_SECTOR_SIZE && ((nSectorSize & (nSectorSize - 1)) == 0));
-			NumbatLogic::Assert::Plz(nShortSectorSize < nSectorSize && ((nShortSectorSize & (nShortSectorSize - 1)) == 0));
+			Assert::Plz(nSectorSize >= Sector::MINIMUM_SECTOR_SIZE && ((nSectorSize & (nSectorSize - 1)) == 0));
+			Assert::Plz(nShortSectorSize < nSectorSize && ((nShortSectorSize & (nShortSectorSize - 1)) == 0));
 			m_pSectorVector = new OwnedVector<Sector*>();
 			m_pShortSectorVector = new OwnedVector<Sector*>();
 			m_pBlob = new Blob(false);
@@ -45423,8 +45741,8 @@ namespace NumberDuck
 					int nSectorSize = (1 << m_pHeader->m_nSectorSize);
 					int nNumSector = (m_pBlob->GetSize() - HEADER_SIZE) / nSectorSize;
 					BlobView* pBlobView = m_pBlob->GetBlobView();
-					NumbatLogic::Assert::Plz(pBlobView->GetOffset() == HEADER_SIZE);
-					NumbatLogic::Assert::Plz(pBlobView->GetOffset() + nNumSector * nSectorSize == m_pBlob->GetSize());
+					Assert::Plz(pBlobView->GetOffset() == HEADER_SIZE);
+					Assert::Plz(pBlobView->GetOffset() + nNumSector * nSectorSize == m_pBlob->GetSize());
 					for (int i = 0; i < nNumSector; i++)
 						m_pSectorVector->PushBack(new Sector(i, pBlobView, nSectorSize));
 					m_pMasterSectorAllocationTable = new MasterSectorAllocationTable(m_pHeader);
@@ -45434,18 +45752,18 @@ namespace NumberDuck
 						m_pMasterSectorAllocationTable->AppendSector(m_pSectorVector->Get(nSectorId));
 						nSectorId = m_pMasterSectorAllocationTable->GetSectorIdToAppend();
 					}
-					NumbatLogic::Assert::Plz(m_pMasterSectorAllocationTable->GetNumSector() == (int)(m_pHeader->m_nMasterSectorAllocationTableSize));
+					Assert::Plz(m_pMasterSectorAllocationTable->GetNumSector() == (int)(m_pHeader->m_nMasterSectorAllocationTableSize));
 					m_pSectorAllocationTable = new SectorAllocationTable(1 << m_pHeader->m_nSectorSize);
 					for (int i = 0; i < (int)(m_pHeader->m_nSectorAllocationTableSize); i++)
 						m_pSectorAllocationTable->AppendSector(GetSector(m_pMasterSectorAllocationTable->GetSectorId(i), false));
-					NumbatLogic::Assert::Plz(m_pSectorAllocationTable->GetNumSector() == (int)(m_pHeader->m_nSectorAllocationTableSize));
+					Assert::Plz(m_pSectorAllocationTable->GetNumSector() == (int)(m_pHeader->m_nSectorAllocationTableSize));
 					m_pShortSectorAllocationTable = new SectorAllocationTable(1 << m_pHeader->m_nSectorSize);
 					FillSectorChain(m_pShortSectorAllocationTable, m_pHeader->m_nShortSectorAllocationTableSectorId, false);
-					NumbatLogic::Assert::Plz(m_pShortSectorAllocationTable->GetNumSector() == (int)(m_pHeader->m_nShortSectorAllocationTableSize));
+					Assert::Plz(m_pShortSectorAllocationTable->GetNumSector() == (int)(m_pHeader->m_nShortSectorAllocationTableSize));
 					m_pStreamDirectory = new StreamDirectory((int)(nSectorSize), m_pHeader->m_nMinimumStandardStreamSize, this);
 					FillSectorChain(m_pStreamDirectory, m_pHeader->m_nStreamDirectoryStreamSectorId, false);
 					Stream* pRootStream = m_pStreamDirectory->GetStreamByIndex(0);
-					NumbatLogic::Assert::Plz(pRootStream->GetType() == Stream::Type::TYPE_ROOT_STORAGE);
+					Assert::Plz(pRootStream->GetType() == Stream::Type::TYPE_ROOT_STORAGE);
 					pRootStream->FillSectorChain();
 					int nShortSectorSize = (1 << m_pHeader->m_nShortSectorSize);
 					int nNumShortSector = pRootStream->GetSize() / nShortSectorSize;
@@ -45453,11 +45771,9 @@ namespace NumberDuck
 					for (int i = 0; i < nNumShortSector; i++)
 					{
 						Sector* pSector = new Sector(i, pRootStream->GetSectorChain()->GetBlobView(), nShortSectorSize);
-						{
-							NumberDuck::Secret::Sector* __3878760436 = pSector;
-							pSector = 0;
-							m_pShortSectorVector->PushBack(__3878760436);
-						}
+						NumberDuck::Secret::Sector* __2491009814 = pSector;
+						pSector = 0;
+						m_pShortSectorVector->PushBack(__2491009814);
 						if (pSector) delete pSector;
 					}
 					for (int i = 1; i < m_pStreamDirectory->GetNumStream(); i++)
@@ -45529,7 +45845,7 @@ namespace NumberDuck
 
 		int CompoundFile::GetSectorId(int nSectorId, bool bShortSector)
 		{
-			NumbatLogic::Assert::Plz(nSectorId >= 0);
+			Assert::Plz(nSectorId >= 0);
 			if (bShortSector)
 			{
 				return m_pShortSectorAllocationTable->GetSectorId(nSectorId);
@@ -45542,22 +45858,22 @@ namespace NumberDuck
 
 		Sector* CompoundFile::GetSector(int nSectorId, bool bShortSector)
 		{
-			NumbatLogic::Assert::Plz(nSectorId >= 0);
+			Assert::Plz(nSectorId >= 0);
 			if (bShortSector)
 			{
-				NumbatLogic::Assert::Plz(nSectorId < m_pShortSectorVector->GetSize());
+				Assert::Plz(nSectorId < m_pShortSectorVector->GetSize());
 				return m_pShortSectorVector->Get(nSectorId);
 			}
 			else
 			{
-				NumbatLogic::Assert::Plz(nSectorId < m_pSectorVector->GetSize());
+				Assert::Plz(nSectorId < m_pSectorVector->GetSize());
 				return m_pSectorVector->Get(nSectorId);
 			}
 		}
 
 		void CompoundFile::FillSectorChain(SectorChain* pSectorChain, int nInitialSectorId, bool bShortSector)
 		{
-			NumbatLogic::Assert::Plz(pSectorChain != 0);
+			Assert::Plz(pSectorChain != 0);
 			int nSectorId = nInitialSectorId;
 			while (nSectorId != (int)(Sector::SectorId::END_OF_CHAIN_SECTOR_ID))
 			{
@@ -45619,11 +45935,9 @@ namespace NumberDuck
 				while (m_pShortSectorVector->GetSize() != m_pShortSectorAllocationTable->GetNumSectorId())
 				{
 					Sector* pSector = new Sector(m_pShortSectorVector->GetSize(), pBlobView, nSectorSize);
-					{
-						NumberDuck::Secret::Sector* __3878760436 = pSector;
-						pSector = 0;
-						m_pShortSectorVector->PushBack(__3878760436);
-					}
+					NumberDuck::Secret::Sector* __744037563 = pSector;
+					pSector = 0;
+					m_pShortSectorVector->PushBack(__744037563);
 					if (pSector) delete pSector;
 				}
 			}
@@ -45637,11 +45951,9 @@ namespace NumberDuck
 				int nSectorId = m_pSectorVector->GetSize();
 				Sector* pSector = new Sector(nSectorId, pBlobView, nSectorSize);
 				Sector* pTemp = pSector;
-				{
-					NumberDuck::Secret::Sector* __3878760436 = pSector;
-					pSector = 0;
-					m_pSectorVector->PushBack(__3878760436);
-				}
+				NumberDuck::Secret::Sector* __3109677137 = pSector;
+				pSector = 0;
+				m_pSectorVector->PushBack(__3109677137);
 				m_pMasterSectorAllocationTable->SetSectorId(m_pSectorAllocationTable->GetNumSector(), nSectorId);
 				m_pSectorAllocationTable->Extend(pTemp);
 				if (m_pSectorVector->GetSize() > 1)
@@ -45745,10 +46057,8 @@ namespace NumberDuck
 									delete sTemp;
 									sTemp = 0;
 								}
-								{
-									if (sTemp) delete sTemp;
-									return false;
-								}
+								if (sTemp) delete sTemp;
+								return false;
 							}
 							ppValueVector->PopBack();
 							{
@@ -45761,19 +46071,15 @@ namespace NumberDuck
 							delete sTemp;
 							sTemp = 0;
 						}
-						{
-							if (sTemp) delete sTemp;
-							return true;
-						}
+						if (sTemp) delete sTemp;
+						return true;
 					}
 					{
 						delete sTemp;
 						sTemp = 0;
 					}
-					{
-						if (sTemp) delete sTemp;
-						return false;
-					}
+					if (sTemp) delete sTemp;
+					return false;
 				}
 
 				case Type::TYPE_FUNC_HOUR:
@@ -45784,14 +46090,15 @@ namespace NumberDuck
 						if (pValue->GetType() == Value::Type::TYPE_FLOAT)
 						{
 							Value* pOwnedValue = ppValueVector->PopBack();
+							if (pOwnedValue != 0)
+							{
+							}
 							unsigned int nInteger = (unsigned int)(pValue->GetFloat());
 							double fInteger = (double)(nInteger);
 							double fFraction = pValue->GetFloat() - fInteger;
 							ppValueVector->PushBack(Secret::ValueImplementation::CreateFloatValue((double)((int)(fFraction * 24))));
-							{
-								if (pOwnedValue) delete pOwnedValue;
-								return true;
-							}
+							if (pOwnedValue) delete pOwnedValue;
+							return true;
 						}
 					}
 					return false;
@@ -45802,35 +46109,30 @@ namespace NumberDuck
 					if (ppValueVector->GetSize() >= 3)
 					{
 						Value* pA = ppValueVector->Get(ppValueVector->GetSize() - 3);
-						Value* pB = ppValueVector->Get(ppValueVector->GetSize() - 2);
-						Value* pC = ppValueVector->Get(ppValueVector->GetSize() - 1);
 						if (pA->GetType() == Value::Type::TYPE_BOOLEAN)
 						{
 							Value* pOwnedC = ppValueVector->PopBack();
 							Value* pOwnedB = ppValueVector->PopBack();
 							Value* pOwnedA = ppValueVector->PopBack();
+							if (pOwnedA != 0 && pOwnedB != 0 && pOwnedC != 0)
+							{
+							}
 							if (pA->GetBoolean())
 							{
-								{
-									NumberDuck::Value* __1092584474 = pOwnedB;
-									pOwnedB = 0;
-									ppValueVector->PushBack(__1092584474);
-								}
+								NumberDuck::Value* __3470845947 = pOwnedB;
+								pOwnedB = 0;
+								ppValueVector->PushBack(__3470845947);
 							}
 							else
 							{
-								{
-									NumberDuck::Value* __3995042842 = pOwnedC;
-									pOwnedC = 0;
-									ppValueVector->PushBack(__3995042842);
-								}
+								NumberDuck::Value* __3323600122 = pOwnedC;
+								pOwnedC = 0;
+								ppValueVector->PushBack(__3323600122);
 							}
-							{
-								if (pOwnedC) delete pOwnedC;
-								if (pOwnedB) delete pOwnedB;
-								if (pOwnedA) delete pOwnedA;
-								return true;
-							}
+							if (pOwnedC) delete pOwnedC;
+							if (pOwnedB) delete pOwnedB;
+							if (pOwnedA) delete pOwnedA;
+							return true;
 						}
 					}
 					break;
@@ -45844,6 +46146,9 @@ namespace NumberDuck
 						if (pValue->GetType() == Value::Type::TYPE_AREA)
 						{
 							Value* pOwnedValue = ppValueVector->PopBack();
+							if (pOwnedValue != 0)
+							{
+							}
 							Coordinate* pCoordinate = pValue->m_pImpl->m_pArea->m_pTopLeft->CreateClone();
 							double fSum = 0.0f;
 							int nCount = 0;
@@ -45871,11 +46176,9 @@ namespace NumberDuck
 								return false;
 							}
 							ppValueVector->PushBack(Secret::ValueImplementation::CreateFloatValue(fSum / (double)(nCount)));
-							{
-								if (pOwnedValue) delete pOwnedValue;
-								if (pCoordinate) delete pCoordinate;
-								return true;
-							}
+							if (pOwnedValue) delete pOwnedValue;
+							if (pCoordinate) delete pCoordinate;
+							return true;
 						}
 					}
 					break;
@@ -47841,12 +48144,13 @@ namespace NumberDuck
 										Cell* pCell = pWorksheet->GetCell(nX, nY);
 										if (pCell->GetType() == Value::Type::TYPE_FLOAT)
 											fValue += pCell->GetFloat();
-										else if (pCell->GetType() == Value::Type::TYPE_FORMULA)
-										{
-											const Value* pResult = pCell->GetValue()->m_pImpl->m_pFormula->Evaluate(pWorksheet->m_pImpl, (unsigned short)(nDepth + 1));
-											if (pResult->GetType() == Value::Type::TYPE_FLOAT)
-												fValue += pResult->GetFloat();
-										}
+										else
+											if (pCell->GetType() == Value::Type::TYPE_FORMULA)
+											{
+												const Value* pResult = pCell->GetValue()->m_pImpl->m_pFormula->Evaluate(pWorksheet->m_pImpl, (unsigned short)(nDepth + 1));
+												if (pResult->GetType() == Value::Type::TYPE_FLOAT)
+													fValue += pResult->GetFloat();
+											}
 									}
 								}
 							}
@@ -47905,8 +48209,8 @@ namespace NumberDuck
 		{
 			m_eSpaceType = SpaceType::TYPE_SPACE_BEFORE_BASE_EXPRESSION;
 			m_nCount = 0;
-			NumbatLogic::Assert::Plz(eSpaceType >= SpaceType::TYPE_SPACE_BEFORE_BASE_EXPRESSION && eSpaceType <= SpaceType::TYPE_SPACE_BEFORE_EXPRESSION);
-			NumbatLogic::Assert::Plz(nCount > 0);
+			Assert::Plz(eSpaceType >= SpaceType::TYPE_SPACE_BEFORE_BASE_EXPRESSION && eSpaceType <= SpaceType::TYPE_SPACE_BEFORE_EXPRESSION);
+			Assert::Plz(nCount > 0);
 			m_eSpaceType = eSpaceType;
 			m_nCount = nCount;
 		}
@@ -47972,7 +48276,7 @@ namespace NumberDuck
 				return new PtgOperatorRecord(0x0D);
 			if (m_sOperator->IsEqual("<>"))
 				return new PtgOperatorRecord(0x0E);
-			NumbatLogic::Assert::Plz(false);
+			Assert::Plz(false);
 			return 0;
 		}
 
@@ -47986,62 +48290,75 @@ namespace NumberDuck
 				{
 					Value* pOwnedB = ppValueVector->PopBack();
 					Value* pOwnedA = ppValueVector->PopBack();
+					if (pOwnedA != 0 && pOwnedB != 0)
+					{
+					}
 					bool bReturnable = true;
 					if (m_sOperator->IsEqual("+"))
 						ppValueVector->PushBack(ValueImplementation::CreateFloatValue(a->GetFloat() + b->GetFloat()));
-					else if (m_sOperator->IsEqual("*"))
-						ppValueVector->PushBack(ValueImplementation::CreateFloatValue(a->GetFloat() * b->GetFloat()));
-					else if (m_sOperator->IsEqual("-"))
-						ppValueVector->PushBack(ValueImplementation::CreateFloatValue(a->GetFloat() - b->GetFloat()));
-					else if (m_sOperator->IsEqual("/") && b->GetFloat() != 0.0f)
-						ppValueVector->PushBack(ValueImplementation::CreateFloatValue(a->GetFloat() / b->GetFloat()));
-					else if (m_sOperator->IsEqual("^"))
-						ppValueVector->PushBack(ValueImplementation::CreateFloatValue(Utils::Pow(a->GetFloat(), b->GetFloat())));
-					else if (m_sOperator->IsEqual(">"))
-						ppValueVector->PushBack(ValueImplementation::CreateBooleanValue(a->GetFloat() > b->GetFloat()));
-					else if (m_sOperator->IsEqual(">="))
-						ppValueVector->PushBack(ValueImplementation::CreateBooleanValue(a->GetFloat() >= b->GetFloat()));
-					else if (m_sOperator->IsEqual("<"))
-						ppValueVector->PushBack(ValueImplementation::CreateBooleanValue(a->GetFloat() < b->GetFloat()));
-					else if (m_sOperator->IsEqual("<="))
-						ppValueVector->PushBack(ValueImplementation::CreateBooleanValue(a->GetFloat() <= b->GetFloat()));
-					else if (m_sOperator->IsEqual("="))
-						ppValueVector->PushBack(ValueImplementation::CreateBooleanValue(a->GetFloat() == b->GetFloat()));
-					else if (m_sOperator->IsEqual("<>"))
-						ppValueVector->PushBack(ValueImplementation::CreateBooleanValue(a->GetFloat() != b->GetFloat()));
 					else
-						bReturnable = false;
-					{
-						if (pOwnedB) delete pOwnedB;
-						if (pOwnedA) delete pOwnedA;
-						return bReturnable;
-					}
+						if (m_sOperator->IsEqual("*"))
+							ppValueVector->PushBack(ValueImplementation::CreateFloatValue(a->GetFloat() * b->GetFloat()));
+						else
+							if (m_sOperator->IsEqual("-"))
+								ppValueVector->PushBack(ValueImplementation::CreateFloatValue(a->GetFloat() - b->GetFloat()));
+							else
+								if (m_sOperator->IsEqual("/") && b->GetFloat() != 0.0f)
+									ppValueVector->PushBack(ValueImplementation::CreateFloatValue(a->GetFloat() / b->GetFloat()));
+								else
+									if (m_sOperator->IsEqual("^"))
+										ppValueVector->PushBack(ValueImplementation::CreateFloatValue(Utils::Pow(a->GetFloat(), b->GetFloat())));
+									else
+										if (m_sOperator->IsEqual(">"))
+											ppValueVector->PushBack(ValueImplementation::CreateBooleanValue(a->GetFloat() > b->GetFloat()));
+										else
+											if (m_sOperator->IsEqual(">="))
+												ppValueVector->PushBack(ValueImplementation::CreateBooleanValue(a->GetFloat() >= b->GetFloat()));
+											else
+												if (m_sOperator->IsEqual("<"))
+													ppValueVector->PushBack(ValueImplementation::CreateBooleanValue(a->GetFloat() < b->GetFloat()));
+												else
+													if (m_sOperator->IsEqual("<="))
+														ppValueVector->PushBack(ValueImplementation::CreateBooleanValue(a->GetFloat() <= b->GetFloat()));
+													else
+														if (m_sOperator->IsEqual("="))
+															ppValueVector->PushBack(ValueImplementation::CreateBooleanValue(a->GetFloat() == b->GetFloat()));
+														else
+															if (m_sOperator->IsEqual("<>"))
+																ppValueVector->PushBack(ValueImplementation::CreateBooleanValue(a->GetFloat() != b->GetFloat()));
+															else
+																bReturnable = false;
+					if (pOwnedB) delete pOwnedB;
+					if (pOwnedA) delete pOwnedA;
+					return bReturnable;
 				}
 				if (a->GetType() == Value::Type::TYPE_STRING && b->GetType() == Value::Type::TYPE_STRING)
 				{
 					Value* pOwnedB = ppValueVector->PopBack();
 					Value* pOwnedA = ppValueVector->PopBack();
+					if (pOwnedA != 0 && pOwnedB != 0)
+					{
+					}
 					bool bReturnable = true;
 					if (m_sOperator->IsEqual("="))
 						ppValueVector->PushBack(ValueImplementation::CreateBooleanValue(ExternalString::Equal(a->GetString(), b->GetString())));
-					else if (m_sOperator->IsEqual("&"))
-					{
-						InternalString* sTemp = new InternalString(a->GetString());
-						sTemp->AppendString(b->GetString());
-						ppValueVector->PushBack(ValueImplementation::CreateStringValue(sTemp->GetExternalString()));
-						{
-							delete sTemp;
-							sTemp = 0;
-						}
-						if (sTemp) delete sTemp;
-					}
 					else
-						bReturnable = false;
-					{
-						if (pOwnedB) delete pOwnedB;
-						if (pOwnedA) delete pOwnedA;
-						return bReturnable;
-					}
+						if (m_sOperator->IsEqual("&"))
+						{
+							InternalString* sTemp = new InternalString(a->GetString());
+							sTemp->AppendString(b->GetString());
+							ppValueVector->PushBack(ValueImplementation::CreateStringValue(sTemp->GetExternalString()));
+							{
+								delete sTemp;
+								sTemp = 0;
+							}
+							if (sTemp) delete sTemp;
+						}
+						else
+							bReturnable = false;
+					if (pOwnedB) delete pOwnedB;
+					if (pOwnedA) delete pOwnedA;
+					return bReturnable;
 				}
 			}
 			return false;
@@ -48159,9 +48476,9 @@ namespace NumberDuck
 				Token* pToken = pParsedExpressionRecord->GetToken(pWorkbookGlobals);
 				if (pToken != 0)
 				{
-					NumberDuck::Secret::Token* __2538616708 = pToken;
+					NumberDuck::Secret::Token* __3559961396 = pToken;
 					pToken = 0;
-					m_pTokenVector->PushBack(__2538616708);
+					m_pTokenVector->PushBack(__3559961396);
 				}
 				if (pParsedExpressionRecord->GetType() == ParsedExpressionRecord::Type::TYPE_UNKNOWN)
 				{
@@ -48187,9 +48504,9 @@ namespace NumberDuck
 				Token* pToken = pParsedExpressionRecord->GetToken(pWorkbookGlobals);
 				if (pToken != 0)
 				{
-					NumberDuck::Secret::Token* __2538616708 = pToken;
+					NumberDuck::Secret::Token* __858841149 = pToken;
 					pToken = 0;
-					m_pTokenVector->PushBack(__2538616708);
+					m_pTokenVector->PushBack(__858841149);
 				}
 				if (pParsedExpressionRecord->GetType() == ParsedExpressionRecord::Type::TYPE_UNKNOWN)
 				{
@@ -48207,7 +48524,7 @@ namespace NumberDuck
 
 		const Token* Formula::GetTokenByIndex(unsigned short nIndex)
 		{
-			NumbatLogic::Assert::Plz(nIndex < m_pTokenVector->GetSize());
+			Assert::Plz(nIndex < m_pTokenVector->GetSize());
 			return m_pTokenVector->Get(nIndex);
 		}
 
@@ -48237,10 +48554,8 @@ namespace NumberDuck
 			{
 				m_pValue = ppValueVector->PopBack();
 			}
-			{
-				if (ppValueVector) delete ppValueVector;
-				return m_pValue;
-			}
+			if (ppValueVector) delete ppValueVector;
+			return m_pValue;
 		}
 
 		const char* Formula::ToString(WorksheetImplementation* pWorksheetImplementation)
@@ -48259,111 +48574,98 @@ namespace NumberDuck
 					if (sParameterVector->GetSize() < 2 || pToken->GetParameterCount() != 2)
 					{
 						m_sTemp->Set("=");
-						{
-							if (sPreSpace) delete sPreSpace;
-							if (sPostSpace) delete sPostSpace;
-							if (sParameterVector) delete sParameterVector;
-							return m_sTemp->GetExternalString();
-						}
+						if (sPreSpace) delete sPreSpace;
+						if (sPostSpace) delete sPostSpace;
+						if (sParameterVector) delete sParameterVector;
+						return m_sTemp->GetExternalString();
 					}
 					InternalString* sTempB = sParameterVector->PopBack();
 					InternalString* sTempA = sParameterVector->PopBack();
 					sTempA->AppendString(sPreSpace->GetExternalString());
 					pToken->ToString(pWorksheetImplementation, sTempA);
 					sTempA->AppendString(sTempB->GetExternalString());
-					{
-						NumberDuck::Secret::InternalString* __2442592686 = sTempA;
-						sTempA = 0;
-						sParameterVector->PushBack(__2442592686);
-					}
+					NumberDuck::Secret::InternalString* __2621135866 = sTempA;
+					sTempA = 0;
+					sParameterVector->PushBack(__2621135866);
 					sPreSpace->Set("");
 					sPostSpace->Set("");
 					if (sTempB) delete sTempB;
 					if (sTempA) delete sTempA;
 				}
-				else if (pToken->GetSubType() == Token::SubType::SUB_TYPE_FUNCTION)
-				{
-					InternalString* sParameters = new InternalString("");
-					for (unsigned short j = 0; j < pToken->GetParameterCount(); j++)
+				else
+					if (pToken->GetSubType() == Token::SubType::SUB_TYPE_FUNCTION)
 					{
-						if (sParameterVector->GetSize() == 0)
+						InternalString* sParameters = new InternalString("");
+						for (unsigned short j = 0; j < pToken->GetParameterCount(); j++)
 						{
-							m_sTemp->Set("=");
+							if (sParameterVector->GetSize() == 0)
 							{
+								m_sTemp->Set("=");
 								if (sParameters) delete sParameters;
 								if (sPreSpace) delete sPreSpace;
 								if (sPostSpace) delete sPostSpace;
 								if (sParameterVector) delete sParameterVector;
 								return m_sTemp->GetExternalString();
 							}
-						}
-						InternalString* sPopped = sParameterVector->PopBack();
-						if (j > 0)
-							sPopped->AppendString(",");
-						sPopped->AppendString(sParameters->GetExternalString());
-						{
-							delete sParameters;
-							sParameters = 0;
-						}
-						{
-							NumberDuck::Secret::InternalString* __2953685605 = sPopped;
+							InternalString* sPopped = sParameterVector->PopBack();
+							if (j > 0)
+								sPopped->AppendString(",");
+							sPopped->AppendString(sParameters->GetExternalString());
+							{
+								delete sParameters;
+								sParameters = 0;
+							}
+							NumberDuck::Secret::InternalString* __90934153 = sPopped;
 							sPopped = 0;
-							sParameters = __2953685605;
+							sParameters = __90934153;
+							if (sPopped) delete sPopped;
 						}
-						if (sPopped) delete sPopped;
-					}
-					InternalString* sTemp = new InternalString("");
-					sTemp->AppendString(sPreSpace->GetExternalString());
-					pToken->ToString(pWorksheetImplementation, sTemp);
-					sTemp->AppendString("(");
-					sTemp->AppendString(sParameters->GetExternalString());
-					sTemp->AppendString(sPostSpace->GetExternalString());
-					sTemp->AppendString(")");
-					{
-						NumberDuck::Secret::InternalString* __1006353954 = sTemp;
-						sTemp = 0;
-						sParameterVector->PushBack(__1006353954);
-					}
-					sPreSpace->Set("");
-					sPostSpace->Set("");
-					if (sParameters) delete sParameters;
-					if (sTemp) delete sTemp;
-				}
-				else
-				{
-					if (pSpaceToken != 0)
-					{
-						if (pSpaceToken->GetSpaceType() == SpaceToken::SpaceType::TYPE_SPACE_BEFORE_BASE_EXPRESSION || pSpaceToken->GetSpaceType() == SpaceToken::SpaceType::TYPE_RETURN_BEFORE_BASE_EXPRESSION)
-							pToken->ToString(pWorksheetImplementation, sPreSpace);
-						else
-							pToken->ToString(pWorksheetImplementation, sPostSpace);
-					}
-					else
-					{
 						InternalString* sTemp = new InternalString("");
 						sTemp->AppendString(sPreSpace->GetExternalString());
 						pToken->ToString(pWorksheetImplementation, sTemp);
+						sTemp->AppendString("(");
+						sTemp->AppendString(sParameters->GetExternalString());
 						sTemp->AppendString(sPostSpace->GetExternalString());
-						{
-							NumberDuck::Secret::InternalString* __1006353954 = sTemp;
-							sTemp = 0;
-							sParameterVector->PushBack(__1006353954);
-						}
+						sTemp->AppendString(")");
+						NumberDuck::Secret::InternalString* __3808533829 = sTemp;
+						sTemp = 0;
+						sParameterVector->PushBack(__3808533829);
 						sPreSpace->Set("");
 						sPostSpace->Set("");
+						if (sParameters) delete sParameters;
 						if (sTemp) delete sTemp;
 					}
-				}
+					else
+					{
+						if (pSpaceToken != 0)
+						{
+							if (pSpaceToken->GetSpaceType() == SpaceToken::SpaceType::TYPE_SPACE_BEFORE_BASE_EXPRESSION || pSpaceToken->GetSpaceType() == SpaceToken::SpaceType::TYPE_RETURN_BEFORE_BASE_EXPRESSION)
+								pToken->ToString(pWorksheetImplementation, sPreSpace);
+							else
+								pToken->ToString(pWorksheetImplementation, sPostSpace);
+						}
+						else
+						{
+							InternalString* sTemp = new InternalString("");
+							sTemp->AppendString(sPreSpace->GetExternalString());
+							pToken->ToString(pWorksheetImplementation, sTemp);
+							sTemp->AppendString(sPostSpace->GetExternalString());
+							NumberDuck::Secret::InternalString* __774957044 = sTemp;
+							sTemp = 0;
+							sParameterVector->PushBack(__774957044);
+							sPreSpace->Set("");
+							sPostSpace->Set("");
+							if (sTemp) delete sTemp;
+						}
+					}
 			}
 			m_sTemp->Set("=");
 			if (sParameterVector->GetSize() > 0)
 				m_sTemp->AppendString(sParameterVector->Get(0)->GetExternalString());
-			{
-				if (sPreSpace) delete sPreSpace;
-				if (sPostSpace) delete sPostSpace;
-				if (sParameterVector) delete sParameterVector;
-				return m_sTemp->GetExternalString();
-			}
+			if (sPreSpace) delete sPreSpace;
+			if (sPostSpace) delete sPostSpace;
+			if (sParameterVector) delete sParameterVector;
+			return m_sTemp->GetExternalString();
 		}
 
 		void Formula::ToRgce(RgceStruct* pRgce, WorkbookGlobals* pWorkbookGlobals)
@@ -48372,12 +48674,10 @@ namespace NumberDuck
 			{
 				Token* pToken = m_pTokenVector->Get(i);
 				ParsedExpressionRecord* pTemp = pToken->ToParsedExpression(pWorkbookGlobals);
-				NumbatLogic::Assert::Plz(pTemp != 0);
-				{
-					NumberDuck::Secret::ParsedExpressionRecord* __432555651 = pTemp;
-					pTemp = 0;
-					pRgce->m_pParsedExpressionRecordVector->PushBack(__432555651);
-				}
+				Assert::Plz(pTemp != 0);
+				NumberDuck::Secret::ParsedExpressionRecord* __2822736115 = pTemp;
+				pTemp = 0;
+				pRgce->m_pParsedExpressionRecordVector->PushBack(__2822736115);
 				if (pTemp) delete pTemp;
 			}
 		}
@@ -48419,45 +48719,40 @@ namespace NumberDuck
 					pArea3d->m_pArea->m_pBottomRight->m_bXRelative = false;
 					pArea3d->m_pArea->m_pBottomRight->m_bYRelative = false;
 					m_pTokenVector->Erase(0);
-					{
-						NumberDuck::Secret::Area3d* __2738670685 = pArea3d;
-						pArea3d = 0;
-						m_pTokenVector->Insert(0, new Area3dToken(__2738670685));
-					}
+					NumberDuck::Secret::Area3d* __3187773267 = pArea3d;
+					pArea3d = 0;
+					m_pTokenVector->Insert(0, new Area3dToken(__3187773267));
 					if (pArea3d) delete pArea3d;
 				}
-				else if (pToken->GetType() == Token::Type::TYPE_AREA)
-				{
-					unsigned short nWorksheet = 0;
-					Workbook* pWorkbook = pWorksheetImplementation->GetWorkbook();
-					for (unsigned short i = 0; i < pWorkbook->GetNumWorksheet(); i++)
+				else
+					if (pToken->GetType() == Token::Type::TYPE_AREA)
 					{
-						if (pWorkbook->GetWorksheetByIndex(i)->m_pImpl == pWorksheetImplementation)
+						unsigned short nWorksheet = 0;
+						Workbook* pWorkbook = pWorksheetImplementation->GetWorkbook();
+						for (unsigned short i = 0; i < pWorkbook->GetNumWorksheet(); i++)
 						{
-							nWorksheet = i;
-							break;
+							if (pWorkbook->GetWorksheetByIndex(i)->m_pImpl == pWorksheetImplementation)
+							{
+								nWorksheet = i;
+								break;
+							}
 						}
-					}
-					Area* pArea = ((AreaToken*)(pToken))->GetArea()->CreateClone();
-					pArea->m_pTopLeft->m_bXRelative = false;
-					pArea->m_pTopLeft->m_bYRelative = false;
-					pArea->m_pBottomRight->m_bXRelative = false;
-					pArea->m_pBottomRight->m_bYRelative = false;
-					Area3d* pArea3d = 0;
-					{
-						NumberDuck::Secret::Area* __4245081970 = pArea;
+						Area* pArea = ((AreaToken*)(pToken))->GetArea()->CreateClone();
+						pArea->m_pTopLeft->m_bXRelative = false;
+						pArea->m_pTopLeft->m_bYRelative = false;
+						pArea->m_pBottomRight->m_bXRelative = false;
+						pArea->m_pBottomRight->m_bYRelative = false;
+						Area3d* pArea3d = 0;
+						NumberDuck::Secret::Area* __3568734740 = pArea;
 						pArea = 0;
-						pArea3d = new Area3d(nWorksheet, nWorksheet, __4245081970);
-					}
-					m_pTokenVector->Erase(0);
-					{
-						NumberDuck::Secret::Area3d* __2738670685 = pArea3d;
+						pArea3d = new Area3d(nWorksheet, nWorksheet, __3568734740);
+						m_pTokenVector->Erase(0);
+						NumberDuck::Secret::Area3d* __2316386515 = pArea3d;
 						pArea3d = 0;
-						m_pTokenVector->Insert(0, new Area3dToken(__2738670685));
+						m_pTokenVector->Insert(0, new Area3dToken(__2316386515));
+						if (pArea) delete pArea;
+						if (pArea3d) delete pArea3d;
 					}
-					if (pArea) delete pArea;
-					if (pArea3d) delete pArea3d;
-				}
 				return true;
 			}
 			return false;
@@ -48498,49 +48793,40 @@ namespace NumberDuck
 					pCoordinate3d->m_pCoordinate->m_bXRelative = false;
 					pCoordinate3d->m_pCoordinate->m_bYRelative = false;
 					m_pTokenVector->Erase(0);
-					{
-						NumberDuck::Secret::Coordinate3d* __1094936853 = pCoordinate3d;
-						pCoordinate3d = 0;
-						m_pTokenVector->Insert(0, new Coordinate3dToken(__1094936853));
-					}
-					{
-						if (pCoordinate3d) delete pCoordinate3d;
-						return true;
-					}
+					NumberDuck::Secret::Coordinate3d* __2685552705 = pCoordinate3d;
+					pCoordinate3d = 0;
+					m_pTokenVector->Insert(0, new Coordinate3dToken(__2685552705));
+					if (pCoordinate3d) delete pCoordinate3d;
+					return true;
 				}
-				else if (pToken->GetType() == Token::Type::TYPE_COORDINATE)
-				{
-					unsigned short nWorksheet = 0;
-					Workbook* pWorkbook = pWorksheetImplementation->GetWorkbook();
-					for (unsigned short i = 0; i < pWorkbook->GetNumWorksheet(); i++)
+				else
+					if (pToken->GetType() == Token::Type::TYPE_COORDINATE)
 					{
-						if (pWorkbook->GetWorksheetByIndex(i)->m_pImpl == pWorksheetImplementation)
+						unsigned short nWorksheet = 0;
+						Workbook* pWorkbook = pWorksheetImplementation->GetWorkbook();
+						for (unsigned short i = 0; i < pWorkbook->GetNumWorksheet(); i++)
 						{
-							nWorksheet = i;
-							break;
+							if (pWorkbook->GetWorksheetByIndex(i)->m_pImpl == pWorksheetImplementation)
+							{
+								nWorksheet = i;
+								break;
+							}
 						}
-					}
-					Coordinate* pCoordinate = ((CoordinateToken*)(pToken))->GetCoordinate()->CreateClone();
-					pCoordinate->m_bXRelative = false;
-					pCoordinate->m_bYRelative = false;
-					Coordinate3d* pCoordinate3d = 0;
-					{
-						NumberDuck::Secret::Coordinate* __3642692973 = pCoordinate;
+						Coordinate* pCoordinate = ((CoordinateToken*)(pToken))->GetCoordinate()->CreateClone();
+						pCoordinate->m_bXRelative = false;
+						pCoordinate->m_bYRelative = false;
+						Coordinate3d* pCoordinate3d = 0;
+						NumberDuck::Secret::Coordinate* __1392669657 = pCoordinate;
 						pCoordinate = 0;
-						pCoordinate3d = new Coordinate3d(nWorksheet, nWorksheet, __3642692973);
-					}
-					m_pTokenVector->Erase(0);
-					{
-						NumberDuck::Secret::Coordinate3d* __1094936853 = pCoordinate3d;
+						pCoordinate3d = new Coordinate3d(nWorksheet, nWorksheet, __1392669657);
+						m_pTokenVector->Erase(0);
+						NumberDuck::Secret::Coordinate3d* __3054640103 = pCoordinate3d;
 						pCoordinate3d = 0;
-						m_pTokenVector->Insert(0, new Coordinate3dToken(__1094936853));
-					}
-					{
+						m_pTokenVector->Insert(0, new Coordinate3dToken(__3054640103));
 						if (pCoordinate) delete pCoordinate;
 						if (pCoordinate3d) delete pCoordinate3d;
 						return true;
 					}
-				}
 			}
 			return false;
 		}
@@ -48584,10 +48870,8 @@ namespace NumberDuck
 				if (nIndex > 0)
 				{
 					sFormula->CropFront(nIndex);
-					{
-						if (pParseSpaceData) delete pParseSpaceData;
-						return Parse(sFormula, pWorksheetImplementation);
-					}
+					if (pParseSpaceData) delete pParseSpaceData;
+					return Parse(sFormula, pWorksheetImplementation);
 				}
 				if (pParseSpaceData) delete pParseSpaceData;
 			}
@@ -48601,10 +48885,8 @@ namespace NumberDuck
 			if (ParseFunction(sFormula, "SUM", pParseFunctionData, pWorksheetImplementation))
 			{
 				m_pTokenVector->PushBack(new SumToken((unsigned char)(pParseFunctionData->m_nCount)));
-				{
-					if (pParseFunctionData) delete pParseFunctionData;
-					return 1;
-				}
+				if (pParseFunctionData) delete pParseFunctionData;
+				return 1;
 			}
 			for (int i = 0; i <= (int)(Token::Type::TYPE_FUNC_RTD); i++)
 			{
@@ -48612,81 +48894,61 @@ namespace NumberDuck
 				if (ParseFunction(sFormula, Token::GetTypeName(e), pParseFunctionData, pWorksheetImplementation))
 				{
 					m_pTokenVector->PushBack(new Token(e, Token::SubType::SUB_TYPE_FUNCTION, (unsigned char)(pParseFunctionData->m_nCount)));
-					{
-						if (pParseFunctionData) delete pParseFunctionData;
-						return 1;
-					}
+					if (pParseFunctionData) delete pParseFunctionData;
+					return 1;
 				}
 			}
 			if (ParseFunction(sFormula, "", pParseFunctionData, pWorksheetImplementation))
 			{
 				m_pTokenVector->PushBack(new Token(Token::Type::TYPE_PAREN, Token::SubType::SUB_TYPE_FUNCTION, (unsigned char)(pParseFunctionData->m_nCount)));
-				{
-					if (pParseFunctionData) delete pParseFunctionData;
-					return 1;
-				}
+				if (pParseFunctionData) delete pParseFunctionData;
+				return 1;
 			}
 			Coordinate* pCoordinate = WorksheetImplementation::AddressToCoordinate(sFormula->GetExternalString());
 			if (pCoordinate != 0)
 			{
-				{
-					NumberDuck::Secret::Coordinate* __3642692973 = pCoordinate;
-					pCoordinate = 0;
-					m_pTokenVector->PushBack(new CoordinateToken(__3642692973));
-				}
-				{
-					if (pParseFunctionData) delete pParseFunctionData;
-					if (pCoordinate) delete pCoordinate;
-					return 1;
-				}
+				NumberDuck::Secret::Coordinate* __1450342680 = pCoordinate;
+				pCoordinate = 0;
+				m_pTokenVector->PushBack(new CoordinateToken(__1450342680));
+				if (pParseFunctionData) delete pParseFunctionData;
+				if (pCoordinate) delete pCoordinate;
+				return 1;
 			}
 			Area* pArea = WorksheetImplementation::AddressToArea(sFormula->GetExternalString());
 			if (pArea != 0)
 			{
-				{
-					NumberDuck::Secret::Area* __4245081970 = pArea;
-					pArea = 0;
-					m_pTokenVector->PushBack(new AreaToken(__4245081970));
-				}
-				{
-					if (pParseFunctionData) delete pParseFunctionData;
-					if (pCoordinate) delete pCoordinate;
-					if (pArea) delete pArea;
-					return 1;
-				}
+				NumberDuck::Secret::Area* __1305943531 = pArea;
+				pArea = 0;
+				m_pTokenVector->PushBack(new AreaToken(__1305943531));
+				if (pParseFunctionData) delete pParseFunctionData;
+				if (pCoordinate) delete pCoordinate;
+				if (pArea) delete pArea;
+				return 1;
 			}
 			Coordinate3d* pCoordinate3d = pWorksheetImplementation->ParseCoordinate3d(sFormula);
 			if (pCoordinate3d != 0)
 			{
-				{
-					NumberDuck::Secret::Coordinate3d* __1094936853 = pCoordinate3d;
-					pCoordinate3d = 0;
-					m_pTokenVector->PushBack(new Coordinate3dToken(__1094936853));
-				}
-				{
-					if (pParseFunctionData) delete pParseFunctionData;
-					if (pCoordinate) delete pCoordinate;
-					if (pArea) delete pArea;
-					if (pCoordinate3d) delete pCoordinate3d;
-					return 1;
-				}
+				NumberDuck::Secret::Coordinate3d* __23227219 = pCoordinate3d;
+				pCoordinate3d = 0;
+				m_pTokenVector->PushBack(new Coordinate3dToken(__23227219));
+				if (pParseFunctionData) delete pParseFunctionData;
+				if (pCoordinate) delete pCoordinate;
+				if (pArea) delete pArea;
+				if (pCoordinate3d) delete pCoordinate3d;
+				return 1;
 			}
 			Area3d* pArea3d = pWorksheetImplementation->ParseArea3d(sFormula);
 			if (pArea3d != 0)
 			{
-				{
-					NumberDuck::Secret::Area3d* __2738670685 = pArea3d;
-					pArea3d = 0;
-					m_pTokenVector->PushBack(new Area3dToken(__2738670685));
-				}
-				{
-					if (pParseFunctionData) delete pParseFunctionData;
-					if (pCoordinate) delete pCoordinate;
-					if (pArea) delete pArea;
-					if (pCoordinate3d) delete pCoordinate3d;
-					if (pArea3d) delete pArea3d;
-					return 1;
-				}
+				NumberDuck::Secret::Area3d* __3361861139 = pArea3d;
+				pArea3d = 0;
+				m_pTokenVector->PushBack(new Area3dToken(__3361861139));
+				if (pParseFunctionData) delete pParseFunctionData;
+				if (pCoordinate) delete pCoordinate;
+				if (pArea) delete pArea;
+				if (pCoordinate3d) delete pCoordinate3d;
+				if (pArea3d) delete pArea3d;
+				return 1;
 			}
 			if (ParseString(sFormula))
 			{
@@ -48699,15 +48961,13 @@ namespace NumberDuck
 						i++;
 				}
 				m_pTokenVector->PushBack(new StringToken(sTemp->GetExternalString()));
-				{
-					if (sTemp) delete sTemp;
-					if (pParseFunctionData) delete pParseFunctionData;
-					if (pCoordinate) delete pCoordinate;
-					if (pArea) delete pArea;
-					if (pCoordinate3d) delete pCoordinate3d;
-					if (pArea3d) delete pArea3d;
-					return 1;
-				}
+				if (sTemp) delete sTemp;
+				if (pParseFunctionData) delete pParseFunctionData;
+				if (pCoordinate) delete pCoordinate;
+				if (pArea) delete pArea;
+				if (pCoordinate3d) delete pCoordinate3d;
+				if (pArea3d) delete pArea3d;
+				return 1;
 			}
 			InternalString* sToken = new InternalString("");
 			InternalString* sOperator = new InternalString("");
@@ -48730,12 +48990,13 @@ namespace NumberDuck
 						else
 							nQuoteDepth--;
 					}
-					else if (nQuoteDepth == 2)
-					{
-						nQuoteDepth--;
-					}
 					else
-						nQuoteDepth++;
+						if (nQuoteDepth == 2)
+						{
+							nQuoteDepth--;
+						}
+						else
+							nQuoteDepth++;
 				}
 				if (nQuoteDepth == 0)
 				{
@@ -48744,20 +49005,18 @@ namespace NumberDuck
 					if (nChar == ')')
 						if (nParenDepth == 0)
 						{
-							{
-								if (pParseFunctionData) delete pParseFunctionData;
-								if (pCoordinate) delete pCoordinate;
-								if (pArea) delete pArea;
-								if (pCoordinate3d) delete pCoordinate3d;
-								if (pArea3d) delete pArea3d;
-								if (sToken) delete sToken;
-								if (sOperator) delete sOperator;
-								if (sTrailingSpaces) delete sTrailingSpaces;
-								if (sNextOperator) delete sNextOperator;
-								if (sLastOperator) delete sLastOperator;
-								if (sLastTrailingSpaces) delete sLastTrailingSpaces;
-								return 0;
-							}
+							if (pParseFunctionData) delete pParseFunctionData;
+							if (pCoordinate) delete pCoordinate;
+							if (pArea) delete pArea;
+							if (pCoordinate3d) delete pCoordinate3d;
+							if (pArea3d) delete pArea3d;
+							if (sToken) delete sToken;
+							if (sOperator) delete sOperator;
+							if (sTrailingSpaces) delete sTrailingSpaces;
+							if (sNextOperator) delete sNextOperator;
+							if (sLastOperator) delete sLastOperator;
+							if (sLastTrailingSpaces) delete sLastTrailingSpaces;
+							return 0;
 						}
 						else
 							nParenDepth--;
@@ -48765,12 +49024,15 @@ namespace NumberDuck
 				sNextOperator->Set("");
 				if (nChar == '<' && i + 1 < sFormula->GetLength() && sFormula->GetChar(i + 1) == '>')
 					sNextOperator->Set("<>");
-				else if (nChar == '<' && i + 1 < sFormula->GetLength() && sFormula->GetChar(i + 1) == '=')
-					sNextOperator->Set("<=");
-				else if (nChar == '>' && i + 1 < sFormula->GetLength() && sFormula->GetChar(i + 1) == '=')
-					sNextOperator->Set(">=");
-				else if (nChar == '+' || nChar == '-' || nChar == '*' || nChar == '/' || nChar == '<' || nChar == '>' || nChar == '^' || nChar == '&' || nChar == '=')
-					sNextOperator->AppendChar(nChar);
+				else
+					if (nChar == '<' && i + 1 < sFormula->GetLength() && sFormula->GetChar(i + 1) == '=')
+						sNextOperator->Set("<=");
+					else
+						if (nChar == '>' && i + 1 < sFormula->GetLength() && sFormula->GetChar(i + 1) == '=')
+							sNextOperator->Set(">=");
+						else
+							if (nChar == '+' || nChar == '-' || nChar == '*' || nChar == '/' || nChar == '<' || nChar == '>' || nChar == '^' || nChar == '&' || nChar == '=')
+								sNextOperator->AppendChar(nChar);
 				if (nQuoteDepth == 0 && nParenDepth == 0 && (nChar == ',' || sNextOperator->GetLength() > 0))
 				{
 					sLastOperator->Set(sOperator->GetExternalString());
@@ -48806,20 +49068,18 @@ namespace NumberDuck
 				InsertOperator(sOperator, sTrailingSpaces);
 				nCount--;
 			}
-			{
-				if (pParseFunctionData) delete pParseFunctionData;
-				if (pCoordinate) delete pCoordinate;
-				if (pArea) delete pArea;
-				if (pCoordinate3d) delete pCoordinate3d;
-				if (pArea3d) delete pArea3d;
-				if (sToken) delete sToken;
-				if (sOperator) delete sOperator;
-				if (sTrailingSpaces) delete sTrailingSpaces;
-				if (sNextOperator) delete sNextOperator;
-				if (sLastOperator) delete sLastOperator;
-				if (sLastTrailingSpaces) delete sLastTrailingSpaces;
-				return (unsigned char)(nCount);
-			}
+			if (pParseFunctionData) delete pParseFunctionData;
+			if (pCoordinate) delete pCoordinate;
+			if (pArea) delete pArea;
+			if (pCoordinate3d) delete pCoordinate3d;
+			if (pArea3d) delete pArea3d;
+			if (sToken) delete sToken;
+			if (sOperator) delete sOperator;
+			if (sTrailingSpaces) delete sTrailingSpaces;
+			if (sNextOperator) delete sNextOperator;
+			if (sLastOperator) delete sLastOperator;
+			if (sLastTrailingSpaces) delete sLastTrailingSpaces;
+			return (unsigned char)(nCount);
 		}
 
 		bool Formula::ParseFunction(InternalString* sFormula, const char* szFunction, ParseFunctionData* pData, WorksheetImplementation* pWorksheetImplementation)
@@ -48893,18 +49153,14 @@ namespace NumberDuck
 							eSpaceType = SpaceToken::SpaceType::TYPE_RETURN_BEFORE_CLOSE;
 						m_pTokenVector->PushBack(new SpaceToken(eSpaceType, (unsigned char)(pParseSpaceData->m_nCount)));
 					}
-					{
-						if (pParseSpaceData) delete pParseSpaceData;
-						if (sCount) delete sCount;
-						if (sTemp) delete sTemp;
-						return true;
-					}
+					if (pParseSpaceData) delete pParseSpaceData;
+					if (sCount) delete sCount;
+					if (sTemp) delete sTemp;
+					return true;
 				}
 			}
-			{
-				if (sTemp) delete sTemp;
-				return false;
-			}
+			if (sTemp) delete sTemp;
+			return false;
 		}
 
 		bool Formula::ParseSpace(InternalString* sFormula, ParseSpaceData* pData)
@@ -48954,30 +49210,27 @@ namespace NumberDuck
 			Token* pToken = 0;
 			if (sFormula->IsEqual("FALSE"))
 				pToken = new BoolToken(false, false);
-			else if (sFormula->IsEqual("TRUE"))
-				pToken = new BoolToken(true, false);
-			else if (ParseFunction(sFormula, "FALSE", pParseFunctionData, pWorksheetImplementation))
-				pToken = new BoolToken(false, true);
-			else if (ParseFunction(sFormula, "TRUE", pParseFunctionData, pWorksheetImplementation))
-				pToken = new BoolToken(true, true);
+			else
+				if (sFormula->IsEqual("TRUE"))
+					pToken = new BoolToken(true, false);
+				else
+					if (ParseFunction(sFormula, "FALSE", pParseFunctionData, pWorksheetImplementation))
+						pToken = new BoolToken(false, true);
+					else
+						if (ParseFunction(sFormula, "TRUE", pParseFunctionData, pWorksheetImplementation))
+							pToken = new BoolToken(true, true);
 			if (pToken != 0)
 			{
-				{
-					NumberDuck::Secret::Token* __2538616708 = pToken;
-					pToken = 0;
-					m_pTokenVector->PushBack(__2538616708);
-				}
-				{
-					if (pParseFunctionData) delete pParseFunctionData;
-					if (pToken) delete pToken;
-					return true;
-				}
-			}
-			{
+				NumberDuck::Secret::Token* __58281517 = pToken;
+				pToken = 0;
+				m_pTokenVector->PushBack(__58281517);
 				if (pParseFunctionData) delete pParseFunctionData;
 				if (pToken) delete pToken;
-				return false;
+				return true;
 			}
+			if (pParseFunctionData) delete pParseFunctionData;
+			if (pToken) delete pToken;
+			return false;
 		}
 
 		bool Formula::ParseInt(InternalString* sFormula)
@@ -49112,16 +49365,12 @@ namespace NumberDuck
 				Area* pArea = 0;
 				pArea = new Area(m_pCoordinate3d->m_pCoordinate->CreateClone(), m_pCoordinate3d->m_pCoordinate->CreateClone());
 				Area3d* pArea3d = 0;
-				{
-					NumberDuck::Secret::Area* __4245081970 = pArea;
-					pArea = 0;
-					pArea3d = new Area3d(m_pCoordinate3d->m_nWorksheetFirst, m_pCoordinate3d->m_nWorksheetLast, __4245081970);
-				}
-				{
-					NumberDuck::Secret::Area3d* __2738670685 = pArea3d;
-					pArea3d = 0;
-					ppValueVector->PushBack(ValueImplementation::CreateArea3dValue(__2738670685));
-				}
+				NumberDuck::Secret::Area* __3661366840 = pArea;
+				pArea = 0;
+				pArea3d = new Area3d(m_pCoordinate3d->m_nWorksheetFirst, m_pCoordinate3d->m_nWorksheetLast, __3661366840);
+				NumberDuck::Secret::Area3d* __1442903336 = pArea3d;
+				pArea3d = 0;
+				ppValueVector->PushBack(ValueImplementation::CreateArea3dValue(__1442903336));
 				if (pArea) delete pArea;
 				if (pArea3d) delete pArea3d;
 			}
@@ -49405,7 +49654,7 @@ namespace NumberDuck
 		RedBlackTree::RedBlackTree(ComparisonCallback* pComparisonCallback)
 		{
 			m_pImpl = 0;
-			NumbatLogic::Assert::Plz(pComparisonCallback != 0);
+			Assert::Plz(pComparisonCallback != 0);
 			m_pImpl = new RedBlackTreeImplementation();
 			m_pImpl->m_pComparisonCallback = pComparisonCallback;
 			m_pImpl->m_pRootNode = 0;
@@ -49413,11 +49662,9 @@ namespace NumberDuck
 
 		RedBlackTree::~RedBlackTree()
 		{
-			{
-				NumberDuck::Secret::RedBlackNodeImplementation* __608107594 = m_pImpl->m_pRootNode;
-				m_pImpl->m_pRootNode = 0;
-				m_pImpl->RecursiveDelete(__608107594);
-			}
+			NumberDuck::Secret::RedBlackNodeImplementation* __642909787 = m_pImpl->m_pRootNode;
+			m_pImpl->m_pRootNode = 0;
+			m_pImpl->RecursiveDelete(__642909787);
 			{
 				delete m_pImpl;
 				m_pImpl = 0;
@@ -49432,23 +49679,19 @@ namespace NumberDuck
 			RedBlackNodeImplementation* pNewNode = new RedBlackNodeImplementation(pObject);
 			if (m_pImpl->m_pRootNode == 0)
 			{
-				{
-					NumberDuck::Secret::RedBlackNodeImplementation* __615123591 = pNewNode;
-					pNewNode = 0;
-					m_pImpl->m_pRootNode = __615123591;
-				}
-				{
-					if (pNewNode) delete pNewNode;
-					return true;
-				}
+				NumberDuck::Secret::RedBlackNodeImplementation* __1171540261 = pNewNode;
+				pNewNode = 0;
+				m_pImpl->m_pRootNode = __1171540261;
+				if (pNewNode) delete pNewNode;
+				return true;
 			}
 			pNewNode->m_eColor = RedBlackNode::NodeColor::COLOR_RED;
 			RedBlackNodeImplementation* pNode = m_pImpl->m_pRootNode;
 			while (true)
 			{
 				int nComparison = m_pImpl->m_pComparisonCallback(pNode->GetStoredObject(), pObject);
-				NumbatLogic::Assert::Plz(nComparison >= -1);
-				NumbatLogic::Assert::Plz(nComparison <= 1);
+				Assert::Plz(nComparison >= -1);
+				Assert::Plz(nComparison <= 1);
 				if (nComparison == 0)
 				{
 					if (pNewNode) delete pNewNode;
@@ -49460,28 +49703,22 @@ namespace NumberDuck
 				if (pNode->m_pChild[nDirection] == 0)
 				{
 					RedBlackNodeImplementation* pTempNode = pNewNode;
-					{
-						NumberDuck::Secret::RedBlackNodeImplementation* __615123591 = pNewNode;
-						pNewNode = 0;
-						pNode->m_pChild[nDirection] = __615123591;
-					}
+					NumberDuck::Secret::RedBlackNodeImplementation* __3855924781 = pNewNode;
+					pNewNode = 0;
+					pNode->m_pChild[nDirection] = __3855924781;
 					pTempNode->m_pParent = pNode;
 					while (true)
 					{
 						if (pTempNode->m_pParent == 0)
 						{
 							pTempNode->m_eColor = RedBlackNode::NodeColor::COLOR_BLACK;
-							{
-								if (pNewNode) delete pNewNode;
-								return true;
-							}
+							if (pNewNode) delete pNewNode;
+							return true;
 						}
 						if (pTempNode->m_pParent->m_eColor == RedBlackNode::NodeColor::COLOR_BLACK)
 						{
-							{
-								if (pNewNode) delete pNewNode;
-								return true;
-							}
+							if (pNewNode) delete pNewNode;
+							return true;
 						}
 						RedBlackNodeImplementation* pUncle = pTempNode->GetUncle();
 						if (pUncle != 0 && pUncle->m_eColor == RedBlackNode::NodeColor::COLOR_RED)
@@ -49498,11 +49735,12 @@ namespace NumberDuck
 							m_pImpl->Rotate(pTempNode->m_pParent, 0);
 							pTempNode = pTempNode->m_pChild[0];
 						}
-						else if ((pTempNode == pTempNode->m_pParent->m_pChild[0]) && (pTempNode->m_pParent == pGrandparent->m_pChild[1]))
-						{
-							m_pImpl->Rotate(pTempNode->m_pParent, 1);
-							pTempNode = pTempNode->m_pChild[1];
-						}
+						else
+							if ((pTempNode == pTempNode->m_pParent->m_pChild[0]) && (pTempNode->m_pParent == pGrandparent->m_pChild[1]))
+							{
+								m_pImpl->Rotate(pTempNode->m_pParent, 1);
+								pTempNode = pTempNode->m_pChild[1];
+							}
 						pUncle = pTempNode->GetUncle();
 						pGrandparent = pTempNode->GetGrandparent();
 						pTempNode->m_pParent->m_eColor = RedBlackNode::NodeColor::COLOR_BLACK;
@@ -49511,10 +49749,8 @@ namespace NumberDuck
 							m_pImpl->Rotate(pGrandparent, 1);
 						else
 							m_pImpl->Rotate(pGrandparent, 0);
-						{
-							if (pNewNode) delete pNewNode;
-							return true;
-						}
+						if (pNewNode) delete pNewNode;
+						return true;
 					}
 				}
 				pNode = pNode->m_pChild[nDirection];
@@ -49524,7 +49760,7 @@ namespace NumberDuck
 
 		bool RedBlackTree::DeleteObject(void* pObject)
 		{
-			NumbatLogic::Assert::Plz(false);
+			Assert::Plz(false);
 			return false;
 		}
 
@@ -49541,8 +49777,8 @@ namespace NumberDuck
 			while (pNode != 0)
 			{
 				int nComparison = m_pImpl->m_pComparisonCallback(pNode->GetStoredObject(), pObject);
-				NumbatLogic::Assert::Plz(nComparison >= -1);
-				NumbatLogic::Assert::Plz(nComparison <= 1);
+				Assert::Plz(nComparison >= -1);
+				Assert::Plz(nComparison <= 1);
 				if (nComparison == 0)
 					return pNode;
 				int nDirection = 0;
@@ -49558,17 +49794,13 @@ namespace NumberDuck
 			RedBlackNodeImplementation* pTempNode = pNode;
 			if (pTempNode != 0)
 			{
-				{
-					NumberDuck::Secret::RedBlackNodeImplementation* __3820686225 = pTempNode->m_pChild[0];
-					pTempNode->m_pChild[0] = 0;
-					RecursiveDelete(__3820686225);
-				}
+				NumberDuck::Secret::RedBlackNodeImplementation* __1505220876 = pTempNode->m_pChild[0];
 				pTempNode->m_pChild[0] = 0;
-				{
-					NumberDuck::Secret::RedBlackNodeImplementation* __3065717485 = pTempNode->m_pChild[1];
-					pTempNode->m_pChild[1] = 0;
-					RecursiveDelete(__3065717485);
-				}
+				RecursiveDelete(__1505220876);
+				pTempNode->m_pChild[0] = 0;
+				NumberDuck::Secret::RedBlackNodeImplementation* __2779156322 = pTempNode->m_pChild[1];
+				pTempNode->m_pChild[1] = 0;
+				RecursiveDelete(__2779156322);
 				pTempNode->m_pChild[1] = 0;
 				{
 					delete pTempNode;
@@ -49583,18 +49815,14 @@ namespace NumberDuck
 			int nOpposite = 1;
 			if (nDirection > 0)
 				nOpposite = 0;
-			NumbatLogic::Assert::Plz(pNode->m_pChild[nOpposite] != 0);
+			Assert::Plz(pNode->m_pChild[nOpposite] != 0);
 			RedBlackNodeImplementation* pChild = 0;
-			{
-				NumberDuck::Secret::RedBlackNodeImplementation* __474790283 = pNode->m_pChild[nOpposite];
-				pNode->m_pChild[nOpposite] = 0;
-				pChild = __474790283;
-			}
-			{
-				NumberDuck::Secret::RedBlackNodeImplementation* __2982843613 = pChild->m_pChild[nDirection];
-				pChild->m_pChild[nDirection] = 0;
-				pNode->m_pChild[nOpposite] = __2982843613;
-			}
+			NumberDuck::Secret::RedBlackNodeImplementation* __1393166394 = pNode->m_pChild[nOpposite];
+			pNode->m_pChild[nOpposite] = 0;
+			pChild = __1393166394;
+			NumberDuck::Secret::RedBlackNodeImplementation* __983153870 = pChild->m_pChild[nDirection];
+			pChild->m_pChild[nDirection] = 0;
+			pNode->m_pChild[nOpposite] = __983153870;
 			if (pNode->m_pChild[nOpposite] != 0)
 				pNode->m_pChild[nOpposite]->m_pParent = pNode;
 			RedBlackNodeImplementation* pParent = pNode->m_pParent;
@@ -49602,45 +49830,33 @@ namespace NumberDuck
 			pNode->m_pParent = pChild;
 			if (pParent == 0)
 			{
-				NumbatLogic::Assert::Plz(pNode == m_pRootNode);
-				{
-					NumberDuck::Secret::RedBlackNodeImplementation* __1798688362 = m_pRootNode;
-					m_pRootNode = 0;
-					pChild->m_pChild[nDirection] = __1798688362;
-				}
-				{
-					NumberDuck::Secret::RedBlackNodeImplementation* __4076228335 = pChild;
-					pChild = 0;
-					m_pRootNode = __4076228335;
-				}
+				Assert::Plz(pNode == m_pRootNode);
+				NumberDuck::Secret::RedBlackNodeImplementation* __1466551247 = m_pRootNode;
+				m_pRootNode = 0;
+				pChild->m_pChild[nDirection] = __1466551247;
+				NumberDuck::Secret::RedBlackNodeImplementation* __661345313 = pChild;
+				pChild = 0;
+				m_pRootNode = __661345313;
 			}
 			else
 			{
 				if (pParent->m_pChild[0] == pNode)
 				{
-					{
-						NumberDuck::Secret::RedBlackNodeImplementation* __3633264354 = pParent->m_pChild[0];
-						pParent->m_pChild[0] = 0;
-						pChild->m_pChild[nDirection] = __3633264354;
-					}
-					{
-						NumberDuck::Secret::RedBlackNodeImplementation* __4076228335 = pChild;
-						pChild = 0;
-						pParent->m_pChild[0] = __4076228335;
-					}
+					NumberDuck::Secret::RedBlackNodeImplementation* __3884201689 = pParent->m_pChild[0];
+					pParent->m_pChild[0] = 0;
+					pChild->m_pChild[nDirection] = __3884201689;
+					NumberDuck::Secret::RedBlackNodeImplementation* __2926270109 = pChild;
+					pChild = 0;
+					pParent->m_pChild[0] = __2926270109;
 				}
 				else
 				{
-					{
-						NumberDuck::Secret::RedBlackNodeImplementation* __2374967198 = pParent->m_pChild[1];
-						pParent->m_pChild[1] = 0;
-						pChild->m_pChild[nDirection] = __2374967198;
-					}
-					{
-						NumberDuck::Secret::RedBlackNodeImplementation* __4076228335 = pChild;
-						pChild = 0;
-						pParent->m_pChild[1] = __4076228335;
-					}
+					NumberDuck::Secret::RedBlackNodeImplementation* __630540934 = pParent->m_pChild[1];
+					pParent->m_pChild[1] = 0;
+					pChild->m_pChild[nDirection] = __630540934;
+					NumberDuck::Secret::RedBlackNodeImplementation* __2422963372 = pChild;
+					pChild = 0;
+					pParent->m_pChild[1] = __2422963372;
 				}
 			}
 			if (pChild) delete pChild;
@@ -49766,10 +49982,11 @@ namespace NumberDuck
 							m_pImageInfo->m_nWidth = (int)(((unsigned int)(nWidth0)) << 8 | ((unsigned int)(nWidth1)));
 							break;
 						}
-						else if (cType == 0xDA)
-						{
-							break;
-						}
+						else
+							if (cType == 0xDA)
+							{
+								break;
+							}
 						pBlobView->SetOffset(nStart + nSize);
 					}
 				}
@@ -49789,6 +50006,120 @@ namespace NumberDuck
 
 		XlsxWorksheet::XlsxWorksheet(Workbook* pWorkbook) : Worksheet(pWorkbook)
 		{
+		}
+
+		bool XlsxWorksheet::Write(Worksheet* pWorksheet, WorkbookGlobals* pWorkbookGlobals, ZipWriter* pZipWriter, int nWorksheetIndex)
+		{
+			InternalString* sTemp = new InternalString("");
+			Blob* pWorksheetBlob = new Blob(true);
+			XmlFile* pWorksheetXml = new XmlFile();
+			XmlNode* pWorksheetNode = pWorksheetXml->CreateElement("worksheet");
+			pWorksheetNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+			XmlNode* pSheetDataNode = pWorksheetXml->CreateElement("sheetData");
+			XmlNode* pCurrentRowNode = 0;
+			int nCurrentRow = 0xFFFF;
+			for (int j = 0; j < pWorksheet->m_pImpl->m_pCellTable->GetSize(); j++)
+			{
+				TableElement<Cell*>* pElement = pWorksheet->m_pImpl->m_pCellTable->GetByIndex(j);
+				if (pElement != 0 && pElement->m_xObject != 0)
+				{
+					if (pElement->m_nRow != nCurrentRow)
+					{
+						pCurrentRowNode = pWorksheetXml->CreateElement("row");
+						pSheetDataNode->AppendChild(pCurrentRowNode);
+						sTemp->Set("");
+						sTemp->AppendInt(pElement->m_nRow + 1);
+						pCurrentRowNode->SetAttribute("r", sTemp->GetExternalString());
+						nCurrentRow = pElement->m_nRow;
+					}
+					Cell* pCell = pElement->m_xObject;
+					const Value* pValue = pCell->GetValue();
+					XmlNode* pCellNode = pWorksheetXml->CreateElement("c");
+					{
+						Coordinate* pCoord = new Coordinate((unsigned short)(pElement->m_nColumn), (unsigned short)(pElement->m_nRow));
+						sTemp->Set("");
+						WorksheetImplementation::CoordinateToAddress(pCoord, sTemp);
+						pCellNode->SetAttribute("r", sTemp->GetExternalString());
+						if (pCoord) delete pCoord;
+					}
+					Style* pCellStyle = pCell->GetStyle();
+					if (pCellStyle != 0 && pCellStyle != pWorkbookGlobals->GetStyleByIndex(0))
+					{
+						unsigned short nStyleIndex = 0;
+						for (int k = 0; k < pWorkbookGlobals->GetNumStyle(); k++)
+						{
+							if (pWorkbookGlobals->GetStyleByIndex((unsigned short)(k)) == pCellStyle)
+							{
+								nStyleIndex = (unsigned short)(k);
+								break;
+							}
+						}
+						sTemp->Set("");
+						sTemp->AppendUint32(nStyleIndex);
+						pCellNode->SetAttribute("s", sTemp->GetExternalString());
+					}
+					switch (pValue->GetType())
+					{
+						case Value::Type::TYPE_STRING:
+						{
+							const char* szString = pValue->GetString();
+							if (szString != 0 && !ExternalString::Equal(szString, ""))
+							{
+								pCellNode->SetAttribute("t", "s");
+								XmlNode* pValueNode = pWorksheetXml->CreateElement("v");
+								unsigned int nSstIndex = pWorkbookGlobals->GetSharedStringIndex(szString);
+								sTemp->Set("");
+								sTemp->AppendUint32(nSstIndex);
+								pValueNode->SetText(sTemp->GetExternalString());
+								pCellNode->AppendChild(pValueNode);
+							}
+							break;
+						}
+
+						case Value::Type::TYPE_FLOAT:
+						{
+							double fFloat = pValue->GetFloat();
+							XmlNode* pValueNode = pWorksheetXml->CreateElement("v");
+							sTemp->Set("");
+							sTemp->AppendDouble(fFloat);
+							pValueNode->SetText(sTemp->GetExternalString());
+							pCellNode->AppendChild(pValueNode);
+							break;
+						}
+
+						case Value::Type::TYPE_BOOLEAN:
+						{
+							bool bBoolean = pValue->GetBoolean();
+							pCellNode->SetAttribute("t", "b");
+							XmlNode* pValueNode = pWorksheetXml->CreateElement("v");
+							pValueNode->SetText(bBoolean ? "1" : "0");
+							pCellNode->AppendChild(pValueNode);
+							break;
+						}
+
+						default:
+						{
+							break;
+						}
+
+					}
+					pCurrentRowNode->AppendChild(pCellNode);
+				}
+			}
+			pWorksheetNode->AppendChild(pSheetDataNode);
+			pWorksheetXml->AppendChild(pWorksheetNode);
+			pWorksheetXml->Save(pWorksheetBlob->GetBlobView());
+			sTemp->Set("xl/worksheets/sheet");
+			sTemp->AppendInt(nWorksheetIndex + 1);
+			sTemp->AppendString(".xml");
+			bool bSuccess;
+			NumberDuck::Blob* __4289951052 = pWorksheetBlob;
+			pWorksheetBlob = 0;
+			bSuccess = pZipWriter->AddFileFromBlob(sTemp->GetExternalString(), __4289951052);
+			if (sTemp) delete sTemp;
+			if (pWorksheetBlob) delete pWorksheetBlob;
+			if (pWorksheetXml) delete pWorksheetXml;
+			return bSuccess;
 		}
 
 		bool XlsxWorksheet::Parse(XlsxWorkbookGlobals* pWorkbookGlobals, XmlNode* pWorksheetNode)
@@ -49845,12 +50176,8 @@ namespace NumberDuck
 						const char* szRef = pMergeCellNode->GetAttribute("ref");
 						if (szRef == 0)
 							return false;
-						Secret::Area* pArea = Secret::WorksheetImplementation::AddressToArea(szRef);
+						Area* pArea = WorksheetImplementation::AddressToArea(szRef);
 						CreateMergedCell(pArea->m_pTopLeft->m_nX, pArea->m_pTopLeft->m_nY, (unsigned short)(pArea->m_pBottomRight->m_nX - pArea->m_pTopLeft->m_nX + 1), (unsigned short)(pArea->m_pBottomRight->m_nY - pArea->m_pTopLeft->m_nY + 1));
-						{
-							delete pArea;
-							pArea = 0;
-						}
 						pMergeCellNode = pMergeCellNode->GetNextSiblingElement("mergeCell");
 						if (pArea) delete pArea;
 					}
@@ -49949,21 +50276,12 @@ namespace NumberDuck
 				if (nIndexed == BiffWorkbookGlobals::PALETTE_INDEX_DEFAULT_FOREGROUND)
 					return 0x000000;
 			}
-			else if (szRgb != 0)
-			{
-				InternalString* sTemp = new InternalString("0x");
-				sTemp->AppendString(szRgb);
-				unsigned int nRgb = sTemp->ParseHex();
+			else
+				if (szRgb != 0)
 				{
-					delete sTemp;
-					sTemp = 0;
+					return XlsxUtils::ReadBgra(szRgb);
 				}
-				{
-					if (sTemp) delete sTemp;
-					return nRgb;
-				}
-			}
-			NumbatLogic::Assert::Plz(false);
+			Assert::Plz(false);
 			return 0x000000;
 		}
 
@@ -49987,7 +50305,7 @@ namespace NumberDuck
 					const char* szVal = pSzElement->GetAttribute("val");
 					if (szVal == 0)
 						return false;
-					double dPoints = (double)(ExternalString::atoi(szVal));
+					double dPoints = (double)(ExternalString::atof(szVal));
 					double dPixels = (dPoints * 96.0 + 72.0 / 2.0) / 72.0;
 					pFont->SetSize((unsigned char)(dPixels));
 				}
@@ -50010,12 +50328,15 @@ namespace NumberDuck
 					const char* szVal = pUElement->GetAttribute("val");
 					if (szVal == 0 || ExternalString::Equal(szVal, "single"))
 						pFont->SetUnderline(Font::Underline::UNDERLINE_SINGLE);
-					else if (ExternalString::Equal(szVal, "double"))
-						pFont->SetUnderline(Font::Underline::UNDERLINE_DOUBLE);
-					else if (ExternalString::Equal(szVal, "singleAccounting"))
-						pFont->SetUnderline(Font::Underline::UNDERLINE_SINGLE_ACCOUNTING);
-					else if (ExternalString::Equal(szVal, "doubleAccounting"))
-						pFont->SetUnderline(Font::Underline::UNDERLINE_DOUBLE_ACCOUNTING);
+					else
+						if (ExternalString::Equal(szVal, "double"))
+							pFont->SetUnderline(Font::Underline::UNDERLINE_DOUBLE);
+						else
+							if (ExternalString::Equal(szVal, "singleAccounting"))
+								pFont->SetUnderline(Font::Underline::UNDERLINE_SINGLE_ACCOUNTING);
+							else
+								if (ExternalString::Equal(szVal, "doubleAccounting"))
+									pFont->SetUnderline(Font::Underline::UNDERLINE_DOUBLE_ACCOUNTING);
 				}
 			}
 			return true;
@@ -50028,34 +50349,47 @@ namespace NumberDuck
 			{
 				if (ExternalString::Equal(szStyle, "dashDot"))
 					pLine->SetType(Line::Type::TYPE_DASH_DOT);
-				else if (ExternalString::Equal(szStyle, "dashDotDot"))
-					pLine->SetType(Line::Type::TYPE_DASH_DOT_DOT);
-				else if (ExternalString::Equal(szStyle, "dashed"))
-					pLine->SetType(Line::Type::TYPE_DASHED);
-				else if (ExternalString::Equal(szStyle, "dotted"))
-					pLine->SetType(Line::Type::TYPE_DOTTED);
-				else if (ExternalString::Equal(szStyle, "double"))
-					pLine->SetType(Line::Type::TYPE_THICK);
-				else if (ExternalString::Equal(szStyle, "hair"))
-					pLine->SetType(Line::Type::TYPE_THIN);
-				else if (ExternalString::Equal(szStyle, "medium"))
-					pLine->SetType(Line::Type::TYPE_MEDIUM);
-				else if (ExternalString::Equal(szStyle, "mediumDashDot"))
-					pLine->SetType(Line::Type::TYPE_MEDIUM_DASH_DOT);
-				else if (ExternalString::Equal(szStyle, "mediumDashDotDot"))
-					pLine->SetType(Line::Type::TYPE_MEDIUM_DASH_DOT_DOT);
-				else if (ExternalString::Equal(szStyle, "mediumDashed"))
-					pLine->SetType(Line::Type::TYPE_MEDIUM_DASHED);
-				else if (ExternalString::Equal(szStyle, "none"))
-					pLine->SetType(Line::Type::TYPE_NONE);
-				else if (ExternalString::Equal(szStyle, "slantDashDot"))
-					pLine->SetType(Line::Type::TYPE_DASHED);
-				else if (ExternalString::Equal(szStyle, "thick"))
-					pLine->SetType(Line::Type::TYPE_THICK);
-				else if (ExternalString::Equal(szStyle, "thin"))
-					pLine->SetType(Line::Type::TYPE_THIN);
 				else
-					return false;
+					if (ExternalString::Equal(szStyle, "dashDotDot"))
+						pLine->SetType(Line::Type::TYPE_DASH_DOT_DOT);
+					else
+						if (ExternalString::Equal(szStyle, "dashed"))
+							pLine->SetType(Line::Type::TYPE_DASHED);
+						else
+							if (ExternalString::Equal(szStyle, "dotted"))
+								pLine->SetType(Line::Type::TYPE_DOTTED);
+							else
+								if (ExternalString::Equal(szStyle, "double"))
+									pLine->SetType(Line::Type::TYPE_THICK);
+								else
+									if (ExternalString::Equal(szStyle, "hair"))
+										pLine->SetType(Line::Type::TYPE_THIN);
+									else
+										if (ExternalString::Equal(szStyle, "medium"))
+											pLine->SetType(Line::Type::TYPE_MEDIUM);
+										else
+											if (ExternalString::Equal(szStyle, "mediumDashDot"))
+												pLine->SetType(Line::Type::TYPE_MEDIUM_DASH_DOT);
+											else
+												if (ExternalString::Equal(szStyle, "mediumDashDotDot"))
+													pLine->SetType(Line::Type::TYPE_MEDIUM_DASH_DOT_DOT);
+												else
+													if (ExternalString::Equal(szStyle, "mediumDashed"))
+														pLine->SetType(Line::Type::TYPE_MEDIUM_DASHED);
+													else
+														if (ExternalString::Equal(szStyle, "none"))
+															pLine->SetType(Line::Type::TYPE_NONE);
+														else
+															if (ExternalString::Equal(szStyle, "slantDashDot"))
+																pLine->SetType(Line::Type::TYPE_DASHED);
+															else
+																if (ExternalString::Equal(szStyle, "thick"))
+																	pLine->SetType(Line::Type::TYPE_THICK);
+																else
+																	if (ExternalString::Equal(szStyle, "thin"))
+																		pLine->SetType(Line::Type::TYPE_THIN);
+																	else
+																		return false;
 			}
 			XmlNode* pColorElement = pSideElement->GetFirstChildElement("color");
 			if (pColorElement != 0)
@@ -50151,16 +50485,14 @@ namespace NumberDuck
 				delete pCellStyleVector;
 				pCellStyleVector = 0;
 			}
-			{
-				if (pNumFmtVector) delete pNumFmtVector;
-				if (pFontVector) delete pFontVector;
-				if (pFillVector) delete pFillVector;
-				if (pBorderVector) delete pBorderVector;
-				if (pCellStyleXfVector) delete pCellStyleXfVector;
-				if (pCellXfVector) delete pCellXfVector;
-				if (pCellStyleVector) delete pCellStyleVector;
-				return bResult;
-			}
+			if (pNumFmtVector) delete pNumFmtVector;
+			if (pFontVector) delete pFontVector;
+			if (pFillVector) delete pFillVector;
+			if (pBorderVector) delete pBorderVector;
+			if (pCellStyleXfVector) delete pCellStyleXfVector;
+			if (pCellXfVector) delete pCellXfVector;
+			if (pCellStyleVector) delete pCellStyleVector;
+			return bResult;
 		}
 
 		bool XlsxWorkbookGlobals::SubParseStyles(WorkbookGlobals* pWorkbookGlobals, XmlNode* pStyleSheetNode, Vector<XmlNode*>* pNumFmtVector, Vector<XmlNode*>* pFontVector, Vector<XmlNode*>* pFillVector, Vector<XmlNode*>* pBorderVector, Vector<XmlNode*>* pCellStyleXfVector, Vector<XmlNode*>* pCellXfVector, Vector<XmlNode*>* pCellStyleVector)
@@ -50170,7 +50502,6 @@ namespace NumberDuck
 				Style* pStyle = pWorkbookGlobals->CreateStyle();
 				XmlNode* pXfElement = pCellXfVector->Get(i);
 				XmlNode* pInheritXfElement = 0;
-				XmlNode* pCellStyleElement = 0;
 				const char* szXfId = pXfElement->GetAttribute("xfId");
 				if (szXfId != 0)
 				{
@@ -50178,9 +50509,6 @@ namespace NumberDuck
 					if (nXfId < 0 || pCellStyleXfVector->GetSize() <= nXfId)
 						return false;
 					pInheritXfElement = pCellStyleXfVector->Get(nXfId);
-					if (nXfId < 0 || pCellStyleVector->GetSize() <= nXfId)
-						return false;
-					pCellStyleElement = pCellStyleVector->Get(nXfId);
 				}
 				{
 					const char* szFontId = 0;
@@ -50244,34 +50572,45 @@ namespace NumberDuck
 						{
 							if (ExternalString::Equal(szHorizontal, "general"))
 								pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_GENERAL);
-							else if (ExternalString::Equal(szHorizontal, "left"))
-								pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_LEFT);
-							else if (ExternalString::Equal(szHorizontal, "center"))
-								pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_CENTER);
-							else if (ExternalString::Equal(szHorizontal, "right"))
-								pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_RIGHT);
-							else if (ExternalString::Equal(szHorizontal, "fill"))
-								pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_FILL);
-							else if (ExternalString::Equal(szHorizontal, "justify"))
-								pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_JUSTIFY);
-							else if (ExternalString::Equal(szHorizontal, "centerContinuous"))
-								pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_CENTER_ACROSS_SELECTION);
-							else if (ExternalString::Equal(szHorizontal, "distributed"))
-								pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_DISTRIBUTED);
+							else
+								if (ExternalString::Equal(szHorizontal, "left"))
+									pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_LEFT);
+								else
+									if (ExternalString::Equal(szHorizontal, "center"))
+										pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_CENTER);
+									else
+										if (ExternalString::Equal(szHorizontal, "right"))
+											pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_RIGHT);
+										else
+											if (ExternalString::Equal(szHorizontal, "fill"))
+												pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_FILL);
+											else
+												if (ExternalString::Equal(szHorizontal, "justify"))
+													pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_JUSTIFY);
+												else
+													if (ExternalString::Equal(szHorizontal, "centerContinuous"))
+														pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_CENTER_ACROSS_SELECTION);
+													else
+														if (ExternalString::Equal(szHorizontal, "distributed"))
+															pStyle->SetHorizontalAlign(Style::HorizontalAlign::HORIZONTAL_ALIGN_DISTRIBUTED);
 						}
 						const char* szVertical = pAlignmentElement->GetAttribute("vertical");
 						if (szVertical != 0)
 						{
 							if (ExternalString::Equal(szVertical, "top"))
 								pStyle->SetVerticalAlign(Style::VerticalAlign::VERTICAL_ALIGN_TOP);
-							else if (ExternalString::Equal(szVertical, "center"))
-								pStyle->SetVerticalAlign(Style::VerticalAlign::VERTICAL_ALIGN_CENTER);
-							else if (ExternalString::Equal(szVertical, "bottom"))
-								pStyle->SetVerticalAlign(Style::VerticalAlign::VERTICAL_ALIGN_BOTTOM);
-							else if (ExternalString::Equal(szVertical, "justify"))
-								pStyle->SetVerticalAlign(Style::VerticalAlign::VERTICAL_ALIGN_JUSTIFY);
-							else if (ExternalString::Equal(szVertical, "distributed"))
-								pStyle->SetVerticalAlign(Style::VerticalAlign::VERTICAL_ALIGN_DISTRIBUTED);
+							else
+								if (ExternalString::Equal(szVertical, "center"))
+									pStyle->SetVerticalAlign(Style::VerticalAlign::VERTICAL_ALIGN_CENTER);
+								else
+									if (ExternalString::Equal(szVertical, "bottom"))
+										pStyle->SetVerticalAlign(Style::VerticalAlign::VERTICAL_ALIGN_BOTTOM);
+									else
+										if (ExternalString::Equal(szVertical, "justify"))
+											pStyle->SetVerticalAlign(Style::VerticalAlign::VERTICAL_ALIGN_JUSTIFY);
+										else
+											if (ExternalString::Equal(szVertical, "distributed"))
+												pStyle->SetVerticalAlign(Style::VerticalAlign::VERTICAL_ALIGN_DISTRIBUTED);
 						}
 					}
 				}
@@ -50487,6 +50826,29 @@ namespace NumberDuck
 			return true;
 		}
 
+		void XlsxUtils::WriteBgra(unsigned int nRgba, InternalString* sOut)
+		{
+			unsigned int nBlue = (nRgba >> 16) & 0xFF;
+			unsigned int nGreen = (nRgba >> 8) & 0xFF;
+			unsigned int nRed = nRgba & 0xFF;
+			unsigned int nAlpha = (nRgba >> 24) & 0xFF;
+			unsigned int nBgra = nBlue | (nGreen << 8) | (nRed << 16) | (nAlpha << 24);
+			sOut->AppendHex(nBgra);
+		}
+
+		unsigned int XlsxUtils::ReadBgra(const char* sxRgb)
+		{
+			InternalString* sTemp = new InternalString("0x");
+			sTemp->AppendString(sxRgb);
+			unsigned int nBgra = sTemp->ParseHex();
+			unsigned int nRed = (nBgra >> 16) & 0xFF;
+			unsigned int nGreen = (nBgra >> 8) & 0xFF;
+			unsigned int nBlue = nBgra & 0xFF;
+			unsigned int nAlpha = (nBgra >> 24) & 0xFF;
+			if (sTemp) delete sTemp;
+			return nRed | (nGreen << 8) | (nBlue << 16) | (nAlpha << 24);
+		}
+
 		ColumnInfo::ColumnInfo()
 		{
 			m_nWidth = 0;
@@ -50516,8 +50878,8 @@ namespace NumberDuck
 			m_nY = 0;
 			m_bXRelative = false;
 			m_bYRelative = false;
-			NumbatLogic::Assert::Plz(nY <= Worksheet::MAX_ROW);
-			NumbatLogic::Assert::Plz(nX <= Worksheet::MAX_COLUMN);
+			Assert::Plz(nY <= Worksheet::MAX_ROW);
+			Assert::Plz(nX <= Worksheet::MAX_COLUMN);
 			m_nX = nX;
 			m_nY = nY;
 			m_bXRelative = bXRelative;
@@ -50702,10 +51064,11 @@ namespace NumberDuck
 				unsigned short cChar = sAddress->GetChar(nIndex);
 				if (cChar >= 'A' && cChar <= 'Z')
 					nTempVector->PushBack(cChar - 'A');
-				else if (cChar >= 'a' && cChar <= 'z')
-					nTempVector->PushBack(cChar - 'a');
 				else
-					break;
+					if (cChar >= 'a' && cChar <= 'z')
+						nTempVector->PushBack(cChar - 'a');
+					else
+						break;
 				nIndex++;
 			}
 			if (nTempVector->GetSize() == 0)
@@ -50718,11 +51081,9 @@ namespace NumberDuck
 					delete sAddress;
 					sAddress = 0;
 				}
-				{
-					if (nTempVector) delete nTempVector;
-					if (sAddress) delete sAddress;
-					return 0;
-				}
+				if (nTempVector) delete nTempVector;
+				if (sAddress) delete sAddress;
+				return 0;
 			}
 			nMultiplier = 1;
 			nBase = 26;
@@ -50749,19 +51110,15 @@ namespace NumberDuck
 			}
 			if (nTempVector->GetSize() == 0)
 			{
-				{
-					if (nTempVector) delete nTempVector;
-					if (sAddress) delete sAddress;
-					return 0;
-				}
+				if (nTempVector) delete nTempVector;
+				if (sAddress) delete sAddress;
+				return 0;
 			}
 			if (nTempVector->GetSize() == 1 && nTempVector->Get(0) == '0')
 			{
-				{
-					if (nTempVector) delete nTempVector;
-					if (sAddress) delete sAddress;
-					return 0;
-				}
+				if (nTempVector) delete nTempVector;
+				if (sAddress) delete sAddress;
+				return 0;
 			}
 			nMultiplier = 1;
 			nBase = 10;
@@ -50773,11 +51130,9 @@ namespace NumberDuck
 			nY--;
 			if (sAddress->GetLength() != nIndex)
 			{
-				{
-					if (nTempVector) delete nTempVector;
-					if (sAddress) delete sAddress;
-					return 0;
-				}
+				if (nTempVector) delete nTempVector;
+				if (sAddress) delete sAddress;
+				return 0;
 			}
 			if (nX > 255 || nY > 65535)
 			{
@@ -50785,11 +51140,9 @@ namespace NumberDuck
 				if (sAddress) delete sAddress;
 				return 0;
 			}
-			{
-				if (nTempVector) delete nTempVector;
-				if (sAddress) delete sAddress;
-				return new Coordinate(nX, nY, bXRelative, bYRelative);
-			}
+			if (nTempVector) delete nTempVector;
+			if (sAddress) delete sAddress;
+			return new Coordinate(nX, nY, bXRelative, bYRelative);
 		}
 
 		Area* WorksheetImplementation::AddressToArea(const char* szAddress)
@@ -50807,35 +51160,27 @@ namespace NumberDuck
 				Coordinate* pSecond = AddressToCoordinate(sSecond->GetExternalString());
 				if (pFirst != 0 && pSecond != 0)
 				{
-					{
-						NumberDuck::Secret::Coordinate* __1625950533 = pFirst;
-						pFirst = 0;
-						{
-							NumberDuck::Secret::Coordinate* __3967857369 = pSecond;
-							pSecond = 0;
-							pArea = new Area(__1625950533, __3967857369);
-						}
-					}
+					NumberDuck::Secret::Coordinate* __1178557552 = pFirst;
+					pFirst = 0;
+					NumberDuck::Secret::Coordinate* __105214506 = pSecond;
+					pSecond = 0;
+					pArea = new Area(__1178557552, __105214506);
 				}
 				if (sFirst) delete sFirst;
 				if (sSecond) delete sSecond;
 				if (pFirst) delete pFirst;
 				if (pSecond) delete pSecond;
 			}
-			{
-				NumberDuck::Secret::Area* __4245081970 = pArea;
-				pArea = 0;
-				{
-					if (sAddress) delete sAddress;
-					return __4245081970;
-				}
-			}
+			NumberDuck::Secret::Area* __1806124910 = pArea;
+			pArea = 0;
+			if (sAddress) delete sAddress;
+			return __1806124910;
 		}
 
 		void WorksheetImplementation::WorksheetRangeToAddress(unsigned short nFirst, unsigned short nLast, InternalString* sOut)
 		{
-			NumbatLogic::Assert::Plz(nFirst >= 0 && nFirst <= m_pWorkbook->GetNumWorksheet());
-			NumbatLogic::Assert::Plz(nLast >= nFirst && nLast <= m_pWorkbook->GetNumWorksheet());
+			Assert::Plz(nFirst >= 0 && nFirst <= m_pWorkbook->GetNumWorksheet());
+			Assert::Plz(nLast >= nFirst && nLast <= m_pWorkbook->GetNumWorksheet());
 			InternalString* sWorksheetFirst = m_pWorkbook->GetWorksheetByIndex(nFirst)->m_pImpl->m_sName;
 			InternalString* sWorksheetLast = m_pWorkbook->GetWorksheetByIndex(nLast)->m_pImpl->m_sName;
 			bool bHasSpace = sWorksheetFirst->FindChar(' ') != -1 || (nFirst != nLast && sWorksheetLast->FindChar(' ') != -1);
@@ -50914,22 +51259,16 @@ namespace NumberDuck
 					if (pCoordinate != 0)
 					{
 						Coordinate3d* pCoordinate3d = 0;
-						{
-							NumberDuck::Secret::Coordinate* __3642692973 = pCoordinate;
-							pCoordinate = 0;
-							pCoordinate3d = new Coordinate3d(pWorksheetRange->m_nFirst, pWorksheetRange->m_nLast, __3642692973);
-						}
-						{
-							NumberDuck::Secret::Coordinate3d* __1094936853 = pCoordinate3d;
-							pCoordinate3d = 0;
-							{
-								if (pCoordinate) delete pCoordinate;
-								if (sWorksheetRange) delete sWorksheetRange;
-								if (sCell) delete sCell;
-								if (pWorksheetRange) delete pWorksheetRange;
-								return __1094936853;
-							}
-						}
+						NumberDuck::Secret::Coordinate* __1567772875 = pCoordinate;
+						pCoordinate = 0;
+						pCoordinate3d = new Coordinate3d(pWorksheetRange->m_nFirst, pWorksheetRange->m_nLast, __1567772875);
+						NumberDuck::Secret::Coordinate3d* __3227663078 = pCoordinate3d;
+						pCoordinate3d = 0;
+						if (pCoordinate) delete pCoordinate;
+						if (sWorksheetRange) delete sWorksheetRange;
+						if (sCell) delete sCell;
+						if (pWorksheetRange) delete pWorksheetRange;
+						return __3227663078;
 					}
 					{
 						delete pWorksheetRange;
@@ -50968,22 +51307,16 @@ namespace NumberDuck
 					if (pArea != 0)
 					{
 						Area3d* pArea3d = 0;
-						{
-							NumberDuck::Secret::Area* __4245081970 = pArea;
-							pArea = 0;
-							pArea3d = new Area3d(pWorksheetRange->m_nFirst, pWorksheetRange->m_nLast, __4245081970);
-						}
-						{
-							NumberDuck::Secret::Area3d* __2738670685 = pArea3d;
-							pArea3d = 0;
-							{
-								if (pArea) delete pArea;
-								if (sWorksheetRange) delete sWorksheetRange;
-								if (sArea) delete sArea;
-								if (pWorksheetRange) delete pWorksheetRange;
-								return __2738670685;
-							}
-						}
+						NumberDuck::Secret::Area* __3537325297 = pArea;
+						pArea = 0;
+						pArea3d = new Area3d(pWorksheetRange->m_nFirst, pWorksheetRange->m_nLast, __3537325297);
+						NumberDuck::Secret::Area3d* __3412097654 = pArea3d;
+						pArea3d = 0;
+						if (pArea) delete pArea;
+						if (sWorksheetRange) delete sWorksheetRange;
+						if (sArea) delete sArea;
+						if (pWorksheetRange) delete pWorksheetRange;
+						return __3412097654;
 					}
 					if (pArea) delete pArea;
 				}
@@ -51010,11 +51343,9 @@ namespace NumberDuck
 				ColumnInfo* pColumnInfo = new ColumnInfo();
 				pColumnInfo->m_bHidden = false;
 				pColumnInfo->m_nWidth = Worksheet::DEFAULT_COLUMN_WIDTH;
-				{
-					NumberDuck::Secret::ColumnInfo* __1173438266 = pColumnInfo;
-					pColumnInfo = 0;
-					pElement->m_xObject = __1173438266;
-				}
+				NumberDuck::Secret::ColumnInfo* __518549535 = pColumnInfo;
+				pColumnInfo = 0;
+				pElement->m_xObject = __518549535;
 				if (pColumnInfo) delete pColumnInfo;
 			}
 			return pElement->m_xObject;
@@ -51035,11 +51366,9 @@ namespace NumberDuck
 			{
 				RowInfo* pRowInfo = new RowInfo();
 				pRowInfo->m_nHeight = Worksheet::DEFAULT_ROW_HEIGHT;
-				{
-					NumberDuck::Secret::RowInfo* __3798332131 = pRowInfo;
-					pRowInfo = 0;
-					pElement->m_xObject = __3798332131;
-				}
+				NumberDuck::Secret::RowInfo* __2334844916 = pRowInfo;
+				pRowInfo = 0;
+				pElement->m_xObject = __2334844916;
 				if (pRowInfo) delete pRowInfo;
 			}
 			return pElement->m_xObject;
@@ -51055,10 +51384,11 @@ namespace NumberDuck
 			while (m_pWorksheetVector->GetSize() > 0)
 			{
 				Worksheet* pWorksheet = m_pWorksheetVector->Remove(0);
-				{
-					delete pWorksheet;
-					pWorksheet = 0;
-				}
+				if (pWorksheet != 0)
+					{
+						delete pWorksheet;
+						pWorksheet = 0;
+					}
 				if (pWorksheet) delete pWorksheet;
 			}
 			if (m_pWorkbookGlobals) delete m_pWorkbookGlobals;
@@ -51093,44 +51423,36 @@ namespace NumberDuck
 		{
 			Value* pValue = new Value();
 			pValue->m_pImpl->SetFloat(fFloat);
-			{
-				NumberDuck::Value* __482980084 = pValue;
-				pValue = 0;
-				return __482980084;
-			}
+			NumberDuck::Value* __904019314 = pValue;
+			pValue = 0;
+			return __904019314;
 		}
 
 		Value* ValueImplementation::CreateStringValue(const char* szString)
 		{
 			Value* pValue = new Value();
 			pValue->m_pImpl->SetString(szString);
-			{
-				NumberDuck::Value* __482980084 = pValue;
-				pValue = 0;
-				return __482980084;
-			}
+			NumberDuck::Value* __1877140230 = pValue;
+			pValue = 0;
+			return __1877140230;
 		}
 
 		Value* ValueImplementation::CreateBooleanValue(const bool bBoolean)
 		{
 			Value* pValue = new Value();
 			pValue->m_pImpl->SetBoolean(bBoolean);
-			{
-				NumberDuck::Value* __482980084 = pValue;
-				pValue = 0;
-				return __482980084;
-			}
+			NumberDuck::Value* __585294583 = pValue;
+			pValue = 0;
+			return __585294583;
 		}
 
 		Value* ValueImplementation::CreateErrorValue()
 		{
 			Value* pValue = new Value();
 			pValue->m_pImpl->m_eType = Value::Type::TYPE_ERROR;
-			{
-				NumberDuck::Value* __482980084 = pValue;
-				pValue = 0;
-				return __482980084;
-			}
+			NumberDuck::Value* __2263010084 = pValue;
+			pValue = 0;
+			return __2263010084;
 		}
 
 		Value* ValueImplementation::CreateAreaValue(Area* pArea)
@@ -51138,11 +51460,9 @@ namespace NumberDuck
 			Value* pValue = new Value();
 			pValue->m_pImpl->m_eType = Value::Type::TYPE_AREA;
 			pValue->m_pImpl->m_pArea = pArea;
-			{
-				NumberDuck::Value* __482980084 = pValue;
-				pValue = 0;
-				return __482980084;
-			}
+			NumberDuck::Value* __2615325009 = pValue;
+			pValue = 0;
+			return __2615325009;
 		}
 
 		Value* ValueImplementation::CreateArea3dValue(Area3d* pArea3d)
@@ -51150,17 +51470,15 @@ namespace NumberDuck
 			Value* pValue = new Value();
 			pValue->m_pImpl->m_eType = Value::Type::TYPE_AREA_3D;
 			pValue->m_pImpl->m_pArea3d = pArea3d;
-			{
-				NumberDuck::Value* __482980084 = pValue;
-				pValue = 0;
-				return __482980084;
-			}
+			NumberDuck::Value* __2430769282 = pValue;
+			pValue = 0;
+			return __2430769282;
 		}
 
 		Value* ValueImplementation::CopyValue(const Value* pValue)
 		{
 			Value* pNewValue = new Value();
-			NumbatLogic::Assert::Plz(pValue->m_pImpl->m_eType != Value::Type::TYPE_FORMULA);
+			Assert::Plz(pValue->m_pImpl->m_eType != Value::Type::TYPE_FORMULA);
 			pNewValue->m_pImpl->m_eType = pValue->m_pImpl->m_eType;
 			pNewValue->m_pImpl->m_sString->Set(pValue->m_pImpl->m_sString->GetExternalString());
 			pNewValue->m_pImpl->m_fFloat = pValue->m_pImpl->m_fFloat;
@@ -51169,11 +51487,9 @@ namespace NumberDuck
 				pNewValue->m_pImpl->m_pArea = pValue->m_pImpl->m_pArea->CreateClone();
 			if (pValue->m_pImpl->m_pArea3d != 0)
 				pNewValue->m_pImpl->m_pArea3d = pValue->m_pImpl->m_pArea3d->CreateClone();
-			{
-				NumberDuck::Value* __4153834605 = pNewValue;
-				pNewValue = 0;
-				return __4153834605;
-			}
+			NumberDuck::Value* __1136840818 = pNewValue;
+			pNewValue = 0;
+			return __1136840818;
 		}
 
 		void ValueImplementation::Clear()
@@ -51206,8 +51522,8 @@ namespace NumberDuck
 
 		void ValueImplementation::SetFormula(Formula* pFormula, Worksheet* pWorksheet)
 		{
-			NumbatLogic::Assert::Plz(pFormula != 0);
-			NumbatLogic::Assert::Plz(pWorksheet != 0);
+			Assert::Plz(pFormula != 0);
+			Assert::Plz(pWorksheet != 0);
 			m_eType = Value::Type::TYPE_FORMULA;
 			if (m_pFormula != 0)
 				{
@@ -51339,15 +51655,11 @@ namespace NumberDuck
 				i++;
 			}
 			m_pSharedStringSortedVector->Insert(i, pSharedString);
-			{
-				NumberDuck::Secret::SharedString* __3093361001 = pSharedString;
-				pSharedString = 0;
-				m_pSharedStringVector->PushBack(__3093361001);
-			}
-			{
-				if (pSharedString) delete pSharedString;
-				return nIndex;
-			}
+			NumberDuck::Secret::SharedString* __542811394 = pSharedString;
+			pSharedString = 0;
+			m_pSharedStringVector->PushBack(__542811394);
+			if (pSharedString) delete pSharedString;
+			return nIndex;
 		}
 
 		int SharedStringContainer::GetSize()
@@ -51373,7 +51685,7 @@ namespace NumberDuck
 
 		void SeriesImplementation::SetNameFormula(Formula* pFormula)
 		{
-			NumbatLogic::Assert::Plz(pFormula != 0);
+			Assert::Plz(pFormula != 0);
 			{
 				delete m_pNameFormula;
 				m_pNameFormula = 0;
@@ -51383,7 +51695,7 @@ namespace NumberDuck
 
 		void SeriesImplementation::SetValuesFormula(Formula* pFormula)
 		{
-			NumbatLogic::Assert::Plz(pFormula != 0);
+			Assert::Plz(pFormula != 0);
 			{
 				delete m_pValuesFormula;
 				m_pValuesFormula = 0;
@@ -51430,7 +51742,7 @@ namespace NumberDuck
 
 				default:
 				{
-					NumbatLogic::Assert::Plz(false);
+					Assert::Plz(false);
 					break;
 				}
 
@@ -51689,7 +52001,7 @@ namespace NumberDuck
 			m_bBold = false;
 			m_bItalic = false;
 			m_eUnderline = Font::Underline::UNDERLINE_NONE;
-			m_sName = new InternalString("Arial");
+			m_sName = new InternalString("Calibri");
 			m_nSizeTwips = 14 * 15;
 			m_pColor = 0;
 			m_bBold = false;
@@ -51791,19 +52103,15 @@ namespace NumberDuck
 
 		Series* ChartImplementation::CreateSeries(Formula* pValuesFormula)
 		{
-			NumbatLogic::Assert::Plz(pValuesFormula != 0);
+			Assert::Plz(pValuesFormula != 0);
 			Series* pSeries = new Series(m_pWorksheet, pValuesFormula);
 			pSeries->m_pImpl->SetClassicStyle(m_eType, (unsigned short)(m_pSeriesVector->GetSize()));
 			Series* pTemp = pSeries;
-			{
-				NumberDuck::Series* __1756674346 = pSeries;
-				pSeries = 0;
-				m_pSeriesVector->PushBack(__1756674346);
-			}
-			{
-				if (pSeries) delete pSeries;
-				return pTemp;
-			}
+			NumberDuck::Series* __2799140160 = pSeries;
+			pSeries = 0;
+			m_pSeriesVector->PushBack(__2799140160);
+			if (pSeries) delete pSeries;
+			return pTemp;
 		}
 
 		void ChartImplementation::PurgeSeries(int nIndex)
@@ -51816,7 +52124,7 @@ namespace NumberDuck
 
 		void ChartImplementation::SetCategoriesFormula(Formula* pCategoriesFormula)
 		{
-			NumbatLogic::Assert::Plz(pCategoriesFormula != 0);
+			Assert::Plz(pCategoriesFormula != 0);
 			{
 				delete m_pCategoriesFormula;
 				m_pCategoriesFormula = 0;
@@ -51927,6 +52235,6 @@ namespace NumberDuck
 			if (m_pValue) delete m_pValue;
 		}
 
-																			}
+																					}
 }
 
