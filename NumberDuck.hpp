@@ -59,15 +59,7 @@ namespace NumberDuck
 		class BofRecord;
 		class BiffWorkbookGlobals;
 		class BiffWorksheet;
-		class Zip;
-		class XmlFile;
-		class XlsxWorkbookGlobals;
-		class XmlNode;
-		class XlsxWorksheet;
 		class BiffRecordContainer;
-		class ZipWriter;
-		template <class T>
-		class Vector;
 		class SeriesImplementation;
 		class MergedCellImplementation;
 		class LegendImplementation;
