@@ -1489,6 +1489,7 @@ namespace NumberDuck
 			public: unsigned short GetForegroundPaletteIndex();
 			public: unsigned char GetHorizontalAlign();
 			public: unsigned char GetVerticalAlign();
+			public: bool GetWrapText();
 			protected: Line::Type BorderStyleToLineType(unsigned char nBorderStyle);
 			protected: unsigned char LineTypeToBorderStyle(Line::Type eLineType);
 			public: Line::Type GetTopBorderType();
@@ -5045,6 +5046,7 @@ namespace NumberDuck
 			public: Line* m_pBottomBorderLine;
 			public: Line* m_pLeftBorderLine;
 			public: InternalString* m_sFormat;
+			public: bool m_bWrapText;
 			public: unsigned int m_nFormatIndex;
 			public: StyleImplementation();
 			public: virtual ~StyleImplementation();
@@ -9867,6 +9869,16 @@ namespace NumberDuck
 			}
 			m_pImplementation->m_sFormat = new Secret::InternalString(szFormat);
 		}
+	}
+
+	bool Style::GetWrapText()
+	{
+		return m_pImplementation->m_bWrapText;
+	}
+
+	void Style::SetWrapText(bool bWrapText)
+	{
+		m_pImplementation->m_bWrapText = bWrapText;
 	}
 
 	Style::~Style()
@@ -28345,6 +28357,7 @@ namespace NumberDuck
 						pStyle->GetFont()->GetColor(true)->SetFromRgba(GetPaletteColorByIndex(nPaletteIndex));
 					pStyle->SetHorizontalAlign((Style::HorizontalAlign)(pXF->GetHorizontalAlign()));
 					pStyle->SetVerticalAlign((Style::VerticalAlign)(pXF->GetVerticalAlign()));
+					pStyle->SetWrapText(pXF->GetWrapText());
 					pStyle->GetTopBorderLine()->SetType(pXF->GetTopBorderType());
 					nPaletteIndex = pXF->GetTopBorderPaletteIndex();
 					if (nPaletteIndex < NUM_DEFAULT_PALETTE_ENTRY + NUM_CUSTOM_PALETTE_ENTRY)
@@ -28520,9 +28533,9 @@ namespace NumberDuck
 			{
 				pBiffRecordContainer->AddBiffRecord(pXFVector->PopFront());
 			}
-			NumberDuck::Secret::XFCRC* __435572905 = pXFCRC;
+			NumberDuck::Secret::XFCRC* __1425428824 = pXFCRC;
 			pXFCRC = 0;
-			pBiffRecordContainer->AddBiffRecord(__435572905);
+			pBiffRecordContainer->AddBiffRecord(__1425428824);
 			for (unsigned short i = 0; i < (unsigned short)(pWorkbookGlobals->m_pStyleVector->GetSize()); i++)
 			{
 				Style* pStyle = pWorkbookGlobals->m_pStyleVector->Get(i);
@@ -28534,9 +28547,9 @@ namespace NumberDuck
 				Worksheet* pWorksheet = pWorksheetVector->Get(i);
 				BoundSheet8Record* pBoundSheet8Record = new BoundSheet8Record(pWorksheet->GetName());
 				pBoundSheet8RecordVector->PushBack(pBoundSheet8Record);
-				NumberDuck::Secret::BoundSheet8Record* __2996386143 = pBoundSheet8Record;
+				NumberDuck::Secret::BoundSheet8Record* __496580959 = pBoundSheet8Record;
 				pBoundSheet8Record = 0;
-				pBiffRecordContainer->AddBiffRecord(__2996386143);
+				pBiffRecordContainer->AddBiffRecord(__496580959);
 				if (pBoundSheet8Record) delete pBoundSheet8Record;
 			}
 			if (pWorkbookGlobals->m_pWorksheetRangeVector->GetSize() > 0)
@@ -28546,17 +28559,17 @@ namespace NumberDuck
 			}
 			{
 				MsoDrawingGroupRecord* pMsoDrawingGroupRecord = new MsoDrawingGroupRecord(pWorkbookGlobals->m_pSharedPictureVector);
-				NumberDuck::Secret::MsoDrawingGroupRecord* __298442449 = pMsoDrawingGroupRecord;
+				NumberDuck::Secret::MsoDrawingGroupRecord* __3200900817 = pMsoDrawingGroupRecord;
 				pMsoDrawingGroupRecord = 0;
-				pBiffRecordContainer->AddBiffRecord(__298442449);
+				pBiffRecordContainer->AddBiffRecord(__3200900817);
 				if (pMsoDrawingGroupRecord) delete pMsoDrawingGroupRecord;
 			}
 			if (pWorkbookGlobals->m_pSharedStringContainer->GetSize() > 0)
 			{
 				SstRecord* pSstRecord = new SstRecord(pWorkbookGlobals->m_pSharedStringContainer);
-				NumberDuck::Secret::SstRecord* __173174426 = pSstRecord;
+				NumberDuck::Secret::SstRecord* __1062366584 = pSstRecord;
 				pSstRecord = 0;
-				pBiffRecordContainer->AddBiffRecord(__173174426);
+				pBiffRecordContainer->AddBiffRecord(__1062366584);
 				if (pSstRecord) delete pSstRecord;
 			}
 			pBiffRecordContainer->AddBiffRecord(new BookExtRecord());
@@ -32771,6 +32784,7 @@ namespace NumberDuck
 			unsigned short nLeftBorderPaletteIndex = BiffWorkbookGlobals::SnapToPalette(pStyle->GetLeftBorderLine()->GetColor());
 			unsigned char nHorizontalAlign = (unsigned char)(pStyle->GetHorizontalAlign());
 			unsigned char nVerticalAlign = (unsigned char)(pStyle->GetVerticalAlign());
+			m_fWrap = (unsigned char)(pStyle->GetWrapText() ? 1 : 0);
 			m_fLocked = 0x1;
 			unsigned short fls = 0x00;
 			switch (pStyle->GetFillPattern())
@@ -33033,6 +33047,11 @@ namespace NumberDuck
 		unsigned char XF::GetVerticalAlign()
 		{
 			return m_alcV;
+		}
+
+		bool XF::GetWrapText()
+		{
+			return m_fWrap == 1;
 		}
 
 		Line::Type XF::BorderStyleToLineType(unsigned char nBorderStyle)
@@ -49245,6 +49264,15 @@ namespace NumberDuck
 						sTemp->Set("");
 						sTemp->AppendInt(pElement->m_nRow + 1);
 						pCurrentRowNode->SetAttribute("r", sTemp->GetExternalString());
+						unsigned short nRowHeight = pWorksheet->GetRowHeight((unsigned short)(pElement->m_nRow));
+						if (nRowHeight != Worksheet::DEFAULT_ROW_HEIGHT)
+						{
+							double dHeightInPoints = (double)(nRowHeight) / 1.334;
+							sTemp->Set("");
+							sTemp->AppendDouble(dHeightInPoints);
+							pCurrentRowNode->SetAttribute("ht", sTemp->GetExternalString());
+							pCurrentRowNode->SetAttribute("customHeight", "1");
+						}
 						nCurrentRow = pElement->m_nRow;
 					}
 					Cell* pCell = pElement->m_xObject;
@@ -49358,9 +49386,9 @@ namespace NumberDuck
 			sTemp->AppendInt(nWorksheetIndex + 1);
 			sTemp->AppendString(".xml");
 			bool bSuccess;
-			NumberDuck::Blob* __3649257369 = pWorksheetBlob;
+			NumberDuck::Blob* __3263333233 = pWorksheetBlob;
 			pWorksheetBlob = 0;
-			bSuccess = pZipWriter->AddFileFromBlob(sTemp->GetExternalString(), __3649257369);
+			bSuccess = pZipWriter->AddFileFromBlob(sTemp->GetExternalString(), __3263333233);
 			if (sTemp) delete sTemp;
 			if (pWorksheetBlob) delete pWorksheetBlob;
 			if (pWorksheetXml) delete pWorksheetXml;
@@ -49866,6 +49894,14 @@ namespace NumberDuck
 											if (ExternalString::Equal(szVertical, "distributed"))
 												pStyle->SetVerticalAlign(Style::VerticalAlign::VERTICAL_ALIGN_DISTRIBUTED);
 						}
+						const char* szWrapText = pAlignmentElement->GetAttribute("wrapText");
+						if (szWrapText != 0)
+						{
+							if (szWrapText[0] == '1')
+								pStyle->SetWrapText(true);
+							else
+								pStyle->SetWrapText(false);
+						}
 					}
 				}
 				{
@@ -50287,6 +50323,16 @@ namespace NumberDuck
 			{
 				Font* pFont = pFontVector->Get(i);
 				XmlNode* pFontNode = pStylesXml->CreateElement("font");
+				if (pFont->GetBold())
+				{
+					XmlNode* pBoldNode = pStylesXml->CreateElement("b");
+					pFontNode->AppendChild(pBoldNode);
+				}
+				if (pFont->GetUnderline() != Font::Underline::UNDERLINE_NONE)
+				{
+					XmlNode* pUnderlineNode = pStylesXml->CreateElement("u");
+					pFontNode->AppendChild(pUnderlineNode);
+				}
 				XmlNode* pSzNode = pStylesXml->CreateElement("sz");
 				sTemp->Set("");
 				sTemp->AppendDouble((double)(pFont->m_pImpl->m_fSizePts));
@@ -50295,20 +50341,10 @@ namespace NumberDuck
 				XmlNode* pNameNode = pStylesXml->CreateElement("name");
 				pNameNode->SetAttribute("val", pFont->GetName());
 				pFontNode->AppendChild(pNameNode);
-				if (pFont->GetBold())
-				{
-					XmlNode* pBoldNode = pStylesXml->CreateElement("b");
-					pFontNode->AppendChild(pBoldNode);
-				}
 				if (pFont->GetItalic())
 				{
 					XmlNode* pItalicNode = pStylesXml->CreateElement("i");
 					pFontNode->AppendChild(pItalicNode);
-				}
-				if (pFont->GetUnderline() != Font::Underline::UNDERLINE_NONE)
-				{
-					XmlNode* pUnderlineNode = pStylesXml->CreateElement("u");
-					pFontNode->AppendChild(pUnderlineNode);
 				}
 				Color* pFontColor = pFont->GetColor(false);
 				if (pFontColor != 0)
@@ -50325,14 +50361,14 @@ namespace NumberDuck
 			OwnedVector<Style*>* pFillVector = new OwnedVector<Style*>();
 			{
 				Style* pDefaultFill = new Style();
-				NumberDuck::Style* __2779467523 = pDefaultFill;
+				NumberDuck::Style* __430657117 = pDefaultFill;
 				pDefaultFill = 0;
-				pFillVector->PushBack(__2779467523);
+				pFillVector->PushBack(__430657117);
 				Style* pGrayFill = new Style();
 				pGrayFill->SetFillPattern(Style::FillPattern::FILL_PATTERN_125);
-				NumberDuck::Style* __2568059706 = pGrayFill;
+				NumberDuck::Style* __772887479 = pGrayFill;
 				pGrayFill = 0;
-				pFillVector->PushBack(__2568059706);
+				pFillVector->PushBack(__772887479);
 				if (pDefaultFill) delete pDefaultFill;
 				if (pGrayFill) delete pGrayFill;
 			}
@@ -50362,9 +50398,9 @@ namespace NumberDuck
 						pNewFill->GetBackgroundColor(true)->SetFromColor(pBackgroundColor);
 					if (pFillPatternColor != 0)
 						pNewFill->GetFillPatternColor(true)->SetFromColor(pFillPatternColor);
-					NumberDuck::Style* __1428958441 = pNewFill;
+					NumberDuck::Style* __2435592100 = pNewFill;
 					pNewFill = 0;
-					pFillVector->PushBack(__1428958441);
+					pFillVector->PushBack(__2435592100);
 					if (pNewFill) delete pNewFill;
 				}
 			}
@@ -50519,9 +50555,9 @@ namespace NumberDuck
 			OwnedVector<Style*>* pBorderVector = new OwnedVector<Style*>();
 			{
 				Style* pDefaultBorder = new Style();
-				NumberDuck::Style* __3179463993 = pDefaultBorder;
+				NumberDuck::Style* __2038613620 = pDefaultBorder;
 				pDefaultBorder = 0;
-				pBorderVector->PushBack(__3179463993);
+				pBorderVector->PushBack(__2038613620);
 				if (pDefaultBorder) delete pDefaultBorder;
 			}
 			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
@@ -50556,9 +50592,9 @@ namespace NumberDuck
 					Color* pLeftColor = pStyle->GetLeftBorderLine()->GetColor();
 					if (pLeftColor != 0)
 						pNewBorder->GetLeftBorderLine()->GetColor()->SetFromColor(pLeftColor);
-					NumberDuck::Style* __59243595 = pNewBorder;
+					NumberDuck::Style* __3213360405 = pNewBorder;
 					pNewBorder = 0;
-					pBorderVector->PushBack(__59243595);
+					pBorderVector->PushBack(__3213360405);
 					if (pNewBorder) delete pNewBorder;
 				}
 			}
@@ -50573,59 +50609,57 @@ namespace NumberDuck
 				XmlNode* pLeftNode = pStylesXml->CreateElement("left");
 				if (pBorder->GetLeftBorderLine()->GetType() != Line::Type::TYPE_NONE)
 				{
-					XmlNode* pLeftStyleNode = pStylesXml->CreateElement("style");
 					switch (pBorder->GetLeftBorderLine()->GetType())
 					{
 						case Line::Type::TYPE_THIN:
 						{
-							pLeftStyleNode->SetText("thin");
+							pLeftNode->SetAttribute("style", "thin");
 							break;
 						}
 
 						case Line::Type::TYPE_MEDIUM:
 						{
-							pLeftStyleNode->SetText("medium");
+							pLeftNode->SetAttribute("style", "medium");
 							break;
 						}
 
 						case Line::Type::TYPE_THICK:
 						{
-							pLeftStyleNode->SetText("thick");
+							pLeftNode->SetAttribute("style", "thick");
 							break;
 						}
 
 						case Line::Type::TYPE_DASHED:
 						{
-							pLeftStyleNode->SetText("dashed");
+							pLeftNode->SetAttribute("style", "dashed");
 							break;
 						}
 
 						case Line::Type::TYPE_DOTTED:
 						{
-							pLeftStyleNode->SetText("dotted");
+							pLeftNode->SetAttribute("style", "dotted");
 							break;
 						}
 
 						case Line::Type::TYPE_DASH_DOT:
 						{
-							pLeftStyleNode->SetText("dashDot");
+							pLeftNode->SetAttribute("style", "dashDot");
 							break;
 						}
 
 						case Line::Type::TYPE_DASH_DOT_DOT:
 						{
-							pLeftStyleNode->SetText("dashDotDot");
+							pLeftNode->SetAttribute("style", "dashDotDot");
 							break;
 						}
 
 						default:
 						{
-							pLeftStyleNode->SetText("thin");
+							pLeftNode->SetAttribute("style", "thin");
 							break;
 						}
 
 					}
-					pLeftNode->AppendChild(pLeftStyleNode);
 					Color* pLeftColor = pBorder->GetLeftBorderLine()->GetColor();
 					if (pLeftColor != 0)
 					{
@@ -50640,59 +50674,57 @@ namespace NumberDuck
 				XmlNode* pRightNode = pStylesXml->CreateElement("right");
 				if (pBorder->GetRightBorderLine()->GetType() != Line::Type::TYPE_NONE)
 				{
-					XmlNode* pRightStyleNode = pStylesXml->CreateElement("style");
 					switch (pBorder->GetRightBorderLine()->GetType())
 					{
 						case Line::Type::TYPE_THIN:
 						{
-							pRightStyleNode->SetText("thin");
+							pRightNode->SetAttribute("style", "thin");
 							break;
 						}
 
 						case Line::Type::TYPE_MEDIUM:
 						{
-							pRightStyleNode->SetText("medium");
+							pRightNode->SetAttribute("style", "medium");
 							break;
 						}
 
 						case Line::Type::TYPE_THICK:
 						{
-							pRightStyleNode->SetText("thick");
+							pRightNode->SetAttribute("style", "thick");
 							break;
 						}
 
 						case Line::Type::TYPE_DASHED:
 						{
-							pRightStyleNode->SetText("dashed");
+							pRightNode->SetAttribute("style", "dashed");
 							break;
 						}
 
 						case Line::Type::TYPE_DOTTED:
 						{
-							pRightStyleNode->SetText("dotted");
+							pRightNode->SetAttribute("style", "dotted");
 							break;
 						}
 
 						case Line::Type::TYPE_DASH_DOT:
 						{
-							pRightStyleNode->SetText("dashDot");
+							pRightNode->SetAttribute("style", "dashDot");
 							break;
 						}
 
 						case Line::Type::TYPE_DASH_DOT_DOT:
 						{
-							pRightStyleNode->SetText("dashDotDot");
+							pRightNode->SetAttribute("style", "dashDotDot");
 							break;
 						}
 
 						default:
 						{
-							pRightStyleNode->SetText("thin");
+							pRightNode->SetAttribute("style", "thin");
 							break;
 						}
 
 					}
-					pRightNode->AppendChild(pRightStyleNode);
 					Color* pRightColor = pBorder->GetRightBorderLine()->GetColor();
 					if (pRightColor != 0)
 					{
@@ -50707,59 +50739,57 @@ namespace NumberDuck
 				XmlNode* pTopNode = pStylesXml->CreateElement("top");
 				if (pBorder->GetTopBorderLine()->GetType() != Line::Type::TYPE_NONE)
 				{
-					XmlNode* pTopStyleNode = pStylesXml->CreateElement("style");
 					switch (pBorder->GetTopBorderLine()->GetType())
 					{
 						case Line::Type::TYPE_THIN:
 						{
-							pTopStyleNode->SetText("thin");
+							pTopNode->SetAttribute("style", "thin");
 							break;
 						}
 
 						case Line::Type::TYPE_MEDIUM:
 						{
-							pTopStyleNode->SetText("medium");
+							pTopNode->SetAttribute("style", "medium");
 							break;
 						}
 
 						case Line::Type::TYPE_THICK:
 						{
-							pTopStyleNode->SetText("thick");
+							pTopNode->SetAttribute("style", "thick");
 							break;
 						}
 
 						case Line::Type::TYPE_DASHED:
 						{
-							pTopStyleNode->SetText("dashed");
+							pTopNode->SetAttribute("style", "dashed");
 							break;
 						}
 
 						case Line::Type::TYPE_DOTTED:
 						{
-							pTopStyleNode->SetText("dotted");
+							pTopNode->SetAttribute("style", "dotted");
 							break;
 						}
 
 						case Line::Type::TYPE_DASH_DOT:
 						{
-							pTopStyleNode->SetText("dashDot");
+							pTopNode->SetAttribute("style", "dashDot");
 							break;
 						}
 
 						case Line::Type::TYPE_DASH_DOT_DOT:
 						{
-							pTopStyleNode->SetText("dashDotDot");
+							pTopNode->SetAttribute("style", "dashDotDot");
 							break;
 						}
 
 						default:
 						{
-							pTopStyleNode->SetText("thin");
+							pTopNode->SetAttribute("style", "thin");
 							break;
 						}
 
 					}
-					pTopNode->AppendChild(pTopStyleNode);
 					Color* pTopColor = pBorder->GetTopBorderLine()->GetColor();
 					if (pTopColor != 0)
 					{
@@ -50774,59 +50804,57 @@ namespace NumberDuck
 				XmlNode* pBottomNode = pStylesXml->CreateElement("bottom");
 				if (pBorder->GetBottomBorderLine()->GetType() != Line::Type::TYPE_NONE)
 				{
-					XmlNode* pBottomStyleNode = pStylesXml->CreateElement("style");
 					switch (pBorder->GetBottomBorderLine()->GetType())
 					{
 						case Line::Type::TYPE_THIN:
 						{
-							pBottomStyleNode->SetText("thin");
+							pBottomNode->SetAttribute("style", "thin");
 							break;
 						}
 
 						case Line::Type::TYPE_MEDIUM:
 						{
-							pBottomStyleNode->SetText("medium");
+							pBottomNode->SetAttribute("style", "medium");
 							break;
 						}
 
 						case Line::Type::TYPE_THICK:
 						{
-							pBottomStyleNode->SetText("thick");
+							pBottomNode->SetAttribute("style", "thick");
 							break;
 						}
 
 						case Line::Type::TYPE_DASHED:
 						{
-							pBottomStyleNode->SetText("dashed");
+							pBottomNode->SetAttribute("style", "dashed");
 							break;
 						}
 
 						case Line::Type::TYPE_DOTTED:
 						{
-							pBottomStyleNode->SetText("dotted");
+							pBottomNode->SetAttribute("style", "dotted");
 							break;
 						}
 
 						case Line::Type::TYPE_DASH_DOT:
 						{
-							pBottomStyleNode->SetText("dashDot");
+							pBottomNode->SetAttribute("style", "dashDot");
 							break;
 						}
 
 						case Line::Type::TYPE_DASH_DOT_DOT:
 						{
-							pBottomStyleNode->SetText("dashDotDot");
+							pBottomNode->SetAttribute("style", "dashDotDot");
 							break;
 						}
 
 						default:
 						{
-							pBottomStyleNode->SetText("thin");
+							pBottomNode->SetAttribute("style", "thin");
 							break;
 						}
 
 					}
-					pBottomNode->AppendChild(pBottomStyleNode);
 					Color* pBottomColor = pBorder->GetBottomBorderLine()->GetColor();
 					if (pBottomColor != 0)
 					{
@@ -50927,15 +50955,113 @@ namespace NumberDuck
 				{
 					pXfNode->SetAttribute("applyBorder", "1");
 				}
+				Style::HorizontalAlign eHorizontalAlign = pStyle->GetHorizontalAlign();
+				Style::VerticalAlign eVerticalAlign = pStyle->GetVerticalAlign();
+				if (eHorizontalAlign != Style::HorizontalAlign::HORIZONTAL_ALIGN_GENERAL || eVerticalAlign != Style::VerticalAlign::VERTICAL_ALIGN_BOTTOM || pStyle->GetWrapText())
+				{
+					pXfNode->SetAttribute("applyAlignment", "1");
+					XmlNode* pAlignmentNode = pStylesXml->CreateElement("alignment");
+					if (eHorizontalAlign != Style::HorizontalAlign::HORIZONTAL_ALIGN_GENERAL)
+					{
+						switch (eHorizontalAlign)
+						{
+							case Style::HorizontalAlign::HORIZONTAL_ALIGN_LEFT:
+							{
+								pAlignmentNode->SetAttribute("horizontal", "left");
+								break;
+							}
+
+							case Style::HorizontalAlign::HORIZONTAL_ALIGN_CENTER:
+							{
+								pAlignmentNode->SetAttribute("horizontal", "center");
+								break;
+							}
+
+							case Style::HorizontalAlign::HORIZONTAL_ALIGN_RIGHT:
+							{
+								pAlignmentNode->SetAttribute("horizontal", "right");
+								break;
+							}
+
+							case Style::HorizontalAlign::HORIZONTAL_ALIGN_FILL:
+							{
+								pAlignmentNode->SetAttribute("horizontal", "fill");
+								break;
+							}
+
+							case Style::HorizontalAlign::HORIZONTAL_ALIGN_JUSTIFY:
+							{
+								pAlignmentNode->SetAttribute("horizontal", "justify");
+								break;
+							}
+
+							case Style::HorizontalAlign::HORIZONTAL_ALIGN_CENTER_ACROSS_SELECTION:
+							{
+								pAlignmentNode->SetAttribute("horizontal", "centerContinuous");
+								break;
+							}
+
+							case Style::HorizontalAlign::HORIZONTAL_ALIGN_DISTRIBUTED:
+							{
+								pAlignmentNode->SetAttribute("horizontal", "distributed");
+								break;
+							}
+
+							default:
+							{
+								break;
+							}
+
+						}
+					}
+					if (eVerticalAlign != Style::VerticalAlign::VERTICAL_ALIGN_BOTTOM)
+					{
+						switch (eVerticalAlign)
+						{
+							case Style::VerticalAlign::VERTICAL_ALIGN_TOP:
+							{
+								pAlignmentNode->SetAttribute("vertical", "top");
+								break;
+							}
+
+							case Style::VerticalAlign::VERTICAL_ALIGN_CENTER:
+							{
+								pAlignmentNode->SetAttribute("vertical", "center");
+								break;
+							}
+
+							case Style::VerticalAlign::VERTICAL_ALIGN_JUSTIFY:
+							{
+								pAlignmentNode->SetAttribute("vertical", "justify");
+								break;
+							}
+
+							case Style::VerticalAlign::VERTICAL_ALIGN_DISTRIBUTED:
+							{
+								pAlignmentNode->SetAttribute("vertical", "distributed");
+								break;
+							}
+
+							default:
+							{
+								break;
+							}
+
+						}
+					}
+					if (pStyle->GetWrapText())
+						pAlignmentNode->SetAttribute("wrapText", "1");
+					pXfNode->AppendChild(pAlignmentNode);
+				}
 				pXfNode->SetAttribute("xfId", "0");
 				pCellXfsNode->AppendChild(pXfNode);
 			}
 			pStyleSheetNode->AppendChild(pCellXfsNode);
 			pStylesXml->AppendChild(pStyleSheetNode);
 			pStylesXml->Save(pStylesBlob->GetBlobView());
-			NumberDuck::Blob* __1557403725 = pStylesBlob;
+			NumberDuck::Blob* __3284404502 = pStylesBlob;
 			pStylesBlob = 0;
-			bSuccess = bSuccess && pZipWriter->AddFileFromBlob("xl/styles.xml", __1557403725);
+			bSuccess = bSuccess && pZipWriter->AddFileFromBlob("xl/styles.xml", __3284404502);
 			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorksheetVector->GetSize(); i++)
 			{
 				Worksheet* pWorksheet = pWorkbook->m_pImpl->m_pWorksheetVector->Get(i);
@@ -50963,9 +51089,9 @@ namespace NumberDuck
 				}
 				pSharedStringsXml->AppendChild(pSstNode);
 				pSharedStringsXml->Save(pSharedStringsBlob->GetBlobView());
-				NumberDuck::Blob* __964362156 = pSharedStringsBlob;
+				NumberDuck::Blob* __2909456164 = pSharedStringsBlob;
 				pSharedStringsBlob = 0;
-				bSuccess = bSuccess && pZipWriter->AddFileFromBlob("xl/sharedStrings.xml", __964362156);
+				bSuccess = bSuccess && pZipWriter->AddFileFromBlob("xl/sharedStrings.xml", __2909456164);
 				if (pSharedStringsBlob) delete pSharedStringsBlob;
 				if (pSharedStringsXml) delete pSharedStringsXml;
 			}
@@ -51168,9 +51294,9 @@ namespace NumberDuck
 								if (pXmlBlob) delete pXmlBlob;
 								break;
 							}
-							NumberDuck::Secret::XlsxWorksheet* __3026778354 = pWorksheet;
+							NumberDuck::Secret::XlsxWorksheet* __3776481719 = pWorksheet;
 							pWorksheet = 0;
-							pWorkbook->m_pImpl->m_pWorksheetVector->PushBack(__3026778354);
+							pWorkbook->m_pImpl->m_pWorksheetVector->PushBack(__3776481719);
 							if (pWorksheet) delete pWorksheet;
 						}
 						nWorksheetIndex++;
@@ -51916,6 +52042,7 @@ namespace NumberDuck
 			m_pBottomBorderLine = 0;
 			m_pLeftBorderLine = 0;
 			m_sFormat = 0;
+			m_bWrapText = false;
 			m_nFormatIndex = 0;
 			m_pFont = new Font();
 			m_eHorizontalAlign = Style::HorizontalAlign::HORIZONTAL_ALIGN_GENERAL;
@@ -51932,6 +52059,7 @@ namespace NumberDuck
 			m_pLeftBorderLine = new Line();
 			m_pLeftBorderLine->SetType(Line::Type::TYPE_NONE);
 			m_sFormat = new InternalString("General");
+			m_bWrapText = false;
 		}
 
 		StyleImplementation::~StyleImplementation()

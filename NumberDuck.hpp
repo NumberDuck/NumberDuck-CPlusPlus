@@ -195,6 +195,8 @@ namespace NumberDuck
 		public: Line* GetLeftBorderLine();
 		public: const char* GetFormat();
 		public: void SetFormat(const char* szFormat);
+		public: bool GetWrapText();
+		public: void SetWrapText(bool bWrapText);
 		public: virtual ~Style();
 	};
 	class Line

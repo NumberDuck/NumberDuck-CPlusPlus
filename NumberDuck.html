@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>NumberDuck v3.0.10 [J193] API Reference</title>
+		<title>NumberDuck v3.1.0 [J204] API Reference</title>
 		<style type='text/css'>
 			body
 			{
@@ -39,7 +39,7 @@
 		</style>
 </head>
 <body>
-<h1>NumberDuck v3.0.10 [J193] API Reference</h1>
+<h1>NumberDuck v3.1.0 [J204] API Reference</h1>
 
 <!--Start-->
 <div id='classlist'>
@@ -300,6 +300,12 @@
 
 </a><br>
 <a href='#Style_SetVerticalAlign'><span class='keyword'>void</span> <span class='identifier'>SetVerticalAlign(Style::VerticalAlign eVerticalAlign)</span>
+
+</a><br>
+<a href='#Style_GetWrapText'><span class='keyword'>bool</span> <span class='identifier'>GetWrapText()</span>
+
+</a><br>
+<a href='#Style_SetWrapText'><span class='keyword'>void</span> <span class='identifier'>SetWrapText(bool bWrapText)</span>
 
 </a><br>
 <a href='#Style_GetBackgroundColor'><span class='keyword'>Color*</span> <span class='identifier'>GetBackgroundColor(bool bCreateIfMissing)</span>
@@ -1547,6 +1553,22 @@ the result of a formula against a cell.</p>
 <p>See Style::GetVerticalAlign for the list of possible alignment types.</p>
 
 <p>Eg: pStyle->SetVerticalAlign(Style::VERTICAL&#95;ALIGN&#95;CENTER);</p>
+
+
+</div>
+<h3><a id='Style_GetWrapText'><span class='keyword'>bool</span> <span class='identifier'>GetWrapText()</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Returns if text is wrapped to fit horizontally within the cell.</p>
+
+
+</div>
+<h3><a id='Style_SetWrapText'><span class='keyword'>void</span> <span class='identifier'>SetWrapText(bool bWrapText)</span>
+
+</a></h3>
+<div class='functionBody'>
+<p>Enabes or disables text wrapping for this <em>Style</em>.</p>
 
 
 </div>
