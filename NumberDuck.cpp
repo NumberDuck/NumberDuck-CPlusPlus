@@ -133,8 +133,14 @@ namespace NumberDuck
 		class PngImageInfo;
 		class JpegImageInfo;
 		class ZipWriter;
+		class XlsxRelationship;
 		class XlsxWorkbookGlobals;
 		class XmlNode;
+		class Zip;
+		class XlsxDrawing_PictureAnchor;
+		class XlsxRelationship_File;
+		class XlsxRelationship_Relationship;
+		class XlsxDrawing_PicturePosition;
 		template <class T>
 		class Table;
 		class SharedString;
@@ -4886,8 +4892,10 @@ namespace NumberDuck
 		class XlsxWorksheet : public Worksheet
 		{
 			public: XlsxWorksheet(Workbook* pWorkbook);
-			public: static bool Write(Worksheet* pWorksheet, WorkbookGlobals* pWorkbookGlobals, ZipWriter* pZipWriter, int nWorksheetIndex);
-			public: bool Parse(XlsxWorkbookGlobals* pWorkbookGlobals, XmlNode* pWorksheetNode);
+			public: static bool Write(Worksheet* pWorksheet, WorkbookGlobals* pWorkbookGlobals, ZipWriter* pZipWriter, int nWorksheetIndex, XlsxRelationship* pXlsxRelationship);
+			public: bool Parse(XlsxWorkbookGlobals* pWorkbookGlobals, XmlNode* pWorksheetNode, const char* worksheetXmlPath, XlsxRelationship* pRelationships, Zip* pZip);
+			protected: int ConvertEmuToPixels(int nEmu);
+			protected: void LoadPictureFromAnchor(XlsxDrawing_PictureAnchor* pAnchor, XlsxRelationship_File* pRelFile, Zip* pZip);
 		};
 		class XlsxWorkbookGlobals : public WorkbookGlobals
 		{
@@ -4910,6 +4918,74 @@ namespace NumberDuck
 		{
 			public: static void WriteBgra(unsigned int nRgba, InternalString* sOut);
 			public: static unsigned int ReadBgra(const char* sxRgb);
+			public: static void ConvertToRelsPath(const char* sInputPath, InternalString* sOut);
+		};
+		class XlsxStyle
+		{
+			public: static bool Load(Workbook* pWorkbook, Zip* pZip);
+			public: static bool Save(Workbook* pWorkbook, ZipWriter* pZipWriter);
+		};
+		class XlsxSharedString
+		{
+			public: static bool Load(Workbook* pWorkbook, Zip* pZip);
+			public: static bool Save(Workbook* pWorkbook, ZipWriter* pZipWriter);
+		};
+		class XlsxRelationship_Relationship
+		{
+			public: InternalString* m_sId;
+			public: InternalString* m_sType;
+			public: InternalString* m_sTarget;
+			public: XlsxRelationship_Relationship(const char* sId, const char* sType, const char* sTarget);
+			public: virtual ~XlsxRelationship_Relationship();
+		};
+		class XlsxRelationship_File
+		{
+			public: InternalString* m_sFilePath;
+			public: OwnedVector<XlsxRelationship_Relationship*>* m_pRelationships;
+			public: XlsxRelationship_File(const char* sFilePath, XmlNode* pRelationshipsNode);
+			public: XlsxRelationship_Relationship* FindById(const char* sId);
+			public: void AddRelationship(const char* sId, const char* sType, const char* sTarget);
+			public: void WriteToZip(ZipWriter* pZipWriter);
+			public: virtual ~XlsxRelationship_File();
+		};
+		class XlsxRelationship
+		{
+			public: OwnedVector<XlsxRelationship_File*>* m_pRelationshipFiles;
+			public: XlsxRelationship();
+			public: bool Parse(Zip* pZip);
+			public: XlsxRelationship_File* FindFileByPath(const char* sFilePath);
+			public: void WriteAllToZip(ZipWriter* pZipWriter);
+			public: virtual ~XlsxRelationship();
+		};
+		class XlsxDrawing_PicturePosition
+		{
+			public: int m_nCol;
+			public: int m_nRow;
+			public: int m_nColOff;
+			public: int m_nRowOff;
+			public: XlsxDrawing_PicturePosition(int nCol, int nRow, int nColOff, int nRowOff);
+		};
+		class XlsxDrawing_PictureAnchor
+		{
+			public: XlsxDrawing_PicturePosition* m_pFrom;
+			public: XlsxDrawing_PicturePosition* m_pTo;
+			public: InternalString* m_sImageRelId;
+			public: int m_nPictureId;
+			public: Picture* m_pPicture;
+			public: XlsxDrawing_PictureAnchor(XlsxDrawing_PicturePosition* pFrom, XlsxDrawing_PicturePosition* pTo, const char* sImageRelId, int nPictureId, Picture* pPicture);
+			public: virtual ~XlsxDrawing_PictureAnchor();
+		};
+		class XlsxDrawing
+		{
+			public: OwnedVector<XlsxDrawing_PictureAnchor*>* m_pPictureAnchors;
+			public: XlsxDrawing();
+			public: bool ParseFromBlob(Blob* pDrawingBlob);
+			protected: XlsxDrawing_PictureAnchor* ParsePictureAnchor(XmlNode* pAnchorNode);
+			protected: XlsxDrawing_PicturePosition* ParsePicturePosition(XmlNode* pPosNode);
+			public: int GetNumPictureAnchors();
+			public: XlsxDrawing_PictureAnchor* GetPictureAnchor(int nIndex);
+			public: void Write(ZipWriter* pZipWriter, int nWorksheetIndex);
+			public: virtual ~XlsxDrawing();
 		};
 		class ColumnInfo
 		{
@@ -5096,6 +5172,9 @@ namespace NumberDuck
 			public: InternalString* m_sUrl;
 			public: Blob* m_pBlob;
 			public: Picture::Format m_eFormat;
+			public: int m_nGlobalImageIndex;
+			public: InternalString* m_sXlsxMediaPath;
+			public: InternalString* m_sXlsxDrawingRelId;
 			public: PictureImplementation(Blob* pBlob, Picture::Format eFormat);
 			public: virtual ~PictureImplementation();
 		};
@@ -5294,6 +5373,25 @@ namespace NumberDuck
 			}
 
 		};
+		class XmlWriter
+		{
+			protected: InternalString* m_sOutput;
+			protected: int m_nIndentLevel;
+			protected: bool m_bCompactMode;
+			protected: bool m_bElementOpen;
+			protected: bool m_bElementHasContent;
+			protected: OwnedVector<InternalString*>* m_sElementStack;
+			public: XmlWriter(bool bCompact);
+			public: void StartElement(const char* sName);
+			public: void EndElement();
+			public: void SetAttribute(const char* sName, const char* sValue);
+			public: void SetText(const char* sText);
+			public: InternalString* GetOutput();
+			protected: void WriteIndent();
+			protected: void WriteEscapedText(const char* sText);
+			protected: void WriteEscapedAttribute(const char* sValue);
+			public: virtual ~XmlWriter();
+		};
 	}
 }
 
@@ -5439,6 +5537,7 @@ namespace NumberDuck { namespace Secret
 			~InternalString();
 
 			InternalString* CreateClone();
+			InternalString* Clone();
 
 			void Set(const char* szString);
 			const char* GetExternalString() const;
@@ -5458,6 +5557,7 @@ namespace NumberDuck { namespace Secret
 			void PrependString(const char* szString);
 
 			void SubStr(int nStart, int nLength);
+			void Crop(int nStart, int nLength);
 			void CropFront(int nLength);
 
 			//void CropBack(int nLength);
@@ -5478,6 +5578,7 @@ namespace NumberDuck { namespace Secret
 			unsigned int ParseHex();
 
 			int FindChar(unsigned short nChar);
+			int LastIndexOf(const char* sxFind);
 
 			void Replace(const char* sxFind, const char* sxReplace);
 
@@ -7920,6 +8021,8 @@ namespace NumberDuck { namespace Secret
 {
 	template <class T>
 	class Vector;
+	
+	class InternalString;
 
 	class XmlNode
 	{
@@ -7950,6 +8053,7 @@ namespace NumberDuck { namespace Secret
 
 			bool Load(BlobView* pBlobView);
 			bool Save(BlobView* pBlobView);
+			bool SaveToString(InternalString* sOut);
 			XmlNode* CreateElement(const char* szName);
 
 		protected:
@@ -11989,6 +12093,25 @@ namespace NumberDuck
 		return memcmp(m_pBuffer, pOther->m_pBuffer, m_nSize) == 0;
 	}
 
+	Blob* Blob::Clone()
+	{
+		Blob* pClone = new Blob(m_bAutoResize);
+		pClone->m_nBufferSize = m_nBufferSize;
+		pClone->m_nSize = m_nSize;
+		
+		// Reallocate buffer to match original size
+		free(pClone->m_pBuffer);
+		pClone->m_pBuffer = (unsigned char*)malloc(m_nBufferSize);
+		
+		// Copy all data from original buffer
+		memcpy(pClone->m_pBuffer, m_pBuffer, m_nBufferSize);
+		
+		// Update the blob view to reflect the new size
+		pClone->m_pBlobView->SetEnd(m_nSize);
+		
+		return pClone;
+	}
+
 	// Blob View
 	BlobView::BlobView(Blob* pBlob, int nStart, int nEnd)
 	{
@@ -12331,6 +12454,11 @@ namespace NumberDuck { namespace Secret
 		return new InternalString(m_szBuffer);
 	}
 
+	InternalString* InternalString::Clone()
+	{
+		return new InternalString(m_szBuffer);
+	}
+
 	void InternalString::Set(const char* szString)
 	{
 		GetUtf8Length(szString, &m_nCharLength, &m_nByteLength);
@@ -12556,6 +12684,46 @@ namespace NumberDuck { namespace Secret
 		m_szBuffer = szTemp;
 	}
 
+	void InternalString::Crop(int nStart, int nLength)
+	{
+		Assert::Plz(nStart >= 0);
+		Assert::Plz(nLength >= 0);
+		Assert::Plz(nStart + nLength <= m_nCharLength);
+
+		if (IsAscii())
+		{
+			memmove(m_szBuffer, m_szBuffer+nStart, nLength);
+			m_szBuffer[nLength] = 0;
+			m_nCharLength = nLength;
+			m_nByteLength = nLength;
+			return;
+		}
+
+		int i;
+		unsigned char* p = (unsigned char*)m_szBuffer;
+		for (i = 0; i < nStart; i++)
+			p += GetUtf8CharSize((*p));
+
+		char* szTemp = new char[m_nBufferSize];
+
+		unsigned char* pOut = (unsigned char*)szTemp;
+		for (i = 0; i < nLength; i++)
+		{
+			unsigned short nChar = DecodeChar(p);
+			int nCharSize = EncodeChar(nChar, pOut);
+
+			p += nCharSize;
+			pOut += nCharSize;
+		}
+		(*pOut) = 0;
+
+		m_nCharLength = nLength;
+		m_nByteLength = (int)(pOut - (unsigned char*)szTemp);
+
+		delete [] m_szBuffer;
+		m_szBuffer = szTemp;
+	}
+
 	/*void InternalString :: CropBack(int nLength)
 		{
 		Assert::Plz(nLength <= m_nCharLength);
@@ -12678,6 +12846,30 @@ namespace NumberDuck { namespace Secret
 			nIndex++;
 		}
 		return -1;
+	}
+
+	int InternalString::LastIndexOf(const char* sxFind)
+	{
+		InternalString* sFind = new InternalString(sxFind);
+		int nLastFoundIndex = -1;
+		int nCurrentCharIndex = 0;
+		int nOffset = 0;
+
+		while (nOffset + sFind->m_nByteLength <= m_nByteLength)
+		{
+			if (memcmp(m_szBuffer + nOffset, sFind->m_szBuffer, sFind->m_nByteLength) == 0)
+				nLastFoundIndex = nCurrentCharIndex;
+
+			unsigned char c = m_szBuffer[nOffset];
+			if (c == 0)
+				break;
+
+			nOffset += GetUtf8CharSize(c);
+			nCurrentCharIndex++;
+		}
+
+		delete sFind;
+		return nLastFoundIndex;
 	}
 
 	// probably broken...
@@ -16143,6 +16335,20 @@ namespace NumberDuck { namespace Secret
 		// Copy the XML data to the blob
 		memcpy(pBlobView->GetBlob()->GetData() + pBlobView->GetStart(), szXml, nSize);
 		
+		return true;
+	}
+
+	bool XmlFile::SaveToString(InternalString* sOut)
+	{
+		if (!m_pDocument)
+			return false;
+
+		tinyxml2::XMLPrinter printer;
+		m_pDocument->Print(&printer);
+		const char* szXml = printer.CStr();
+		if (!szXml)
+			return false;
+		sOut->AppendString(szXml);
 		return true;
 	}
 
@@ -24628,18 +24834,28 @@ namespace NumberDuck
 		class RedBlackTreeImplementation;
 		template <class T>
 		class TableElement;
-		class PngImageInfo;
-		class PngLoader;
-		class JpegImageInfo;
-		class JpegLoader;
+		class XmlWriter;
+		class XlsxDrawing;
+		class XlsxDrawing_PicturePosition;
+		class PictureImplementation;
+		class XlsxDrawing_PictureAnchor;
+		class XlsxRelationship_File;
 		class XlsxUtils;
+		class XlsxRelationship_Relationship;
+		class PngLoader;
+		class PngImageInfo;
+		class JpegLoader;
+		class JpegImageInfo;
 		class XlsxWorkbook;
 		class ZipWriter;
+		class XlsxRelationship;
 		class WorkbookImplementation;
+		class XlsxStyle;
+		class XlsxSharedString;
 		class XlsxWorksheet;
 		class XlsxWorkbookGlobals;
+		class ZipFileInfo;
 		class SharedString;
-		class PictureImplementation;
 		class MergedCellImplementation;
 		class MarkerImplementation;
 		class LineImplementation;
@@ -24647,7 +24863,6 @@ namespace NumberDuck
 		class FillImplementation;
 		class Console;
 		class File;
-		class ZipFileInfo;
 	}
 	class BlobView;
 	class Picture;
@@ -49190,26 +49405,25 @@ namespace NumberDuck
 		{
 		}
 
-		bool XlsxWorksheet::Write(Worksheet* pWorksheet, WorkbookGlobals* pWorkbookGlobals, ZipWriter* pZipWriter, int nWorksheetIndex)
+		bool XlsxWorksheet::Write(Worksheet* pWorksheet, WorkbookGlobals* pWorkbookGlobals, ZipWriter* pZipWriter, int nWorksheetIndex, XlsxRelationship* pXlsxRelationship)
 		{
 			InternalString* sTemp = new InternalString("");
-			Blob* pWorksheetBlob = new Blob(true);
-			XmlFile* pWorksheetXml = new XmlFile();
-			XmlNode* pWorksheetNode = pWorksheetXml->CreateElement("worksheet");
-			pWorksheetNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
-			pWorksheetNode->SetAttribute("xmlns:r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
-			pWorksheetNode->SetAttribute("xmlns:mc", "http://schemas.openxmlformats.org/markup-compatibility/2006");
-			pWorksheetNode->SetAttribute("mc:Ignorable", "x14ac");
-			pWorksheetNode->SetAttribute("xmlns:x14ac", "http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac");
-			XmlNode* pSheetFormatPrNode = pWorksheetXml->CreateElement("sheetFormatPr");
+			XmlWriter* pXmlWriter = new XmlWriter(false);
+			pXmlWriter->StartElement("worksheet");
+			pXmlWriter->SetAttribute("xmlns", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+			pXmlWriter->SetAttribute("xmlns:r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+			pXmlWriter->SetAttribute("xmlns:mc", "http://schemas.openxmlformats.org/markup-compatibility/2006");
+			pXmlWriter->SetAttribute("mc:Ignorable", "x14ac");
+			pXmlWriter->SetAttribute("xmlns:x14ac", "http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac");
+			pXmlWriter->StartElement("sheetFormatPr");
 			sTemp->Set("");
 			sTemp->AppendInt((int)(pWorksheet->m_pImpl->m_nDefaultRowHeight) / 20);
-			pSheetFormatPrNode->SetAttribute("defaultRowHeight", sTemp->GetExternalString());
-			pSheetFormatPrNode->SetAttribute("x14ac:dyDescent", "0.25");
-			pWorksheetNode->AppendChild(pSheetFormatPrNode);
+			pXmlWriter->SetAttribute("defaultRowHeight", sTemp->GetExternalString());
+			pXmlWriter->SetAttribute("x14ac:dyDescent", "0.25");
+			pXmlWriter->EndElement();
 			if (pWorksheet->m_pImpl->m_pColumnInfoTable->GetSize() > 0)
 			{
-				XmlNode* pColsNode = pWorksheetXml->CreateElement("cols");
+				pXmlWriter->StartElement("cols");
 				{
 					int i = 0;
 					while (true)
@@ -49230,133 +49444,137 @@ namespace NumberDuck
 							pLast = pNext;
 							i++;
 						}
-						XmlNode* pColNode = pWorksheetXml->CreateElement("col");
+						pXmlWriter->StartElement("col");
 						sTemp->Set("");
 						sTemp->AppendUint32((unsigned int)(pCurrent->m_nColumn + 1));
-						pColNode->SetAttribute("min", sTemp->GetExternalString());
+						pXmlWriter->SetAttribute("min", sTemp->GetExternalString());
 						sTemp->Set("");
 						sTemp->AppendUint32((unsigned int)(pLast->m_nColumn + 1));
-						pColNode->SetAttribute("max", sTemp->GetExternalString());
+						pXmlWriter->SetAttribute("max", sTemp->GetExternalString());
 						sTemp->Set("");
 						sTemp->AppendDouble(pCurrent->m_xObject->m_fWidth);
-						pColNode->SetAttribute("width", sTemp->GetExternalString());
-						pColNode->SetAttribute("customWidth", "1");
+						pXmlWriter->SetAttribute("width", sTemp->GetExternalString());
+						pXmlWriter->SetAttribute("customWidth", "1");
 						if (pCurrent->m_xObject->m_bHidden)
-							pColNode->SetAttribute("hidden", "1");
-						pColsNode->AppendChild(pColNode);
+							pXmlWriter->SetAttribute("hidden", "1");
+						pXmlWriter->EndElement();
 						i++;
 					}
 				}
-				pWorksheetNode->AppendChild(pColsNode);
+				pXmlWriter->EndElement();
 			}
-			XmlNode* pSheetDataNode = pWorksheetXml->CreateElement("sheetData");
-			XmlNode* pCurrentRowNode = 0;
-			int nCurrentRow = 0xFFFF;
-			for (int j = 0; j < pWorksheet->m_pImpl->m_pCellTable->GetSize(); j++)
 			{
-				TableElement<Cell*>* pElement = pWorksheet->m_pImpl->m_pCellTable->GetByIndex(j);
-				if (pElement != 0 && pElement->m_xObject != 0)
+				pXmlWriter->StartElement("sheetData");
+				int nCurrentRow = 0xFFFF;
+				for (int j = 0; j < pWorksheet->m_pImpl->m_pCellTable->GetSize(); j++)
 				{
-					if (pElement->m_nRow != nCurrentRow)
+					TableElement<Cell*>* pElement = pWorksheet->m_pImpl->m_pCellTable->GetByIndex(j);
+					if (pElement != 0 && pElement->m_xObject != 0)
 					{
-						pCurrentRowNode = pWorksheetXml->CreateElement("row");
-						pSheetDataNode->AppendChild(pCurrentRowNode);
-						sTemp->Set("");
-						sTemp->AppendInt(pElement->m_nRow + 1);
-						pCurrentRowNode->SetAttribute("r", sTemp->GetExternalString());
-						unsigned short nRowHeight = pWorksheet->GetRowHeight((unsigned short)(pElement->m_nRow));
-						if (nRowHeight != Worksheet::DEFAULT_ROW_HEIGHT)
+						if (pElement->m_nRow != nCurrentRow)
 						{
-							double dHeightInPoints = (double)(nRowHeight) / 1.334;
+							if (nCurrentRow != 0xFFFF)
+								pXmlWriter->EndElement();
+							pXmlWriter->StartElement("row");
 							sTemp->Set("");
-							sTemp->AppendDouble(dHeightInPoints);
-							pCurrentRowNode->SetAttribute("ht", sTemp->GetExternalString());
-							pCurrentRowNode->SetAttribute("customHeight", "1");
-						}
-						nCurrentRow = pElement->m_nRow;
-					}
-					Cell* pCell = pElement->m_xObject;
-					const Value* pValue = pCell->GetValue();
-					XmlNode* pCellNode = pWorksheetXml->CreateElement("c");
-					{
-						Coordinate* pCoord = new Coordinate((unsigned short)(pElement->m_nColumn), (unsigned short)(pElement->m_nRow));
-						sTemp->Set("");
-						WorksheetImplementation::CoordinateToAddress(pCoord, sTemp);
-						pCellNode->SetAttribute("r", sTemp->GetExternalString());
-						if (pCoord) delete pCoord;
-					}
-					Style* pCellStyle = pCell->GetStyle();
-					if (pCellStyle != 0 && pCellStyle != pWorkbookGlobals->GetStyleByIndex(0))
-					{
-						unsigned short nStyleIndex = 0;
-						for (int k = 0; k < pWorkbookGlobals->GetNumStyle(); k++)
-						{
-							if (pWorkbookGlobals->GetStyleByIndex((unsigned short)(k)) == pCellStyle)
+							sTemp->AppendInt(pElement->m_nRow + 1);
+							pXmlWriter->SetAttribute("r", sTemp->GetExternalString());
+							unsigned short nRowHeight = pWorksheet->GetRowHeight((unsigned short)(pElement->m_nRow));
+							if (nRowHeight != Worksheet::DEFAULT_ROW_HEIGHT)
 							{
-								nStyleIndex = (unsigned short)(k);
+								double dHeightInPoints = (double)(nRowHeight) / 1.334;
+								sTemp->Set("");
+								sTemp->AppendDouble(dHeightInPoints);
+								pXmlWriter->SetAttribute("ht", sTemp->GetExternalString());
+								pXmlWriter->SetAttribute("customHeight", "1");
+							}
+							nCurrentRow = pElement->m_nRow;
+						}
+						Cell* pCell = pElement->m_xObject;
+						const Value* pValue = pCell->GetValue();
+						pXmlWriter->StartElement("c");
+						{
+							Coordinate* pCoord = new Coordinate((unsigned short)(pElement->m_nColumn), (unsigned short)(pElement->m_nRow));
+							sTemp->Set("");
+							WorksheetImplementation::CoordinateToAddress(pCoord, sTemp);
+							pXmlWriter->SetAttribute("r", sTemp->GetExternalString());
+							if (pCoord) delete pCoord;
+						}
+						Style* pCellStyle = pCell->GetStyle();
+						if (pCellStyle != 0 && pCellStyle != pWorkbookGlobals->GetStyleByIndex(0))
+						{
+							unsigned short nStyleIndex = 0;
+							for (int k = 0; k < pWorkbookGlobals->GetNumStyle(); k++)
+							{
+								if (pWorkbookGlobals->GetStyleByIndex((unsigned short)(k)) == pCellStyle)
+								{
+									nStyleIndex = (unsigned short)(k);
+									break;
+								}
+							}
+							sTemp->Set("");
+							sTemp->AppendUint32(nStyleIndex);
+							pXmlWriter->SetAttribute("s", sTemp->GetExternalString());
+						}
+						switch (pValue->GetType())
+						{
+							case Value::Type::TYPE_STRING:
+							{
+								const char* szString = pValue->GetString();
+								if (szString != 0 && !ExternalString::Equal(szString, ""))
+								{
+									pXmlWriter->SetAttribute("t", "s");
+									pXmlWriter->StartElement("v");
+									unsigned int nSstIndex = pWorkbookGlobals->GetSharedStringIndex(szString);
+									sTemp->Set("");
+									sTemp->AppendUint32(nSstIndex);
+									pXmlWriter->SetText(sTemp->GetExternalString());
+									pXmlWriter->EndElement();
+								}
 								break;
 							}
-						}
-						sTemp->Set("");
-						sTemp->AppendUint32(nStyleIndex);
-						pCellNode->SetAttribute("s", sTemp->GetExternalString());
-					}
-					switch (pValue->GetType())
-					{
-						case Value::Type::TYPE_STRING:
-						{
-							const char* szString = pValue->GetString();
-							if (szString != 0 && !ExternalString::Equal(szString, ""))
+
+							case Value::Type::TYPE_FLOAT:
 							{
-								pCellNode->SetAttribute("t", "s");
-								XmlNode* pValueNode = pWorksheetXml->CreateElement("v");
-								unsigned int nSstIndex = pWorkbookGlobals->GetSharedStringIndex(szString);
+								double fFloat = pValue->GetFloat();
+								pXmlWriter->StartElement("v");
 								sTemp->Set("");
-								sTemp->AppendUint32(nSstIndex);
-								pValueNode->SetText(sTemp->GetExternalString());
-								pCellNode->AppendChild(pValueNode);
+								sTemp->AppendDouble(fFloat);
+								pXmlWriter->SetText(sTemp->GetExternalString());
+								pXmlWriter->EndElement();
+								break;
 							}
-							break;
-						}
 
-						case Value::Type::TYPE_FLOAT:
-						{
-							double fFloat = pValue->GetFloat();
-							XmlNode* pValueNode = pWorksheetXml->CreateElement("v");
-							sTemp->Set("");
-							sTemp->AppendDouble(fFloat);
-							pValueNode->SetText(sTemp->GetExternalString());
-							pCellNode->AppendChild(pValueNode);
-							break;
-						}
+							case Value::Type::TYPE_BOOLEAN:
+							{
+								bool bBoolean = pValue->GetBoolean();
+								pXmlWriter->SetAttribute("t", "b");
+								pXmlWriter->StartElement("v");
+								pXmlWriter->SetText(bBoolean ? "1" : "0");
+								pXmlWriter->EndElement();
+								break;
+							}
 
-						case Value::Type::TYPE_BOOLEAN:
-						{
-							bool bBoolean = pValue->GetBoolean();
-							pCellNode->SetAttribute("t", "b");
-							XmlNode* pValueNode = pWorksheetXml->CreateElement("v");
-							pValueNode->SetText(bBoolean ? "1" : "0");
-							pCellNode->AppendChild(pValueNode);
-							break;
-						}
+							default:
+							{
+								break;
+							}
 
-						default:
-						{
-							break;
 						}
-
+						pXmlWriter->EndElement();
 					}
-					pCurrentRowNode->AppendChild(pCellNode);
 				}
+				if (nCurrentRow != 0xFFFF)
+					pXmlWriter->EndElement();
+				pXmlWriter->EndElement();
 			}
-			pWorksheetNode->AppendChild(pSheetDataNode);
 			if (pWorksheet->m_pImpl->m_pMergedCellVector->GetSize() > 0)
 			{
-				XmlNode* pMergeCellsNode = pWorksheetXml->CreateElement("mergeCells");
+				pXmlWriter->StartElement("mergeCells");
 				for (int i = 0; i < pWorksheet->m_pImpl->m_pMergedCellVector->GetSize(); i++)
 				{
 					MergedCell* pMergedCell = pWorksheet->m_pImpl->m_pMergedCellVector->Get(i);
-					XmlNode* pMergeCellNode = pWorksheetXml->CreateElement("mergeCell");
+					pXmlWriter->StartElement("mergeCell");
 					{
 						Coordinate* pTopLeft = new Coordinate((unsigned short)(pMergedCell->GetX()), (unsigned short)(pMergedCell->GetY()));
 						Coordinate* pBottomRight = new Coordinate((unsigned short)(pMergedCell->GetX() + pMergedCell->GetWidth() - 1), (unsigned short)(pMergedCell->GetY() + pMergedCell->GetHeight() - 1));
@@ -49364,38 +49582,146 @@ namespace NumberDuck
 						WorksheetImplementation::CoordinateToAddress(pTopLeft, sTemp);
 						sTemp->AppendString(":");
 						WorksheetImplementation::CoordinateToAddress(pBottomRight, sTemp);
-						pMergeCellNode->SetAttribute("ref", sTemp->GetExternalString());
+						pXmlWriter->SetAttribute("ref", sTemp->GetExternalString());
 						if (pTopLeft) delete pTopLeft;
 						if (pBottomRight) delete pBottomRight;
 					}
-					pMergeCellsNode->AppendChild(pMergeCellNode);
+					pXmlWriter->EndElement();
 				}
-				pWorksheetNode->AppendChild(pMergeCellsNode);
+				pXmlWriter->EndElement();
 			}
-			XmlNode* pPageMarginsNode = pWorksheetXml->CreateElement("pageMargins");
-			pPageMarginsNode->SetAttribute("left", "0.7");
-			pPageMarginsNode->SetAttribute("right", "0.7");
-			pPageMarginsNode->SetAttribute("top", "0.75");
-			pPageMarginsNode->SetAttribute("bottom", "0.75");
-			pPageMarginsNode->SetAttribute("header", "0.3");
-			pPageMarginsNode->SetAttribute("footer", "0.3");
-			pWorksheetNode->AppendChild(pPageMarginsNode);
-			pWorksheetXml->AppendChild(pWorksheetNode);
-			pWorksheetXml->Save(pWorksheetBlob->GetBlobView());
+			pXmlWriter->StartElement("pageMargins");
+			pXmlWriter->SetAttribute("left", "0.7");
+			pXmlWriter->SetAttribute("right", "0.7");
+			pXmlWriter->SetAttribute("top", "0.75");
+			pXmlWriter->SetAttribute("bottom", "0.75");
+			pXmlWriter->SetAttribute("header", "0.3");
+			pXmlWriter->SetAttribute("footer", "0.3");
+			pXmlWriter->EndElement();
+			const char* sDrawingRelId = 0;
+			if (pWorksheet->GetNumPicture() > 0)
+			{
+				sDrawingRelId = "rId1";
+				pXmlWriter->StartElement("drawing");
+				pXmlWriter->SetAttribute("r:id", sDrawingRelId);
+				pXmlWriter->EndElement();
+			}
+			pXmlWriter->EndElement();
 			sTemp->Set("xl/worksheets/sheet");
 			sTemp->AppendInt(nWorksheetIndex + 1);
 			sTemp->AppendString(".xml");
-			bool bSuccess;
-			NumberDuck::Blob* __3263333233 = pWorksheetBlob;
-			pWorksheetBlob = 0;
-			bSuccess = pZipWriter->AddFileFromBlob(sTemp->GetExternalString(), __3263333233);
+			Blob* pBlob = new Blob(true);
+			pXmlWriter->GetOutput()->BlobWriteUtf8(pBlob->GetBlobView(), false);
+			NumberDuck::Blob* __3570824271 = pBlob;
+			pBlob = 0;
+			if (!pZipWriter->AddFileFromBlob(sTemp->GetExternalString(), __3570824271))
+			{
+				if (sTemp) delete sTemp;
+				if (pXmlWriter) delete pXmlWriter;
+				if (pBlob) delete pBlob;
+				return false;
+			}
+			if (pWorksheet->GetNumPicture() > 0)
+			{
+				XlsxDrawing* pDrawing = new XlsxDrawing();
+				for (int i = 0; i < pWorksheet->GetNumPicture(); i++)
+				{
+					Picture* pPicture = pWorksheet->GetPictureByIndex(i);
+					if (pPicture == 0)
+						continue;
+					XlsxDrawing_PicturePosition* pFrom = new XlsxDrawing_PicturePosition((int)(pPicture->GetX()), (int)(pPicture->GetY()), (int)(pPicture->GetSubX() * 9525), (int)(pPicture->GetSubY() * 9525));
+					XlsxDrawing_PicturePosition* pTo = new XlsxDrawing_PicturePosition(pFrom->m_nCol, pFrom->m_nRow, (int)(pPicture->GetSubX() + pPicture->GetWidth()), (int)(pPicture->GetSubY() + pPicture->GetHeight()));
+					int nColumnWidth = (int)(pWorksheet->GetColumnWidth((unsigned short)(pTo->m_nCol)));
+					while (pTo->m_nColOff > nColumnWidth)
+					{
+						pTo->m_nColOff -= nColumnWidth;
+						pTo->m_nCol++;
+						nColumnWidth = (int)(pWorksheet->GetColumnWidth((unsigned short)(pTo->m_nCol)));
+					}
+					int nColumnHeight = (int)(pWorksheet->GetRowHeight((unsigned short)(pTo->m_nRow)));
+					while (pTo->m_nRowOff > nColumnHeight)
+					{
+						pTo->m_nRowOff -= nColumnHeight;
+						pTo->m_nRow++;
+						nColumnHeight = (int)(pWorksheet->GetRowHeight((unsigned short)(pTo->m_nRow)));
+					}
+					pTo->m_nColOff = pTo->m_nColOff * 9525;
+					pTo->m_nRowOff = pTo->m_nRowOff * 9525;
+					const char* sImageRelId = pPicture->m_pImplementation->m_sXlsxDrawingRelId->GetExternalString();
+					int nPictureId = i + 2;
+					NumberDuck::Secret::XlsxDrawing_PicturePosition* __3581523154 = pFrom;
+					pFrom = 0;
+					NumberDuck::Secret::XlsxDrawing_PicturePosition* __3487404448 = pTo;
+					pTo = 0;
+					XlsxDrawing_PictureAnchor* pAnchor = new XlsxDrawing_PictureAnchor(__3581523154, __3487404448, sImageRelId, nPictureId, pPicture);
+					NumberDuck::Secret::XlsxDrawing_PictureAnchor* __4040005662 = pAnchor;
+					pAnchor = 0;
+					pDrawing->m_pPictureAnchors->PushBack(__4040005662);
+					if (pFrom) delete pFrom;
+					if (pTo) delete pTo;
+					if (pAnchor) delete pAnchor;
+				}
+				pDrawing->Write(pZipWriter, nWorksheetIndex);
+				InternalString* sDrawingRelsPath = new InternalString("xl/drawings/_rels/drawing");
+				sDrawingRelsPath->AppendInt(nWorksheetIndex + 1);
+				sDrawingRelsPath->AppendString(".xml.rels");
+				XlsxRelationship_File* pDrawingRels = new XlsxRelationship_File(sDrawingRelsPath->GetExternalString(), 0);
+				for (int i = 0; i < pDrawing->m_pPictureAnchors->GetSize(); i++)
+				{
+					XlsxDrawing_PictureAnchor* pAnchor = pDrawing->m_pPictureAnchors->Get(i);
+					const char* sRelId = pAnchor->m_sImageRelId->GetExternalString();
+					Picture* pPicture = 0;
+					for (int j = 0; j < pWorksheet->GetNumPicture(); j++)
+					{
+						Picture* pPic = pWorksheet->GetPictureByIndex(j);
+						if (pPic != 0 && pPic->m_pImplementation->m_sXlsxDrawingRelId->IsEqual(sRelId))
+						{
+							pPicture = pPic;
+							break;
+						}
+					}
+					if (pPicture == 0)
+						continue;
+					sTemp->Set(pPicture->m_pImplementation->m_sXlsxMediaPath->GetExternalString());
+					sTemp->Replace("xl/", "../");
+					pDrawingRels->AddRelationship(sRelId, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", sTemp->GetExternalString());
+				}
+				NumberDuck::Secret::XlsxRelationship_File* __2173692852 = pDrawingRels;
+				pDrawingRels = 0;
+				pXlsxRelationship->m_pRelationshipFiles->PushBack(__2173692852);
+				if (pDrawing) delete pDrawing;
+				if (sDrawingRelsPath) delete sDrawingRelsPath;
+				if (pDrawingRels) delete pDrawingRels;
+			}
+			if (pWorksheet->GetNumPicture() > 0)
+			{
+				InternalString* sRelsPath = new InternalString("xl/worksheets/_rels/sheet");
+				sRelsPath->AppendInt(nWorksheetIndex + 1);
+				sRelsPath->AppendString(".xml.rels");
+				XlsxRelationship_File* pRelsFile = pXlsxRelationship->FindFileByPath(sRelsPath->GetExternalString());
+				if (pRelsFile == 0)
+				{
+					XlsxRelationship_File* pOwnedRelsFile = new XlsxRelationship_File(sRelsPath->GetExternalString(), 0);
+					pRelsFile = pOwnedRelsFile;
+					NumberDuck::Secret::XlsxRelationship_File* __1688772099 = pOwnedRelsFile;
+					pOwnedRelsFile = 0;
+					pXlsxRelationship->m_pRelationshipFiles->PushBack(__1688772099);
+					if (pOwnedRelsFile) delete pOwnedRelsFile;
+				}
+				InternalString* sTarget = new InternalString("../drawings/drawing");
+				sTarget->AppendInt(nWorksheetIndex + 1);
+				sTarget->AppendString(".xml");
+				pRelsFile->AddRelationship("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing", sTarget->GetExternalString());
+				if (sRelsPath) delete sRelsPath;
+				if (sTarget) delete sTarget;
+			}
 			if (sTemp) delete sTemp;
-			if (pWorksheetBlob) delete pWorksheetBlob;
-			if (pWorksheetXml) delete pWorksheetXml;
-			return bSuccess;
+			if (pXmlWriter) delete pXmlWriter;
+			if (pBlob) delete pBlob;
+			return true;
 		}
 
-		bool XlsxWorksheet::Parse(XlsxWorkbookGlobals* pWorkbookGlobals, XmlNode* pWorksheetNode)
+		bool XlsxWorksheet::Parse(XlsxWorkbookGlobals* pWorkbookGlobals, XmlNode* pWorksheetNode, const char* worksheetXmlPath, XlsxRelationship* pRelationships, Zip* pZip)
 		{
 			{
 				XmlNode* pSheetFormatPrElement = pWorksheetNode->GetFirstChildElement("sheetFormatPr");
@@ -49514,7 +49840,146 @@ namespace NumberDuck
 					}
 				}
 			}
+			{
+				XmlNode* pDrawingNode = pWorksheetNode->GetFirstChildElement("drawing");
+				if (pDrawingNode != 0)
+				{
+					const char* sxDrawingRelId = pDrawingNode->GetAttribute("r:id");
+					InternalString* sRelsPath = new InternalString("");
+					XlsxUtils::ConvertToRelsPath(worksheetXmlPath, sRelsPath);
+					XlsxRelationship_File* pRelFile = pRelationships->FindFileByPath(sRelsPath->GetExternalString());
+					if (pRelFile != 0)
+					{
+						XlsxRelationship_Relationship* pDrawingRel = pRelFile->FindById(sxDrawingRelId);
+						if (pDrawingRel != 0)
+						{
+							const char* drawingXmlPath = pDrawingRel->m_sTarget->GetExternalString();
+							InternalString* sNormalizedPath = new InternalString(drawingXmlPath);
+							if (sNormalizedPath->StartsWith("../"))
+							{
+								sNormalizedPath->CropFront(3);
+								sNormalizedPath->PrependString("xl/");
+							}
+							Blob* pDrawingBlob = new Blob(true);
+							BlobView* pDrawingBlobView = pDrawingBlob->GetBlobView();
+							if (pZip->ExtractFileByName(sNormalizedPath->GetExternalString(), pDrawingBlobView))
+							{
+								XlsxDrawing* pDrawing = new XlsxDrawing();
+								if (pDrawing->ParseFromBlob(pDrawingBlob))
+								{
+									InternalString* sDrawingRelsFullPath = new InternalString("");
+									XlsxUtils::ConvertToRelsPath(sNormalizedPath->GetExternalString(), sDrawingRelsFullPath);
+									XlsxRelationship_File* pDrawingRelsFile = pRelationships->FindFileByPath(sDrawingRelsFullPath->GetExternalString());
+									for (int i = 0; i < pDrawing->GetNumPictureAnchors(); i++)
+									{
+										XlsxDrawing_PictureAnchor* pAnchor = pDrawing->GetPictureAnchor(i);
+										LoadPictureFromAnchor(pAnchor, pDrawingRelsFile, pZip);
+									}
+									if (sDrawingRelsFullPath) delete sDrawingRelsFullPath;
+								}
+								if (pDrawing) delete pDrawing;
+							}
+							if (sNormalizedPath) delete sNormalizedPath;
+							if (pDrawingBlob) delete pDrawingBlob;
+						}
+					}
+					if (sRelsPath) delete sRelsPath;
+				}
+			}
 			return true;
+		}
+
+		int XlsxWorksheet::ConvertEmuToPixels(int nEmu)
+		{
+			return nEmu / 9525;
+		}
+
+		void XlsxWorksheet::LoadPictureFromAnchor(XlsxDrawing_PictureAnchor* pAnchor, XlsxRelationship_File* pRelFile, Zip* pZip)
+		{
+			if (pAnchor == 0 || pRelFile == 0)
+				return;
+			XlsxRelationship_Relationship* pImageRel = pRelFile->FindById(pAnchor->m_sImageRelId->GetExternalString());
+			if (pImageRel == 0)
+				return;
+			const char* imagePath = pImageRel->m_sTarget->GetExternalString();
+			InternalString* sNormalizedImagePath = new InternalString(imagePath);
+			if (sNormalizedImagePath->StartsWith("../"))
+			{
+				sNormalizedImagePath->CropFront(3);
+				sNormalizedImagePath->PrependString("xl/");
+			}
+			Blob* pImageBlob = new Blob(true);
+			BlobView* pImageBlobView = pImageBlob->GetBlobView();
+			if (!pZip->ExtractFileByName(sNormalizedImagePath->GetExternalString(), pImageBlobView))
+			{
+				if (sNormalizedImagePath) delete sNormalizedImagePath;
+				if (pImageBlob) delete pImageBlob;
+				return;
+			}
+			Picture::Format eFormat = Picture::Format::TIFF;
+			int nWidth = 200;
+			int nHeight = 100;
+			{
+				PngLoader* pPngLoader = new PngLoader();
+				PngImageInfo* pImageInfo = pPngLoader->Load(pImageBlob);
+				if (pImageInfo != 0)
+				{
+					nWidth = pImageInfo->m_nWidth;
+					nHeight = pImageInfo->m_nHeight;
+					eFormat = Picture::Format::PNG;
+				}
+				if (pPngLoader) delete pPngLoader;
+			}
+			{
+				JpegLoader* pJpegLoader = new JpegLoader();
+				JpegImageInfo* pImageInfo = pJpegLoader->Load(pImageBlob);
+				if (pImageInfo != 0)
+				{
+					nWidth = pImageInfo->m_nWidth;
+					nHeight = pImageInfo->m_nHeight;
+					eFormat = Picture::Format::JPEG;
+				}
+				if (pJpegLoader) delete pJpegLoader;
+			}
+			if (eFormat == Picture::Format::TIFF)
+			{
+				if (sNormalizedImagePath) delete sNormalizedImagePath;
+				if (pImageBlob) delete pImageBlob;
+				return;
+			}
+			Picture* pPicture = new Picture(pImageBlob, eFormat);
+			pPicture->SetWidth((unsigned int)(nWidth));
+			pPicture->SetHeight((unsigned int)(nHeight));
+			pPicture->SetX((unsigned int)(pAnchor->m_pFrom->m_nCol));
+			pPicture->SetY((unsigned int)(pAnchor->m_pFrom->m_nRow));
+			int nSubX = ConvertEmuToPixels(pAnchor->m_pFrom->m_nColOff);
+			int nSubY = ConvertEmuToPixels(pAnchor->m_pFrom->m_nRowOff);
+			pPicture->SetSubX((unsigned int)(nSubX));
+			pPicture->SetSubY((unsigned int)(nSubY));
+			if (pAnchor->m_pTo != 0)
+			{
+				int nToSubX = ConvertEmuToPixels(pAnchor->m_pTo->m_nColOff);
+				int nToSubY = ConvertEmuToPixels(pAnchor->m_pTo->m_nRowOff);
+				int nCellWidth = 0;
+				for (int col = pAnchor->m_pFrom->m_nCol; col < pAnchor->m_pTo->m_nCol; col++)
+					nCellWidth += GetColumnWidth((unsigned short)(col));
+				int nCellHeight = 0;
+				for (int row = pAnchor->m_pFrom->m_nRow; row < pAnchor->m_pTo->m_nRow; row++)
+					nCellHeight += GetRowHeight((unsigned short)(row));
+				int nFinalWidth = nCellWidth - nSubX + nToSubX;
+				int nFinalHeight = nCellHeight - nSubY + nToSubY;
+				if (nFinalWidth > 0 && nFinalHeight > 0)
+				{
+					pPicture->SetWidth((unsigned int)(nFinalWidth));
+					pPicture->SetHeight((unsigned int)(nFinalHeight));
+				}
+			}
+			NumberDuck::Picture* __3407984692 = pPicture;
+			pPicture = 0;
+			m_pImpl->m_pPictureVector->PushBack(__3407984692);
+			if (sNormalizedImagePath) delete sNormalizedImagePath;
+			if (pImageBlob) delete pImageBlob;
+			if (pPicture) delete pPicture;
 		}
 
 		bool XlsxWorkbookGlobals::LoadVector(Vector<XmlNode*>* pVector, XmlNode* pStyleSheetNode, const char* szParent, const char* szChild)
@@ -50121,980 +50586,282 @@ namespace NumberDuck
 			InternalString* sTemp = new InternalString("");
 			ZipWriter* pZipWriter = new ZipWriter();
 			bool bSuccess = true;
-			Blob* pContentTypesBlob = new Blob(true);
-			XmlFile* pContentTypesXml = new XmlFile();
-			XmlNode* pTypesNode = pContentTypesXml->CreateElement("Types");
-			pTypesNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/package/2006/content-types");
-			XmlNode* pDefaultXml = pContentTypesXml->CreateElement("Default");
-			pDefaultXml->SetAttribute("Extension", "xml");
-			pDefaultXml->SetAttribute("ContentType", "application/xml");
-			pTypesNode->AppendChild(pDefaultXml);
-			XmlNode* pDefaultRels = pContentTypesXml->CreateElement("Default");
-			pDefaultRels->SetAttribute("Extension", "rels");
-			pDefaultRels->SetAttribute("ContentType", "application/vnd.openxmlformats-package.relationships+xml");
-			pTypesNode->AppendChild(pDefaultRels);
-			XmlNode* pOverrideWorkbook = pContentTypesXml->CreateElement("Override");
-			pOverrideWorkbook->SetAttribute("PartName", "/xl/workbook.xml");
-			pOverrideWorkbook->SetAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml");
-			pTypesNode->AppendChild(pOverrideWorkbook);
-			XmlNode* pOverrideStyles = pContentTypesXml->CreateElement("Override");
-			pOverrideStyles->SetAttribute("PartName", "/xl/styles.xml");
-			pOverrideStyles->SetAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml");
-			pTypesNode->AppendChild(pOverrideStyles);
-			XmlNode* pOverrideSharedStrings = pContentTypesXml->CreateElement("Override");
-			pOverrideSharedStrings->SetAttribute("PartName", "/xl/sharedStrings.xml");
-			pOverrideSharedStrings->SetAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml");
-			pTypesNode->AppendChild(pOverrideSharedStrings);
-			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorksheetVector->GetSize(); i++)
+			XlsxRelationship* pXlsxRelationship = new XlsxRelationship();
+			if (bSuccess)
 			{
-				XmlNode* pOverrideWorksheet = pContentTypesXml->CreateElement("Override");
-				sTemp->Set("/xl/worksheets/sheet");
-				sTemp->AppendInt(i + 1);
-				sTemp->AppendString(".xml");
-				pOverrideWorksheet->SetAttribute("PartName", sTemp->GetExternalString());
-				pOverrideWorksheet->SetAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml");
-				pTypesNode->AppendChild(pOverrideWorksheet);
-			}
-			pContentTypesXml->AppendChild(pTypesNode);
-			pContentTypesXml->Save(pContentTypesBlob->GetBlobView());
-			NumberDuck::Blob* __3416822681 = pContentTypesBlob;
-			pContentTypesBlob = 0;
-			bSuccess = bSuccess && pZipWriter->AddFileFromBlob("[Content_Types].xml", __3416822681);
-			Blob* pRelsBlob = new Blob(true);
-			XmlFile* pRelsXml = new XmlFile();
-			XmlNode* pRelationshipsNode = pRelsXml->CreateElement("Relationships");
-			pRelationshipsNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/package/2006/relationships");
-			XmlNode* pRelationshipNode = pRelsXml->CreateElement("Relationship");
-			pRelationshipNode->SetAttribute("Id", "rId1");
-			pRelationshipNode->SetAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument");
-			pRelationshipNode->SetAttribute("Target", "xl/workbook.xml");
-			pRelationshipsNode->AppendChild(pRelationshipNode);
-			pRelsXml->AppendChild(pRelationshipsNode);
-			pRelsXml->Save(pRelsBlob->GetBlobView());
-			NumberDuck::Blob* __3587816521 = pRelsBlob;
-			pRelsBlob = 0;
-			bSuccess = bSuccess && pZipWriter->AddFileFromBlob("_rels/.rels", __3587816521);
-			Blob* pWorkbookRelsBlob = new Blob(true);
-			XmlFile* pWorkbookRelsXml = new XmlFile();
-			XmlNode* pWorkbookRelationshipsNode = pWorkbookRelsXml->CreateElement("Relationships");
-			pWorkbookRelationshipsNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/package/2006/relationships");
-			XmlNode* pStylesRelationship = pWorkbookRelsXml->CreateElement("Relationship");
-			pStylesRelationship->SetAttribute("Id", "rId1");
-			pStylesRelationship->SetAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles");
-			pStylesRelationship->SetAttribute("Target", "styles.xml");
-			pWorkbookRelationshipsNode->AppendChild(pStylesRelationship);
-			XmlNode* pSharedStringsRelationship = pWorkbookRelsXml->CreateElement("Relationship");
-			pSharedStringsRelationship->SetAttribute("Id", "rId2");
-			pSharedStringsRelationship->SetAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings");
-			pSharedStringsRelationship->SetAttribute("Target", "sharedStrings.xml");
-			pWorkbookRelationshipsNode->AppendChild(pSharedStringsRelationship);
-			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorksheetVector->GetSize(); i++)
-			{
-				XmlNode* pWorksheetRelationship = pWorkbookRelsXml->CreateElement("Relationship");
-				sTemp->Set("rId");
-				sTemp->AppendInt(i + 3);
-				pWorksheetRelationship->SetAttribute("Id", sTemp->GetExternalString());
-				pWorksheetRelationship->SetAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet");
-				sTemp->Set("worksheets/sheet");
-				sTemp->AppendInt(i + 1);
-				sTemp->Append(".xml");
-				pWorksheetRelationship->SetAttribute("Target", sTemp->GetExternalString());
-				pWorkbookRelationshipsNode->AppendChild(pWorksheetRelationship);
-			}
-			pWorkbookRelsXml->AppendChild(pWorkbookRelationshipsNode);
-			pWorkbookRelsXml->Save(pWorkbookRelsBlob->GetBlobView());
-			NumberDuck::Blob* __51248825 = pWorkbookRelsBlob;
-			pWorkbookRelsBlob = 0;
-			bSuccess = bSuccess && pZipWriter->AddFileFromBlob("xl/_rels/workbook.xml.rels", __51248825);
-			Blob* pWorkbookBlob = new Blob(true);
-			XmlFile* pWorkbookXml = new XmlFile();
-			XmlNode* pWorkbookNode = pWorkbookXml->CreateElement("workbook");
-			pWorkbookNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
-			pWorkbookNode->SetAttribute("xmlns:r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
-			XmlNode* pSheetsNode = pWorkbookXml->CreateElement("sheets");
-			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorksheetVector->GetSize(); i++)
-			{
-				Worksheet* pWorksheet = pWorkbook->m_pImpl->m_pWorksheetVector->Get(i);
-				XmlNode* pSheetNode = pWorkbookXml->CreateElement("sheet");
-				pSheetNode->SetAttribute("name", pWorksheet->GetName());
-				sTemp->Set("");
-				sTemp->AppendInt(i + 1);
-				pSheetNode->SetAttribute("sheetId", sTemp->GetExternalString());
-				sTemp->Set("rId");
-				sTemp->AppendInt(i + 3);
-				pSheetNode->SetAttribute("r:id", sTemp->GetExternalString());
-				pSheetsNode->AppendChild(pSheetNode);
-			}
-			pWorkbookNode->AppendChild(pSheetsNode);
-			pWorkbookXml->AppendChild(pWorkbookNode);
-			pWorkbookXml->Save(pWorkbookBlob->GetBlobView());
-			NumberDuck::Blob* __1700593568 = pWorkbookBlob;
-			pWorkbookBlob = 0;
-			bSuccess = bSuccess && pZipWriter->AddFileFromBlob("xl/workbook.xml", __1700593568);
-			Blob* pStylesBlob = new Blob(true);
-			XmlFile* pStylesXml = new XmlFile();
-			XmlNode* pStyleSheetNode = pStylesXml->CreateElement("styleSheet");
-			pStyleSheetNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
-			Vector<const char*>* pFormatVector = new Vector<const char*>();
-			Vector<unsigned short>* pFormatIndexVector = new Vector<unsigned short>();
-			pFormatVector->PushBack("General");
-			pFormatIndexVector->PushBack(0);
-			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
-			{
-				Style* pStyle = pWorkbook->m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
-				const char* szFormat = pStyle->GetFormat();
-				bool bFound = false;
-				for (int j = 0; j < pFormatVector->GetSize(); j++)
+				int nGlobalImageIndex = 1;
+				for (int ws = 0; ws < pWorkbook->m_pImpl->m_pWorksheetVector->GetSize(); ws++)
 				{
-					if (ExternalString::Equal(pFormatVector->Get(j), szFormat))
-					{
-						bFound = true;
+					if (!bSuccess)
 						break;
-					}
-				}
-				if (!bFound)
-				{
-					pFormatVector->PushBack(szFormat);
-					pFormatIndexVector->PushBack((unsigned short)(pFormatVector->GetSize() - 1));
-				}
-			}
-			XmlNode* pNumFmtsNode = pStylesXml->CreateElement("numFmts");
-			sTemp->Set("");
-			sTemp->AppendInt(pFormatVector->GetSize());
-			pNumFmtsNode->SetAttribute("count", sTemp->GetExternalString());
-			for (int i = 0; i < pFormatVector->GetSize(); i++)
-			{
-				XmlNode* pNumFmtNode = pStylesXml->CreateElement("numFmt");
-				sTemp->Set("");
-				sTemp->AppendInt(i);
-				pNumFmtNode->SetAttribute("numFmtId", sTemp->GetExternalString());
-				pNumFmtNode->SetAttribute("formatCode", pFormatVector->Get(i));
-				pNumFmtsNode->AppendChild(pNumFmtNode);
-			}
-			pStyleSheetNode->AppendChild(pNumFmtsNode);
-			OwnedVector<Font*>* pFontVector = new OwnedVector<Font*>();
-			{
-				Font* pDefaultFont = new Font();
-				pDefaultFont->SetName(pWorkbook->m_pImpl->m_pWorkbookGlobals->m_pHeaderFont->GetName());
-				pDefaultFont->m_pImpl->m_fSizePts = pWorkbook->m_pImpl->m_pWorkbookGlobals->m_pHeaderFont->m_pImpl->m_fSizePts;
-				NumberDuck::Font* __1794065049 = pDefaultFont;
-				pDefaultFont = 0;
-				pFontVector->PushBack(__1794065049);
-				if (pDefaultFont) delete pDefaultFont;
-			}
-			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
-			{
-				Style* pStyle = pWorkbook->m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
-				Font* pStyleFont = pStyle->GetFont();
-				bool bFound = false;
-				for (int j = 0; j < pFontVector->GetSize(); j++)
-				{
-					Font* pTestFont = pFontVector->Get(j);
-					if (ExternalString::Equal(pTestFont->GetName(), pStyleFont->GetName()) && pTestFont->GetSize() == pStyleFont->GetSize() && pTestFont->GetBold() == pStyleFont->GetBold() && pTestFont->GetItalic() == pStyleFont->GetItalic() && pTestFont->GetUnderline() == pStyleFont->GetUnderline())
+					Worksheet* pWorksheet = pWorkbook->m_pImpl->m_pWorksheetVector->Get(ws);
+					int nNumPictures = pWorksheet->GetNumPicture();
+					int nDrawingRelId = 1;
+					for (int i = 0; i < nNumPictures; i++)
 					{
-						bFound = true;
-						break;
-					}
-				}
-				if (!bFound)
-				{
-					Font* pNewFont = new Font();
-					pNewFont->SetName(pStyleFont->GetName());
-					pNewFont->m_pImpl->m_fSizePts = pStyleFont->m_pImpl->m_fSizePts;
-					pNewFont->SetBold(pStyleFont->GetBold());
-					pNewFont->SetItalic(pStyleFont->GetItalic());
-					pNewFont->SetUnderline(pStyleFont->GetUnderline());
-					Color* pFontColor = pStyleFont->GetColor(false);
-					if (pFontColor != 0)
-					{
-						pNewFont->GetColor(true)->SetFromColor(pFontColor);
-					}
-					NumberDuck::Font* __2020089986 = pNewFont;
-					pNewFont = 0;
-					pFontVector->PushBack(__2020089986);
-					if (pNewFont) delete pNewFont;
-				}
-			}
-			XmlNode* pFontsNode = pStylesXml->CreateElement("fonts");
-			sTemp->Set("");
-			sTemp->AppendInt(pFontVector->GetSize());
-			pFontsNode->SetAttribute("count", sTemp->GetExternalString());
-			for (int i = 0; i < pFontVector->GetSize(); i++)
-			{
-				Font* pFont = pFontVector->Get(i);
-				XmlNode* pFontNode = pStylesXml->CreateElement("font");
-				if (pFont->GetBold())
-				{
-					XmlNode* pBoldNode = pStylesXml->CreateElement("b");
-					pFontNode->AppendChild(pBoldNode);
-				}
-				if (pFont->GetUnderline() != Font::Underline::UNDERLINE_NONE)
-				{
-					XmlNode* pUnderlineNode = pStylesXml->CreateElement("u");
-					pFontNode->AppendChild(pUnderlineNode);
-				}
-				XmlNode* pSzNode = pStylesXml->CreateElement("sz");
-				sTemp->Set("");
-				sTemp->AppendDouble((double)(pFont->m_pImpl->m_fSizePts));
-				pSzNode->SetAttribute("val", sTemp->GetExternalString());
-				pFontNode->AppendChild(pSzNode);
-				XmlNode* pNameNode = pStylesXml->CreateElement("name");
-				pNameNode->SetAttribute("val", pFont->GetName());
-				pFontNode->AppendChild(pNameNode);
-				if (pFont->GetItalic())
-				{
-					XmlNode* pItalicNode = pStylesXml->CreateElement("i");
-					pFontNode->AppendChild(pItalicNode);
-				}
-				Color* pFontColor = pFont->GetColor(false);
-				if (pFontColor != 0)
-				{
-					XmlNode* pColorNode = pStylesXml->CreateElement("color");
-					sTemp->Set("");
-					sTemp->AppendHex(pFontColor->GetRgba());
-					pColorNode->SetAttribute("rgb", sTemp->GetExternalString());
-					pFontNode->AppendChild(pColorNode);
-				}
-				pFontsNode->AppendChild(pFontNode);
-			}
-			pStyleSheetNode->AppendChild(pFontsNode);
-			OwnedVector<Style*>* pFillVector = new OwnedVector<Style*>();
-			{
-				Style* pDefaultFill = new Style();
-				NumberDuck::Style* __430657117 = pDefaultFill;
-				pDefaultFill = 0;
-				pFillVector->PushBack(__430657117);
-				Style* pGrayFill = new Style();
-				pGrayFill->SetFillPattern(Style::FillPattern::FILL_PATTERN_125);
-				NumberDuck::Style* __772887479 = pGrayFill;
-				pGrayFill = 0;
-				pFillVector->PushBack(__772887479);
-				if (pDefaultFill) delete pDefaultFill;
-				if (pGrayFill) delete pGrayFill;
-			}
-			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
-			{
-				Style* pStyle = pWorkbook->m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
-				Color* pBackgroundColor = pStyle->GetBackgroundColor(false);
-				Style::FillPattern eFillPattern = pStyle->GetFillPattern();
-				Color* pFillPatternColor = pStyle->GetFillPatternColor(false);
-				bool bFound = false;
-				for (int j = 0; j < pFillVector->GetSize(); j++)
-				{
-					Style* pTestStyle = pFillVector->Get(j);
-					Color* pTestBackgroundColor = pTestStyle->GetBackgroundColor(false);
-					Color* pTestFillPatternColor = pTestStyle->GetFillPatternColor(false);
-					if (eFillPattern == pTestStyle->GetFillPattern() && ((pBackgroundColor == 0 && pTestBackgroundColor == 0) || (pBackgroundColor != 0 && pTestBackgroundColor != 0 && pBackgroundColor->Equals(pTestBackgroundColor))) && ((pFillPatternColor == 0 && pTestFillPatternColor == 0) || (pFillPatternColor != 0 && pTestFillPatternColor != 0 && pFillPatternColor->Equals(pTestFillPatternColor))))
-					{
-						bFound = true;
-						break;
-					}
-				}
-				if (!bFound)
-				{
-					Style* pNewFill = new Style();
-					pNewFill->SetFillPattern(eFillPattern);
-					if (pBackgroundColor != 0)
-						pNewFill->GetBackgroundColor(true)->SetFromColor(pBackgroundColor);
-					if (pFillPatternColor != 0)
-						pNewFill->GetFillPatternColor(true)->SetFromColor(pFillPatternColor);
-					NumberDuck::Style* __2435592100 = pNewFill;
-					pNewFill = 0;
-					pFillVector->PushBack(__2435592100);
-					if (pNewFill) delete pNewFill;
-				}
-			}
-			XmlNode* pFillsNode = pStylesXml->CreateElement("fills");
-			sTemp->Set("");
-			sTemp->AppendInt(pFillVector->GetSize());
-			pFillsNode->SetAttribute("count", sTemp->GetExternalString());
-			for (int i = 0; i < pFillVector->GetSize(); i++)
-			{
-				Style* pFill = pFillVector->Get(i);
-				XmlNode* pFillNode = pStylesXml->CreateElement("fill");
-				XmlNode* pPatternFillNode = pStylesXml->CreateElement("patternFill");
-				switch (pFill->GetFillPattern())
-				{
-					case Style::FillPattern::FILL_PATTERN_NONE:
-					{
-						pPatternFillNode->SetAttribute("patternType", "solid");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_50:
-					{
-						pPatternFillNode->SetAttribute("patternType", "mediumGray");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_75:
-					{
-						pPatternFillNode->SetAttribute("patternType", "darkGray");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_25:
-					{
-						pPatternFillNode->SetAttribute("patternType", "lightGray");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_HORIZONTAL_STRIPE:
-					{
-						pPatternFillNode->SetAttribute("patternType", "darkHorizontal");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_VARTICAL_STRIPE:
-					{
-						pPatternFillNode->SetAttribute("patternType", "darkVertical");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_REVERSE_DIAGONAL_STRIPE:
-					{
-						pPatternFillNode->SetAttribute("patternType", "darkDown");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_DIAGONAL_STRIPE:
-					{
-						pPatternFillNode->SetAttribute("patternType", "darkUp");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_DIAGONAL_CROSSHATCH:
-					{
-						pPatternFillNode->SetAttribute("patternType", "darkGrid");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_THICK_DIAGONAL_CROSSHATCH:
-					{
-						pPatternFillNode->SetAttribute("patternType", "darkTrellis");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_THIN_HORIZONTAL_STRIPE:
-					{
-						pPatternFillNode->SetAttribute("patternType", "lightHorizontal");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_THIN_VERTICAL_STRIPE:
-					{
-						pPatternFillNode->SetAttribute("patternType", "lightVertical");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_THIN_REVERSE_VERTICAL_STRIPE:
-					{
-						pPatternFillNode->SetAttribute("patternType", "lightDown");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_THIN_DIAGONAL_STRIPE:
-					{
-						pPatternFillNode->SetAttribute("patternType", "lightUp");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_THIN_HORIZONTAL_CROSSHATCH:
-					{
-						pPatternFillNode->SetAttribute("patternType", "lightGrid");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_THIN_DIAGONAL_CROSSHATCH:
-					{
-						pPatternFillNode->SetAttribute("patternType", "lightTrellis");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_125:
-					{
-						pPatternFillNode->SetAttribute("patternType", "gray125");
-						break;
-					}
-
-					case Style::FillPattern::FILL_PATTERN_625:
-					{
-						pPatternFillNode->SetAttribute("patternType", "gray0625");
-						break;
-					}
-
-					default:
-					{
-						pPatternFillNode->SetAttribute("patternType", "none");
-						break;
-					}
-
-				}
-				Color* pBackgroundColor = pFill->GetBackgroundColor(false);
-				if (pBackgroundColor != 0)
-				{
-					XmlNode* pFgColorNode = pStylesXml->CreateElement("fgColor");
-					sTemp->Set("");
-					XlsxUtils::WriteBgra(pBackgroundColor->GetRgba(), sTemp);
-					pFgColorNode->SetAttribute("rgb", sTemp->GetExternalString());
-					pPatternFillNode->AppendChild(pFgColorNode);
-				}
-				Color* pFillPatternColor = pFill->GetFillPatternColor(false);
-				if (pFillPatternColor != 0)
-				{
-					XmlNode* pBgColorNode = pStylesXml->CreateElement("bgColor");
-					sTemp->Set("");
-					XlsxUtils::WriteBgra(pFillPatternColor->GetRgba(), sTemp);
-					pBgColorNode->SetAttribute("rgb", sTemp->GetExternalString());
-					pPatternFillNode->AppendChild(pBgColorNode);
-				}
-				pFillNode->AppendChild(pPatternFillNode);
-				pFillsNode->AppendChild(pFillNode);
-			}
-			pStyleSheetNode->AppendChild(pFillsNode);
-			OwnedVector<Style*>* pBorderVector = new OwnedVector<Style*>();
-			{
-				Style* pDefaultBorder = new Style();
-				NumberDuck::Style* __2038613620 = pDefaultBorder;
-				pDefaultBorder = 0;
-				pBorderVector->PushBack(__2038613620);
-				if (pDefaultBorder) delete pDefaultBorder;
-			}
-			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
-			{
-				Style* pStyle = pWorkbook->m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
-				bool bFound = false;
-				for (int j = 0; j < pBorderVector->GetSize(); j++)
-				{
-					Style* pTestStyle = pBorderVector->Get(j);
-					if (pStyle->GetTopBorderLine()->GetType() == pTestStyle->GetTopBorderLine()->GetType() && pStyle->GetRightBorderLine()->GetType() == pTestStyle->GetRightBorderLine()->GetType() && pStyle->GetBottomBorderLine()->GetType() == pTestStyle->GetBottomBorderLine()->GetType() && pStyle->GetLeftBorderLine()->GetType() == pTestStyle->GetLeftBorderLine()->GetType())
-					{
-						bFound = true;
-						break;
-					}
-				}
-				if (!bFound)
-				{
-					Style* pNewBorder = new Style();
-					pNewBorder->GetTopBorderLine()->SetType(pStyle->GetTopBorderLine()->GetType());
-					pNewBorder->GetRightBorderLine()->SetType(pStyle->GetRightBorderLine()->GetType());
-					pNewBorder->GetBottomBorderLine()->SetType(pStyle->GetBottomBorderLine()->GetType());
-					pNewBorder->GetLeftBorderLine()->SetType(pStyle->GetLeftBorderLine()->GetType());
-					Color* pTopColor = pStyle->GetTopBorderLine()->GetColor();
-					if (pTopColor != 0)
-						pNewBorder->GetTopBorderLine()->GetColor()->SetFromColor(pTopColor);
-					Color* pRightColor = pStyle->GetRightBorderLine()->GetColor();
-					if (pRightColor != 0)
-						pNewBorder->GetRightBorderLine()->GetColor()->SetFromColor(pRightColor);
-					Color* pBottomColor = pStyle->GetBottomBorderLine()->GetColor();
-					if (pBottomColor != 0)
-						pNewBorder->GetBottomBorderLine()->GetColor()->SetFromColor(pBottomColor);
-					Color* pLeftColor = pStyle->GetLeftBorderLine()->GetColor();
-					if (pLeftColor != 0)
-						pNewBorder->GetLeftBorderLine()->GetColor()->SetFromColor(pLeftColor);
-					NumberDuck::Style* __3213360405 = pNewBorder;
-					pNewBorder = 0;
-					pBorderVector->PushBack(__3213360405);
-					if (pNewBorder) delete pNewBorder;
-				}
-			}
-			XmlNode* pBordersNode = pStylesXml->CreateElement("borders");
-			sTemp->Set("");
-			sTemp->AppendInt(pBorderVector->GetSize());
-			pBordersNode->SetAttribute("count", sTemp->GetExternalString());
-			for (int i = 0; i < pBorderVector->GetSize(); i++)
-			{
-				Style* pBorder = pBorderVector->Get(i);
-				XmlNode* pBorderNode = pStylesXml->CreateElement("border");
-				XmlNode* pLeftNode = pStylesXml->CreateElement("left");
-				if (pBorder->GetLeftBorderLine()->GetType() != Line::Type::TYPE_NONE)
-				{
-					switch (pBorder->GetLeftBorderLine()->GetType())
-					{
-						case Line::Type::TYPE_THIN:
+						Picture* pPicture = pWorksheet->GetPictureByIndex(i);
+						if (pPicture == 0)
 						{
-							pLeftNode->SetAttribute("style", "thin");
+							bSuccess = false;
 							break;
 						}
-
-						case Line::Type::TYPE_MEDIUM:
+						pPicture->m_pImplementation->m_nGlobalImageIndex = nGlobalImageIndex;
+						InternalString* sXlsxMediaPath = pPicture->m_pImplementation->m_sXlsxMediaPath;
+						sXlsxMediaPath->Set("xl/media/image");
+						sXlsxMediaPath->AppendInt(nGlobalImageIndex);
+						sXlsxMediaPath->AppendString(".");
+						switch (pPicture->GetFormat())
 						{
-							pLeftNode->SetAttribute("style", "medium");
-							break;
-						}
-
-						case Line::Type::TYPE_THICK:
-						{
-							pLeftNode->SetAttribute("style", "thick");
-							break;
-						}
-
-						case Line::Type::TYPE_DASHED:
-						{
-							pLeftNode->SetAttribute("style", "dashed");
-							break;
-						}
-
-						case Line::Type::TYPE_DOTTED:
-						{
-							pLeftNode->SetAttribute("style", "dotted");
-							break;
-						}
-
-						case Line::Type::TYPE_DASH_DOT:
-						{
-							pLeftNode->SetAttribute("style", "dashDot");
-							break;
-						}
-
-						case Line::Type::TYPE_DASH_DOT_DOT:
-						{
-							pLeftNode->SetAttribute("style", "dashDotDot");
-							break;
-						}
-
-						default:
-						{
-							pLeftNode->SetAttribute("style", "thin");
-							break;
-						}
-
-					}
-					Color* pLeftColor = pBorder->GetLeftBorderLine()->GetColor();
-					if (pLeftColor != 0)
-					{
-						XmlNode* pLeftColorNode = pStylesXml->CreateElement("color");
-						sTemp->Set("");
-						sTemp->AppendHex(pLeftColor->GetRgba());
-						pLeftColorNode->SetAttribute("rgb", sTemp->GetExternalString());
-						pLeftNode->AppendChild(pLeftColorNode);
-					}
-				}
-				pBorderNode->AppendChild(pLeftNode);
-				XmlNode* pRightNode = pStylesXml->CreateElement("right");
-				if (pBorder->GetRightBorderLine()->GetType() != Line::Type::TYPE_NONE)
-				{
-					switch (pBorder->GetRightBorderLine()->GetType())
-					{
-						case Line::Type::TYPE_THIN:
-						{
-							pRightNode->SetAttribute("style", "thin");
-							break;
-						}
-
-						case Line::Type::TYPE_MEDIUM:
-						{
-							pRightNode->SetAttribute("style", "medium");
-							break;
-						}
-
-						case Line::Type::TYPE_THICK:
-						{
-							pRightNode->SetAttribute("style", "thick");
-							break;
-						}
-
-						case Line::Type::TYPE_DASHED:
-						{
-							pRightNode->SetAttribute("style", "dashed");
-							break;
-						}
-
-						case Line::Type::TYPE_DOTTED:
-						{
-							pRightNode->SetAttribute("style", "dotted");
-							break;
-						}
-
-						case Line::Type::TYPE_DASH_DOT:
-						{
-							pRightNode->SetAttribute("style", "dashDot");
-							break;
-						}
-
-						case Line::Type::TYPE_DASH_DOT_DOT:
-						{
-							pRightNode->SetAttribute("style", "dashDotDot");
-							break;
-						}
-
-						default:
-						{
-							pRightNode->SetAttribute("style", "thin");
-							break;
-						}
-
-					}
-					Color* pRightColor = pBorder->GetRightBorderLine()->GetColor();
-					if (pRightColor != 0)
-					{
-						XmlNode* pRightColorNode = pStylesXml->CreateElement("color");
-						sTemp->Set("");
-						sTemp->AppendHex(pRightColor->GetRgba());
-						pRightColorNode->SetAttribute("rgb", sTemp->GetExternalString());
-						pRightNode->AppendChild(pRightColorNode);
-					}
-				}
-				pBorderNode->AppendChild(pRightNode);
-				XmlNode* pTopNode = pStylesXml->CreateElement("top");
-				if (pBorder->GetTopBorderLine()->GetType() != Line::Type::TYPE_NONE)
-				{
-					switch (pBorder->GetTopBorderLine()->GetType())
-					{
-						case Line::Type::TYPE_THIN:
-						{
-							pTopNode->SetAttribute("style", "thin");
-							break;
-						}
-
-						case Line::Type::TYPE_MEDIUM:
-						{
-							pTopNode->SetAttribute("style", "medium");
-							break;
-						}
-
-						case Line::Type::TYPE_THICK:
-						{
-							pTopNode->SetAttribute("style", "thick");
-							break;
-						}
-
-						case Line::Type::TYPE_DASHED:
-						{
-							pTopNode->SetAttribute("style", "dashed");
-							break;
-						}
-
-						case Line::Type::TYPE_DOTTED:
-						{
-							pTopNode->SetAttribute("style", "dotted");
-							break;
-						}
-
-						case Line::Type::TYPE_DASH_DOT:
-						{
-							pTopNode->SetAttribute("style", "dashDot");
-							break;
-						}
-
-						case Line::Type::TYPE_DASH_DOT_DOT:
-						{
-							pTopNode->SetAttribute("style", "dashDotDot");
-							break;
-						}
-
-						default:
-						{
-							pTopNode->SetAttribute("style", "thin");
-							break;
-						}
-
-					}
-					Color* pTopColor = pBorder->GetTopBorderLine()->GetColor();
-					if (pTopColor != 0)
-					{
-						XmlNode* pTopColorNode = pStylesXml->CreateElement("color");
-						sTemp->Set("");
-						sTemp->AppendHex(pTopColor->GetRgba());
-						pTopColorNode->SetAttribute("rgb", sTemp->GetExternalString());
-						pTopNode->AppendChild(pTopColorNode);
-					}
-				}
-				pBorderNode->AppendChild(pTopNode);
-				XmlNode* pBottomNode = pStylesXml->CreateElement("bottom");
-				if (pBorder->GetBottomBorderLine()->GetType() != Line::Type::TYPE_NONE)
-				{
-					switch (pBorder->GetBottomBorderLine()->GetType())
-					{
-						case Line::Type::TYPE_THIN:
-						{
-							pBottomNode->SetAttribute("style", "thin");
-							break;
-						}
-
-						case Line::Type::TYPE_MEDIUM:
-						{
-							pBottomNode->SetAttribute("style", "medium");
-							break;
-						}
-
-						case Line::Type::TYPE_THICK:
-						{
-							pBottomNode->SetAttribute("style", "thick");
-							break;
-						}
-
-						case Line::Type::TYPE_DASHED:
-						{
-							pBottomNode->SetAttribute("style", "dashed");
-							break;
-						}
-
-						case Line::Type::TYPE_DOTTED:
-						{
-							pBottomNode->SetAttribute("style", "dotted");
-							break;
-						}
-
-						case Line::Type::TYPE_DASH_DOT:
-						{
-							pBottomNode->SetAttribute("style", "dashDot");
-							break;
-						}
-
-						case Line::Type::TYPE_DASH_DOT_DOT:
-						{
-							pBottomNode->SetAttribute("style", "dashDotDot");
-							break;
-						}
-
-						default:
-						{
-							pBottomNode->SetAttribute("style", "thin");
-							break;
-						}
-
-					}
-					Color* pBottomColor = pBorder->GetBottomBorderLine()->GetColor();
-					if (pBottomColor != 0)
-					{
-						XmlNode* pBottomColorNode = pStylesXml->CreateElement("color");
-						sTemp->Set("");
-						sTemp->AppendHex(pBottomColor->GetRgba());
-						pBottomColorNode->SetAttribute("rgb", sTemp->GetExternalString());
-						pBottomNode->AppendChild(pBottomColorNode);
-					}
-				}
-				pBorderNode->AppendChild(pBottomNode);
-				XmlNode* pDiagonalNode = pStylesXml->CreateElement("diagonal");
-				pBorderNode->AppendChild(pDiagonalNode);
-				pBordersNode->AppendChild(pBorderNode);
-			}
-			pStyleSheetNode->AppendChild(pBordersNode);
-			XmlNode* pCellStyleXfsNode = pStylesXml->CreateElement("cellStyleXfs");
-			pCellStyleXfsNode->SetAttribute("count", "1");
-			XmlNode* pXfStyleNode = pStylesXml->CreateElement("xf");
-			pXfStyleNode->SetAttribute("numFmtId", "0");
-			pXfStyleNode->SetAttribute("fontId", "0");
-			pXfStyleNode->SetAttribute("fillId", "0");
-			pXfStyleNode->SetAttribute("borderId", "0");
-			pCellStyleXfsNode->AppendChild(pXfStyleNode);
-			pStyleSheetNode->AppendChild(pCellStyleXfsNode);
-			XmlNode* pCellXfsNode = pStylesXml->CreateElement("cellXfs");
-			sTemp->Set("");
-			sTemp->AppendInt(pWorkbook->m_pImpl->m_pWorkbookGlobals->GetNumStyle());
-			pCellXfsNode->SetAttribute("count", sTemp->GetExternalString());
-			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
-			{
-				Style* pStyle = pWorkbook->m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
-				XmlNode* pXfNode = pStylesXml->CreateElement("xf");
-				const char* szFormat = pStyle->GetFormat();
-				unsigned short nFormatIndex = 0;
-				for (int j = 0; j < pFormatVector->GetSize(); j++)
-				{
-					if (ExternalString::Equal(pFormatVector->Get(j), szFormat))
-					{
-						nFormatIndex = (unsigned short)(j);
-						break;
-					}
-				}
-				Font* pStyleFont = pStyle->GetFont();
-				unsigned short nFontIndex = 0;
-				for (int j = 0; j < pFontVector->GetSize(); j++)
-				{
-					Font* pTestFont = pFontVector->Get(j);
-					if (ExternalString::Equal(pTestFont->GetName(), pStyleFont->GetName()) && pTestFont->GetSize() == pStyleFont->GetSize() && pTestFont->GetBold() == pStyleFont->GetBold() && pTestFont->GetItalic() == pStyleFont->GetItalic() && pTestFont->GetUnderline() == pStyleFont->GetUnderline())
-					{
-						nFontIndex = (unsigned short)(j);
-						break;
-					}
-				}
-				Color* pBackgroundColor = pStyle->GetBackgroundColor(false);
-				Style::FillPattern eFillPattern = pStyle->GetFillPattern();
-				Color* pFillPatternColor = pStyle->GetFillPatternColor(false);
-				unsigned short nFillIndex = 0;
-				for (int j = 0; j < pFillVector->GetSize(); j++)
-				{
-					Style* pTestStyle = pFillVector->Get(j);
-					Color* pTestBackgroundColor = pTestStyle->GetBackgroundColor(false);
-					Color* pTestFillPatternColor = pTestStyle->GetFillPatternColor(false);
-					if (eFillPattern == pTestStyle->GetFillPattern() && ((pBackgroundColor == 0 && pTestBackgroundColor == 0) || (pBackgroundColor != 0 && pTestBackgroundColor != 0 && pBackgroundColor->Equals(pTestBackgroundColor))) && ((pFillPatternColor == 0 && pTestFillPatternColor == 0) || (pFillPatternColor != 0 && pTestFillPatternColor != 0 && pFillPatternColor->Equals(pTestFillPatternColor))))
-					{
-						nFillIndex = (unsigned short)(j);
-						break;
-					}
-				}
-				unsigned short nBorderIndex = 0;
-				for (int j = 0; j < pBorderVector->GetSize(); j++)
-				{
-					Style* pTestStyle = pBorderVector->Get(j);
-					if (pStyle->GetTopBorderLine()->GetType() == pTestStyle->GetTopBorderLine()->GetType() && pStyle->GetRightBorderLine()->GetType() == pTestStyle->GetRightBorderLine()->GetType() && pStyle->GetBottomBorderLine()->GetType() == pTestStyle->GetBottomBorderLine()->GetType() && pStyle->GetLeftBorderLine()->GetType() == pTestStyle->GetLeftBorderLine()->GetType())
-					{
-						nBorderIndex = (unsigned short)(j);
-						break;
-					}
-				}
-				sTemp->Set("");
-				sTemp->AppendUint32(nFormatIndex);
-				pXfNode->SetAttribute("numFmtId", sTemp->GetExternalString());
-				sTemp->Set("");
-				sTemp->AppendUint32(nFontIndex);
-				pXfNode->SetAttribute("fontId", sTemp->GetExternalString());
-				{
-					pXfNode->SetAttribute("applyFont", "1");
-				}
-				sTemp->Set("");
-				sTemp->AppendUint32(nFillIndex);
-				pXfNode->SetAttribute("fillId", sTemp->GetExternalString());
-				{
-					pXfNode->SetAttribute("applyFill", "1");
-				}
-				sTemp->Set("");
-				sTemp->AppendUint32(nBorderIndex);
-				pXfNode->SetAttribute("borderId", sTemp->GetExternalString());
-				{
-					pXfNode->SetAttribute("applyBorder", "1");
-				}
-				Style::HorizontalAlign eHorizontalAlign = pStyle->GetHorizontalAlign();
-				Style::VerticalAlign eVerticalAlign = pStyle->GetVerticalAlign();
-				if (eHorizontalAlign != Style::HorizontalAlign::HORIZONTAL_ALIGN_GENERAL || eVerticalAlign != Style::VerticalAlign::VERTICAL_ALIGN_BOTTOM || pStyle->GetWrapText())
-				{
-					pXfNode->SetAttribute("applyAlignment", "1");
-					XmlNode* pAlignmentNode = pStylesXml->CreateElement("alignment");
-					if (eHorizontalAlign != Style::HorizontalAlign::HORIZONTAL_ALIGN_GENERAL)
-					{
-						switch (eHorizontalAlign)
-						{
-							case Style::HorizontalAlign::HORIZONTAL_ALIGN_LEFT:
+							case Picture::Format::PNG:
 							{
-								pAlignmentNode->SetAttribute("horizontal", "left");
+								sXlsxMediaPath->AppendString("png");
 								break;
 							}
 
-							case Style::HorizontalAlign::HORIZONTAL_ALIGN_CENTER:
+							case Picture::Format::JPEG:
 							{
-								pAlignmentNode->SetAttribute("horizontal", "center");
+								sXlsxMediaPath->AppendString("jpeg");
 								break;
 							}
 
-							case Style::HorizontalAlign::HORIZONTAL_ALIGN_RIGHT:
+							case Picture::Format::EMF:
 							{
-								pAlignmentNode->SetAttribute("horizontal", "right");
+								sXlsxMediaPath->AppendString("emf");
 								break;
 							}
 
-							case Style::HorizontalAlign::HORIZONTAL_ALIGN_FILL:
+							case Picture::Format::WMF:
 							{
-								pAlignmentNode->SetAttribute("horizontal", "fill");
+								sXlsxMediaPath->AppendString("wmf");
 								break;
 							}
 
-							case Style::HorizontalAlign::HORIZONTAL_ALIGN_JUSTIFY:
+							case Picture::Format::PICT:
 							{
-								pAlignmentNode->SetAttribute("horizontal", "justify");
+								sXlsxMediaPath->AppendString("pict");
 								break;
 							}
 
-							case Style::HorizontalAlign::HORIZONTAL_ALIGN_CENTER_ACROSS_SELECTION:
+							case Picture::Format::DIB:
 							{
-								pAlignmentNode->SetAttribute("horizontal", "centerContinuous");
+								sXlsxMediaPath->AppendString("dib");
 								break;
 							}
 
-							case Style::HorizontalAlign::HORIZONTAL_ALIGN_DISTRIBUTED:
+							case Picture::Format::TIFF:
 							{
-								pAlignmentNode->SetAttribute("horizontal", "distributed");
+								sXlsxMediaPath->AppendString("tiff");
 								break;
 							}
 
 							default:
 							{
+								sXlsxMediaPath->AppendString("bin");
 								break;
 							}
 
 						}
+						Blob* pImageBlob = pPicture->GetBlob();
+						pZipWriter->AddFileFromBlob(sXlsxMediaPath->GetExternalString(), pImageBlob->Clone());
+						nGlobalImageIndex++;
+						pPicture->m_pImplementation->m_sXlsxDrawingRelId->Set("rId");
+						pPicture->m_pImplementation->m_sXlsxDrawingRelId->AppendInt(nDrawingRelId);
+						nDrawingRelId++;
 					}
-					if (eVerticalAlign != Style::VerticalAlign::VERTICAL_ALIGN_BOTTOM)
-					{
-						switch (eVerticalAlign)
-						{
-							case Style::VerticalAlign::VERTICAL_ALIGN_TOP:
-							{
-								pAlignmentNode->SetAttribute("vertical", "top");
-								break;
-							}
-
-							case Style::VerticalAlign::VERTICAL_ALIGN_CENTER:
-							{
-								pAlignmentNode->SetAttribute("vertical", "center");
-								break;
-							}
-
-							case Style::VerticalAlign::VERTICAL_ALIGN_JUSTIFY:
-							{
-								pAlignmentNode->SetAttribute("vertical", "justify");
-								break;
-							}
-
-							case Style::VerticalAlign::VERTICAL_ALIGN_DISTRIBUTED:
-							{
-								pAlignmentNode->SetAttribute("vertical", "distributed");
-								break;
-							}
-
-							default:
-							{
-								break;
-							}
-
-						}
-					}
-					if (pStyle->GetWrapText())
-						pAlignmentNode->SetAttribute("wrapText", "1");
-					pXfNode->AppendChild(pAlignmentNode);
 				}
-				pXfNode->SetAttribute("xfId", "0");
-				pCellXfsNode->AppendChild(pXfNode);
 			}
-			pStyleSheetNode->AppendChild(pCellXfsNode);
-			pStylesXml->AppendChild(pStyleSheetNode);
-			pStylesXml->Save(pStylesBlob->GetBlobView());
-			NumberDuck::Blob* __3284404502 = pStylesBlob;
-			pStylesBlob = 0;
-			bSuccess = bSuccess && pZipWriter->AddFileFromBlob("xl/styles.xml", __3284404502);
-			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorksheetVector->GetSize(); i++)
 			{
-				Worksheet* pWorksheet = pWorkbook->m_pImpl->m_pWorksheetVector->Get(i);
-				bSuccess = bSuccess && XlsxWorksheet::Write(pWorksheet, pWorkbook->m_pImpl->m_pWorkbookGlobals, pZipWriter, i);
+				XmlWriter* pXmlWriter = new XmlWriter(false);
+				pXmlWriter->StartElement("Types");
+				pXmlWriter->SetAttribute("xmlns", "http://schemas.openxmlformats.org/package/2006/content-types");
+				pXmlWriter->StartElement("Default");
+				pXmlWriter->SetAttribute("Extension", "xml");
+				pXmlWriter->SetAttribute("ContentType", "application/xml");
+				pXmlWriter->EndElement();
+				pXmlWriter->StartElement("Default");
+				pXmlWriter->SetAttribute("Extension", "rels");
+				pXmlWriter->SetAttribute("ContentType", "application/vnd.openxmlformats-package.relationships+xml");
+				pXmlWriter->EndElement();
+				pXmlWriter->StartElement("Override");
+				pXmlWriter->SetAttribute("PartName", "/xl/workbook.xml");
+				pXmlWriter->SetAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml");
+				pXmlWriter->EndElement();
+				pXmlWriter->StartElement("Override");
+				pXmlWriter->SetAttribute("PartName", "/xl/styles.xml");
+				pXmlWriter->SetAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml");
+				pXmlWriter->EndElement();
+				pXmlWriter->StartElement("Override");
+				pXmlWriter->SetAttribute("PartName", "/xl/sharedStrings.xml");
+				pXmlWriter->SetAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml");
+				pXmlWriter->EndElement();
+				for (int i = 0; i < pWorkbook->m_pImpl->m_pWorksheetVector->GetSize(); i++)
+				{
+					pXmlWriter->StartElement("Override");
+					sTemp->Set("/xl/worksheets/sheet");
+					sTemp->AppendInt(i + 1);
+					sTemp->AppendString(".xml");
+					pXmlWriter->SetAttribute("PartName", sTemp->GetExternalString());
+					pXmlWriter->SetAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml");
+					pXmlWriter->EndElement();
+				}
+				for (int ws = 0; ws < pWorkbook->m_pImpl->m_pWorksheetVector->GetSize(); ws++)
+				{
+					Worksheet* pWorksheet = pWorkbook->m_pImpl->m_pWorksheetVector->Get(ws);
+					int nNumPictures = pWorksheet->GetNumPicture();
+					if (nNumPictures > 0)
+					{
+						pXmlWriter->StartElement("Override");
+						sTemp->Set("/xl/drawings/drawing");
+						sTemp->AppendInt(ws + 1);
+						sTemp->AppendString(".xml");
+						pXmlWriter->SetAttribute("PartName", sTemp->GetExternalString());
+						pXmlWriter->SetAttribute("ContentType", "application/vnd.openxmlformats-officedocument.drawing+xml");
+						pXmlWriter->EndElement();
+						for (int i = 0; i < nNumPictures; i++)
+						{
+							Picture* pPicture = pWorksheet->GetPictureByIndex(i);
+							if (pPicture == 0)
+								continue;
+							const char* sContentType = 0;
+							switch (pPicture->GetFormat())
+							{
+								case Picture::Format::PNG:
+								{
+									sContentType = "image/png";
+									break;
+								}
+
+								case Picture::Format::JPEG:
+								{
+									sContentType = "image/jpeg";
+									break;
+								}
+
+								case Picture::Format::EMF:
+								{
+									sContentType = "image/x-emf";
+									break;
+								}
+
+								case Picture::Format::WMF:
+								{
+									sContentType = "image/x-wmf";
+									break;
+								}
+
+								case Picture::Format::PICT:
+								{
+									sContentType = "image/x-pict";
+									break;
+								}
+
+								case Picture::Format::DIB:
+								{
+									sContentType = "image/bmp";
+									break;
+								}
+
+								case Picture::Format::TIFF:
+								{
+									sContentType = "image/tiff";
+									break;
+								}
+
+								default:
+								{
+									sContentType = "application/octet-stream";
+									break;
+								}
+
+							}
+							pXmlWriter->StartElement("Override");
+							sTemp->Set("/");
+							sTemp->AppendString(pPicture->m_pImplementation->m_sXlsxMediaPath->GetExternalString());
+							pXmlWriter->SetAttribute("PartName", sTemp->GetExternalString());
+							pXmlWriter->SetAttribute("ContentType", sContentType);
+							pXmlWriter->EndElement();
+						}
+					}
+				}
+				pXmlWriter->EndElement();
+				Blob* pBlob = new Blob(true);
+				pXmlWriter->GetOutput()->BlobWriteUtf8(pBlob->GetBlobView(), false);
+				NumberDuck::Blob* __4024845551 = pBlob;
+				pBlob = 0;
+				bSuccess = bSuccess && pZipWriter->AddFileFromBlob("[Content_Types].xml", __4024845551);
+				if (pXmlWriter) delete pXmlWriter;
+				if (pBlob) delete pBlob;
+			}
+			{
+				XlsxRelationship_File* pRelationshipFile = new XlsxRelationship_File("_rels/.rels", 0);
+				pRelationshipFile->AddRelationship("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", "xl/workbook.xml");
+				NumberDuck::Secret::XlsxRelationship_File* __1664877003 = pRelationshipFile;
+				pRelationshipFile = 0;
+				pXlsxRelationship->m_pRelationshipFiles->PushBack(__1664877003);
+				if (pRelationshipFile) delete pRelationshipFile;
+			}
+			{
+				XlsxRelationship_File* pWorkbookRels = new XlsxRelationship_File("xl/_rels/workbook.xml.rels", 0);
+				pWorkbookRels->AddRelationship("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles", "styles.xml");
+				pWorkbookRels->AddRelationship("rId2", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings", "sharedStrings.xml");
+				for (int i = 0; i < pWorkbook->m_pImpl->m_pWorksheetVector->GetSize(); i++)
+				{
+					InternalString* sId = new InternalString("rId");
+					sId->AppendInt(i + 3);
+					sTemp->Set("worksheets/sheet");
+					sTemp->AppendInt(i + 1);
+					sTemp->Append(".xml");
+					pWorkbookRels->AddRelationship(sId->GetExternalString(), "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet", sTemp->GetExternalString());
+					if (sId) delete sId;
+				}
+				NumberDuck::Secret::XlsxRelationship_File* __2558458504 = pWorkbookRels;
+				pWorkbookRels = 0;
+				pXlsxRelationship->m_pRelationshipFiles->PushBack(__2558458504);
+				if (pWorkbookRels) delete pWorkbookRels;
+			}
+			{
+				XmlWriter* pXmlWriter = new XmlWriter(false);
+				pXmlWriter->StartElement("workbook");
+				pXmlWriter->SetAttribute("xmlns", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+				pXmlWriter->SetAttribute("xmlns:r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+				pXmlWriter->StartElement("sheets");
+				for (int i = 0; i < pWorkbook->m_pImpl->m_pWorksheetVector->GetSize(); i++)
+				{
+					Worksheet* pWorksheet = pWorkbook->m_pImpl->m_pWorksheetVector->Get(i);
+					pXmlWriter->StartElement("sheet");
+					pXmlWriter->SetAttribute("name", pWorksheet->GetName());
+					sTemp->Set("");
+					sTemp->AppendInt(i + 1);
+					pXmlWriter->SetAttribute("sheetId", sTemp->GetExternalString());
+					sTemp->Set("rId");
+					sTemp->AppendInt(i + 3);
+					pXmlWriter->SetAttribute("r:id", sTemp->GetExternalString());
+					pXmlWriter->EndElement();
+				}
+				pXmlWriter->EndElement();
+				pXmlWriter->EndElement();
+				Blob* pBlob = new Blob(true);
+				pXmlWriter->GetOutput()->BlobWriteUtf8(pBlob->GetBlobView(), false);
+				NumberDuck::Blob* __903340507 = pBlob;
+				pBlob = 0;
+				pZipWriter->AddFileFromBlob("xl/workbook.xml", __903340507);
+				if (pXmlWriter) delete pXmlWriter;
+				if (pBlob) delete pBlob;
 			}
 			if (bSuccess)
 			{
-				Blob* pSharedStringsBlob = new Blob(true);
-				XmlFile* pSharedStringsXml = new XmlFile();
-				XmlNode* pSstNode = pSharedStringsXml->CreateElement("sst");
-				pSstNode->SetAttribute("xmlns", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
-				int nStringCount = pWorkbook->m_pImpl->m_pWorkbookGlobals->m_pSharedStringContainer->GetSize();
-				sTemp->Set("");
-				sTemp->AppendInt(nStringCount);
-				pSstNode->SetAttribute("count", sTemp->GetExternalString());
-				pSstNode->SetAttribute("uniqueCount", sTemp->GetExternalString());
-				for (int i = 0; i < nStringCount; i++)
-				{
-					XmlNode* pSiNode = pSharedStringsXml->CreateElement("si");
-					XmlNode* pTNode = pSharedStringsXml->CreateElement("t");
-					const char* szString = pWorkbook->m_pImpl->m_pWorkbookGlobals->GetSharedStringByIndex((unsigned int)(i));
-					pTNode->SetText(szString);
-					pSiNode->AppendChild(pTNode);
-					pSstNode->AppendChild(pSiNode);
-				}
-				pSharedStringsXml->AppendChild(pSstNode);
-				pSharedStringsXml->Save(pSharedStringsBlob->GetBlobView());
-				NumberDuck::Blob* __2909456164 = pSharedStringsBlob;
-				pSharedStringsBlob = 0;
-				bSuccess = bSuccess && pZipWriter->AddFileFromBlob("xl/sharedStrings.xml", __2909456164);
-				if (pSharedStringsBlob) delete pSharedStringsBlob;
-				if (pSharedStringsXml) delete pSharedStringsXml;
+				bSuccess = bSuccess && XlsxStyle::Save(pWorkbook, pZipWriter);
 			}
+			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorksheetVector->GetSize(); i++)
+			{
+				Worksheet* pWorksheet = pWorkbook->m_pImpl->m_pWorksheetVector->Get(i);
+				bSuccess = bSuccess && XlsxWorksheet::Write(pWorksheet, pWorkbook->m_pImpl->m_pWorkbookGlobals, pZipWriter, i, pXlsxRelationship);
+			}
+			if (bSuccess)
+			{
+				bSuccess = bSuccess && XlsxSharedString::Save(pWorkbook, pZipWriter);
+			}
+			pXlsxRelationship->WriteAllToZip(pZipWriter);
 			Blob* pZipBlob = new Blob(true);
 			bSuccess = bSuccess && pZipWriter->SaveBlobView(pZipBlob->GetBlobView());
 			if (bSuccess)
@@ -51103,21 +50870,7 @@ namespace NumberDuck
 			}
 			if (sTemp) delete sTemp;
 			if (pZipWriter) delete pZipWriter;
-			if (pContentTypesBlob) delete pContentTypesBlob;
-			if (pContentTypesXml) delete pContentTypesXml;
-			if (pRelsBlob) delete pRelsBlob;
-			if (pRelsXml) delete pRelsXml;
-			if (pWorkbookRelsBlob) delete pWorkbookRelsBlob;
-			if (pWorkbookRelsXml) delete pWorkbookRelsXml;
-			if (pWorkbookBlob) delete pWorkbookBlob;
-			if (pWorkbookXml) delete pWorkbookXml;
-			if (pStylesBlob) delete pStylesBlob;
-			if (pStylesXml) delete pStylesXml;
-			if (pFormatVector) delete pFormatVector;
-			if (pFormatIndexVector) delete pFormatIndexVector;
-			if (pFontVector) delete pFontVector;
-			if (pFillVector) delete pFillVector;
-			if (pBorderVector) delete pBorderVector;
+			if (pXlsxRelationship) delete pXlsxRelationship;
 			if (pZipBlob) delete pZipBlob;
 			return bSuccess;
 		}
@@ -51141,6 +50894,13 @@ namespace NumberDuck
 						if (pXmlFile) delete pXmlFile;
 					}
 					if (pXmlBlob) delete pXmlBlob;
+				}
+				XlsxRelationship* pXlsxRelationship = 0;
+				if (bContinue)
+				{
+					pXlsxRelationship = new XlsxRelationship();
+					if (!pXlsxRelationship->Parse(pZip))
+						bContinue = false;
 				}
 				pWorkbook->m_pImpl->m_pWorkbookGlobals = new XlsxWorkbookGlobals();
 				if (bContinue)
@@ -51190,65 +50950,11 @@ namespace NumberDuck
 				}
 				if (bContinue)
 				{
-					XmlFile* pXmlFile = new XmlFile();
-					Blob* pXmlBlob = new Blob(true);
-					BlobView* pXmlBlobView = pXmlBlob->GetBlobView();
-					XmlNode* pSstNode = 0;
-					XmlNode* pSiNode = 0;
-					if (pZip->ExtractFileByName("xl/sharedStrings.xml", pXmlBlobView))
-					{
-						pXmlBlobView->SetOffset(0);
-						if (!pXmlFile->Load(pXmlBlobView))
-							bContinue = false;
-						if (bContinue)
-						{
-							pSstNode = pXmlFile->GetFirstChildElement("sst");
-							if (pSstNode == 0)
-								bContinue = false;
-						}
-						if (bContinue)
-						{
-							pSiNode = pSstNode->GetFirstChildElement("si");
-						}
-						while (bContinue && pSiNode != 0)
-						{
-							XmlNode* pTNode = 0;
-							pTNode = pSiNode->GetFirstChildElement("t");
-							if (pTNode == 0)
-							{
-								bContinue = false;
-								break;
-							}
-							const char* szTemp = pTNode->GetText();
-							pWorkbook->m_pImpl->m_pWorkbookGlobals->PushSharedString(szTemp);
-							pSiNode = pSiNode->GetNextSiblingElement("si");
-						}
-					}
-					if (pXmlFile) delete pXmlFile;
-					if (pXmlBlob) delete pXmlBlob;
+					bContinue = bContinue && XlsxSharedString::Load(pWorkbook, pZip);
 				}
 				if (bContinue)
 				{
-					XmlFile* pXmlFile = new XmlFile();
-					Blob* pXmlBlob = new Blob(true);
-					BlobView* pXmlBlobView = pXmlBlob->GetBlobView();
-					XmlNode* pStyleSheetNode = 0;
-					bContinue = bContinue && pZip->ExtractFileByName("xl/styles.xml", pXmlBlobView);
-					if (bContinue)
-					{
-						pXmlBlobView->SetOffset(0);
-						if (!pXmlFile->Load(pXmlBlobView))
-							bContinue = false;
-					}
-					if (bContinue)
-					{
-						pStyleSheetNode = pXmlFile->GetFirstChildElement("styleSheet");
-						if (pStyleSheetNode == 0)
-							bContinue = false;
-					}
-					bContinue = bContinue && XlsxWorkbookGlobals::ParseStyles(pWorkbook->m_pImpl->m_pWorkbookGlobals, pStyleSheetNode);
-					if (pXmlFile) delete pXmlFile;
-					if (pXmlBlob) delete pXmlBlob;
+					bContinue = bContinue && XlsxStyle::Load(pWorkbook, pZip);
 				}
 				if (bContinue)
 				{
@@ -51286,7 +50992,7 @@ namespace NumberDuck
 							pWorksheetNode = pXmlFile->GetFirstChildElement("worksheet");
 							XlsxWorksheet* pWorksheet = new XlsxWorksheet(pWorkbook);
 							pWorksheet->SetName(sNameVector->Get(pWorkbook->m_pImpl->m_pWorksheetVector->GetSize())->GetExternalString());
-							if (!pWorksheet->Parse((XlsxWorkbookGlobals*)(pWorkbook->m_pImpl->m_pWorkbookGlobals), pWorksheetNode))
+							if (!pWorksheet->Parse((XlsxWorkbookGlobals*)(pWorkbook->m_pImpl->m_pWorkbookGlobals), pWorksheetNode, sFileName->GetExternalString(), pXlsxRelationship, pZip))
 							{
 								bContinue = false;
 								if (pWorksheet) delete pWorksheet;
@@ -51294,9 +51000,9 @@ namespace NumberDuck
 								if (pXmlBlob) delete pXmlBlob;
 								break;
 							}
-							NumberDuck::Secret::XlsxWorksheet* __3776481719 = pWorksheet;
+							NumberDuck::Secret::XlsxWorksheet* __480476826 = pWorksheet;
 							pWorksheet = 0;
-							pWorkbook->m_pImpl->m_pWorksheetVector->PushBack(__3776481719);
+							pWorkbook->m_pImpl->m_pWorksheetVector->PushBack(__480476826);
 							if (pWorksheet) delete pWorksheet;
 						}
 						nWorksheetIndex++;
@@ -51306,6 +51012,7 @@ namespace NumberDuck
 				}
 				sNameVector->Clear();
 				if (sNameVector) delete sNameVector;
+				if (pXlsxRelationship) delete pXlsxRelationship;
 			}
 			if (sFileName) delete sFileName;
 			if (pZip) delete pZip;
@@ -51333,6 +51040,1471 @@ namespace NumberDuck
 			unsigned int nAlpha = (nBgra >> 24) & 0xFF;
 			if (sTemp) delete sTemp;
 			return nRed | (nGreen << 8) | (nBlue << 16) | (nAlpha << 24);
+		}
+
+		void XlsxUtils::ConvertToRelsPath(const char* sInputPath, InternalString* sOut)
+		{
+			InternalString* sPath = new InternalString(sInputPath);
+			int lastSlash = sPath->LastIndexOf("/");
+			if (lastSlash >= 0)
+			{
+				InternalString* sDir = sPath->Clone();
+				sDir->Crop(0, lastSlash + 1);
+				InternalString* sFile = sPath->Clone();
+				sFile->CropFront(lastSlash + 1);
+				sOut->Set(sDir->GetExternalString());
+				sOut->AppendString("_rels/");
+				sOut->AppendString(sFile->GetExternalString());
+				sOut->AppendString(".rels");
+				if (sDir) delete sDir;
+				if (sFile) delete sFile;
+			}
+			else
+			{
+				sOut->Set("_rels/");
+				sOut->AppendString(sInputPath);
+				sOut->AppendString(".rels");
+			}
+			if (sPath) delete sPath;
+		}
+
+		bool XlsxStyle::Load(Workbook* pWorkbook, Zip* pZip)
+		{
+			XmlFile* pXmlFile = new XmlFile();
+			Blob* pXmlBlob = new Blob(true);
+			BlobView* pXmlBlobView = pXmlBlob->GetBlobView();
+			if (!pZip->ExtractFileByName("xl/styles.xml", pXmlBlobView))
+			{
+				if (pXmlFile) delete pXmlFile;
+				if (pXmlBlob) delete pXmlBlob;
+				return false;
+			}
+			pXmlBlobView->SetOffset(0);
+			if (!pXmlFile->Load(pXmlBlobView))
+			{
+				if (pXmlFile) delete pXmlFile;
+				if (pXmlBlob) delete pXmlBlob;
+				return false;
+			}
+			XmlNode* pStyleSheetNode = pXmlFile->GetFirstChildElement("styleSheet");
+			if (pStyleSheetNode == 0)
+			{
+				if (pXmlFile) delete pXmlFile;
+				if (pXmlBlob) delete pXmlBlob;
+				return false;
+			}
+			bool bReturnable = XlsxWorkbookGlobals::ParseStyles(pWorkbook->m_pImpl->m_pWorkbookGlobals, pStyleSheetNode);
+			if (pXmlFile) delete pXmlFile;
+			if (pXmlBlob) delete pXmlBlob;
+			return bReturnable;
+		}
+
+		bool XlsxStyle::Save(Workbook* pWorkbook, ZipWriter* pZipWriter)
+		{
+			XmlWriter* pXmlWriter = new XmlWriter(false);
+			InternalString* sTemp = new InternalString("");
+			pXmlWriter->StartElement("styleSheet");
+			pXmlWriter->SetAttribute("xmlns", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+			Vector<const char*>* pFormatVector = new Vector<const char*>();
+			Vector<unsigned short>* pFormatIndexVector = new Vector<unsigned short>();
+			pFormatVector->PushBack("General");
+			pFormatIndexVector->PushBack(0);
+			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
+			{
+				Style* pStyle = pWorkbook->m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
+				const char* szFormat = pStyle->GetFormat();
+				bool bFound = false;
+				for (int j = 0; j < pFormatVector->GetSize(); j++)
+				{
+					if (ExternalString::Equal(pFormatVector->Get(j), szFormat))
+					{
+						bFound = true;
+						break;
+					}
+				}
+				if (!bFound)
+				{
+					pFormatVector->PushBack(szFormat);
+					pFormatIndexVector->PushBack((unsigned short)(pFormatVector->GetSize() - 1));
+				}
+			}
+			{
+				pXmlWriter->StartElement("numFmts");
+				sTemp->Set("");
+				sTemp->AppendInt(pFormatVector->GetSize());
+				pXmlWriter->SetAttribute("count", sTemp->GetExternalString());
+				for (int i = 0; i < pFormatVector->GetSize(); i++)
+				{
+					pXmlWriter->StartElement("numFmt");
+					sTemp->Set("");
+					sTemp->AppendInt(i);
+					pXmlWriter->SetAttribute("numFmtId", sTemp->GetExternalString());
+					pXmlWriter->SetAttribute("formatCode", pFormatVector->Get(i));
+					pXmlWriter->EndElement();
+				}
+				pXmlWriter->EndElement();
+			}
+			OwnedVector<Font*>* pFontVector = new OwnedVector<Font*>();
+			{
+				Font* pDefaultFont = new Font();
+				pDefaultFont->SetName(pWorkbook->m_pImpl->m_pWorkbookGlobals->m_pHeaderFont->GetName());
+				pDefaultFont->m_pImpl->m_fSizePts = pWorkbook->m_pImpl->m_pWorkbookGlobals->m_pHeaderFont->m_pImpl->m_fSizePts;
+				NumberDuck::Font* __652183330 = pDefaultFont;
+				pDefaultFont = 0;
+				pFontVector->PushBack(__652183330);
+				if (pDefaultFont) delete pDefaultFont;
+			}
+			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
+			{
+				Style* pStyle = pWorkbook->m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
+				Font* pStyleFont = pStyle->GetFont();
+				bool bFound = false;
+				for (int j = 0; j < pFontVector->GetSize(); j++)
+				{
+					Font* pTestFont = pFontVector->Get(j);
+					if (ExternalString::Equal(pTestFont->GetName(), pStyleFont->GetName()) && pTestFont->GetSize() == pStyleFont->GetSize() && pTestFont->GetBold() == pStyleFont->GetBold() && pTestFont->GetItalic() == pStyleFont->GetItalic() && pTestFont->GetUnderline() == pStyleFont->GetUnderline())
+					{
+						bFound = true;
+						break;
+					}
+				}
+				if (!bFound)
+				{
+					Font* pNewFont = new Font();
+					pNewFont->SetName(pStyleFont->GetName());
+					pNewFont->m_pImpl->m_fSizePts = pStyleFont->m_pImpl->m_fSizePts;
+					pNewFont->SetBold(pStyleFont->GetBold());
+					pNewFont->SetItalic(pStyleFont->GetItalic());
+					pNewFont->SetUnderline(pStyleFont->GetUnderline());
+					Color* pFontColor = pStyleFont->GetColor(false);
+					if (pFontColor != 0)
+					{
+						pNewFont->GetColor(true)->SetFromColor(pFontColor);
+					}
+					NumberDuck::Font* __2623123335 = pNewFont;
+					pNewFont = 0;
+					pFontVector->PushBack(__2623123335);
+					if (pNewFont) delete pNewFont;
+				}
+			}
+			{
+				pXmlWriter->StartElement("fonts");
+				sTemp->Set("");
+				sTemp->AppendInt(pFontVector->GetSize());
+				pXmlWriter->SetAttribute("count", sTemp->GetExternalString());
+				for (int i = 0; i < pFontVector->GetSize(); i++)
+				{
+					Font* pFont = pFontVector->Get(i);
+					pXmlWriter->StartElement("font");
+					if (pFont->GetBold())
+					{
+						pXmlWriter->StartElement("b");
+						pXmlWriter->EndElement();
+					}
+					if (pFont->GetUnderline() != Font::Underline::UNDERLINE_NONE)
+					{
+						pXmlWriter->StartElement("u");
+						pXmlWriter->EndElement();
+					}
+					pXmlWriter->StartElement("sz");
+					sTemp->Set("");
+					sTemp->AppendDouble((double)(pFont->m_pImpl->m_fSizePts));
+					pXmlWriter->SetAttribute("val", sTemp->GetExternalString());
+					pXmlWriter->EndElement();
+					pXmlWriter->StartElement("name");
+					pXmlWriter->SetAttribute("val", pFont->GetName());
+					pXmlWriter->EndElement();
+					if (pFont->GetItalic())
+					{
+						pXmlWriter->StartElement("i");
+						pXmlWriter->EndElement();
+					}
+					Color* pFontColor = pFont->GetColor(false);
+					if (pFontColor != 0)
+					{
+						pXmlWriter->StartElement("color");
+						sTemp->Set("");
+						sTemp->AppendHex(pFontColor->GetRgba());
+						pXmlWriter->SetAttribute("rgb", sTemp->GetExternalString());
+						pXmlWriter->EndElement();
+					}
+					pXmlWriter->EndElement();
+				}
+				pXmlWriter->EndElement();
+			}
+			OwnedVector<Style*>* pFillVector = new OwnedVector<Style*>();
+			{
+				Style* pDefaultFill = new Style();
+				NumberDuck::Style* __2008768425 = pDefaultFill;
+				pDefaultFill = 0;
+				pFillVector->PushBack(__2008768425);
+				Style* pGrayFill = new Style();
+				pGrayFill->SetFillPattern(Style::FillPattern::FILL_PATTERN_125);
+				NumberDuck::Style* __1258384272 = pGrayFill;
+				pGrayFill = 0;
+				pFillVector->PushBack(__1258384272);
+				if (pDefaultFill) delete pDefaultFill;
+				if (pGrayFill) delete pGrayFill;
+			}
+			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
+			{
+				Style* pStyle = pWorkbook->m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
+				Color* pBackgroundColor = pStyle->GetBackgroundColor(false);
+				Style::FillPattern eFillPattern = pStyle->GetFillPattern();
+				Color* pFillPatternColor = pStyle->GetFillPatternColor(false);
+				bool bFound = false;
+				for (int j = 0; j < pFillVector->GetSize(); j++)
+				{
+					Style* pTestStyle = pFillVector->Get(j);
+					Color* pTestBackgroundColor = pTestStyle->GetBackgroundColor(false);
+					Color* pTestFillPatternColor = pTestStyle->GetFillPatternColor(false);
+					if (eFillPattern == pTestStyle->GetFillPattern() && ((pBackgroundColor == 0 && pTestBackgroundColor == 0) || (pBackgroundColor != 0 && pTestBackgroundColor != 0 && pBackgroundColor->Equals(pTestBackgroundColor))) && ((pFillPatternColor == 0 && pTestFillPatternColor == 0) || (pFillPatternColor != 0 && pTestFillPatternColor != 0 && pFillPatternColor->Equals(pTestFillPatternColor))))
+					{
+						bFound = true;
+						break;
+					}
+				}
+				if (!bFound)
+				{
+					Style* pNewFill = new Style();
+					pNewFill->SetFillPattern(eFillPattern);
+					if (pBackgroundColor != 0)
+						pNewFill->GetBackgroundColor(true)->SetFromColor(pBackgroundColor);
+					if (pFillPatternColor != 0)
+						pNewFill->GetFillPatternColor(true)->SetFromColor(pFillPatternColor);
+					NumberDuck::Style* __993803549 = pNewFill;
+					pNewFill = 0;
+					pFillVector->PushBack(__993803549);
+					if (pNewFill) delete pNewFill;
+				}
+			}
+			{
+				pXmlWriter->StartElement("fills");
+				sTemp->Set("");
+				sTemp->AppendInt(pFillVector->GetSize());
+				pXmlWriter->SetAttribute("count", sTemp->GetExternalString());
+				for (int i = 0; i < pFillVector->GetSize(); i++)
+				{
+					Style* pFill = pFillVector->Get(i);
+					pXmlWriter->StartElement("fill");
+					pXmlWriter->StartElement("patternFill");
+					switch (pFill->GetFillPattern())
+					{
+						case Style::FillPattern::FILL_PATTERN_NONE:
+						{
+							pXmlWriter->SetAttribute("patternType", "solid");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_50:
+						{
+							pXmlWriter->SetAttribute("patternType", "mediumGray");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_75:
+						{
+							pXmlWriter->SetAttribute("patternType", "darkGray");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_25:
+						{
+							pXmlWriter->SetAttribute("patternType", "lightGray");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_HORIZONTAL_STRIPE:
+						{
+							pXmlWriter->SetAttribute("patternType", "darkHorizontal");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_VARTICAL_STRIPE:
+						{
+							pXmlWriter->SetAttribute("patternType", "darkVertical");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_REVERSE_DIAGONAL_STRIPE:
+						{
+							pXmlWriter->SetAttribute("patternType", "darkDown");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_DIAGONAL_STRIPE:
+						{
+							pXmlWriter->SetAttribute("patternType", "darkUp");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_DIAGONAL_CROSSHATCH:
+						{
+							pXmlWriter->SetAttribute("patternType", "darkGrid");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THICK_DIAGONAL_CROSSHATCH:
+						{
+							pXmlWriter->SetAttribute("patternType", "darkTrellis");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THIN_HORIZONTAL_STRIPE:
+						{
+							pXmlWriter->SetAttribute("patternType", "lightHorizontal");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THIN_VERTICAL_STRIPE:
+						{
+							pXmlWriter->SetAttribute("patternType", "lightVertical");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THIN_REVERSE_VERTICAL_STRIPE:
+						{
+							pXmlWriter->SetAttribute("patternType", "lightDown");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THIN_DIAGONAL_STRIPE:
+						{
+							pXmlWriter->SetAttribute("patternType", "lightUp");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THIN_HORIZONTAL_CROSSHATCH:
+						{
+							pXmlWriter->SetAttribute("patternType", "lightGrid");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_THIN_DIAGONAL_CROSSHATCH:
+						{
+							pXmlWriter->SetAttribute("patternType", "lightTrellis");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_125:
+						{
+							pXmlWriter->SetAttribute("patternType", "gray125");
+							break;
+						}
+
+						case Style::FillPattern::FILL_PATTERN_625:
+						{
+							pXmlWriter->SetAttribute("patternType", "gray0625");
+							break;
+						}
+
+						default:
+						{
+							pXmlWriter->SetAttribute("patternType", "none");
+							break;
+						}
+
+					}
+					Color* pBackgroundColor = pFill->GetBackgroundColor(false);
+					if (pBackgroundColor != 0)
+					{
+						pXmlWriter->StartElement("fgColor");
+						sTemp->Set("");
+						XlsxUtils::WriteBgra(pBackgroundColor->GetRgba(), sTemp);
+						pXmlWriter->SetAttribute("rgb", sTemp->GetExternalString());
+						pXmlWriter->EndElement();
+					}
+					Color* pFillPatternColor = pFill->GetFillPatternColor(false);
+					if (pFillPatternColor != 0)
+					{
+						pXmlWriter->StartElement("bgColor");
+						sTemp->Set("");
+						XlsxUtils::WriteBgra(pFillPatternColor->GetRgba(), sTemp);
+						pXmlWriter->SetAttribute("rgb", sTemp->GetExternalString());
+						pXmlWriter->EndElement();
+					}
+					pXmlWriter->EndElement();
+					pXmlWriter->EndElement();
+				}
+				pXmlWriter->EndElement();
+			}
+			OwnedVector<Style*>* pBorderVector = new OwnedVector<Style*>();
+			{
+				Style* pDefaultBorder = new Style();
+				NumberDuck::Style* __2660422972 = pDefaultBorder;
+				pDefaultBorder = 0;
+				pBorderVector->PushBack(__2660422972);
+				if (pDefaultBorder) delete pDefaultBorder;
+			}
+			for (int i = 0; i < pWorkbook->m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
+			{
+				Style* pStyle = pWorkbook->m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
+				bool bFound = false;
+				for (int j = 0; j < pBorderVector->GetSize(); j++)
+				{
+					Style* pTestStyle = pBorderVector->Get(j);
+					if (pStyle->GetTopBorderLine()->GetType() == pTestStyle->GetTopBorderLine()->GetType() && pStyle->GetRightBorderLine()->GetType() == pTestStyle->GetRightBorderLine()->GetType() && pStyle->GetBottomBorderLine()->GetType() == pTestStyle->GetBottomBorderLine()->GetType() && pStyle->GetLeftBorderLine()->GetType() == pTestStyle->GetLeftBorderLine()->GetType())
+					{
+						bFound = true;
+						break;
+					}
+				}
+				if (!bFound)
+				{
+					Style* pNewBorder = new Style();
+					pNewBorder->GetTopBorderLine()->SetType(pStyle->GetTopBorderLine()->GetType());
+					pNewBorder->GetRightBorderLine()->SetType(pStyle->GetRightBorderLine()->GetType());
+					pNewBorder->GetBottomBorderLine()->SetType(pStyle->GetBottomBorderLine()->GetType());
+					pNewBorder->GetLeftBorderLine()->SetType(pStyle->GetLeftBorderLine()->GetType());
+					Color* pTopColor = pStyle->GetTopBorderLine()->GetColor();
+					if (pTopColor != 0)
+						pNewBorder->GetTopBorderLine()->GetColor()->SetFromColor(pTopColor);
+					Color* pRightColor = pStyle->GetRightBorderLine()->GetColor();
+					if (pRightColor != 0)
+						pNewBorder->GetRightBorderLine()->GetColor()->SetFromColor(pRightColor);
+					Color* pBottomColor = pStyle->GetBottomBorderLine()->GetColor();
+					if (pBottomColor != 0)
+						pNewBorder->GetBottomBorderLine()->GetColor()->SetFromColor(pBottomColor);
+					Color* pLeftColor = pStyle->GetLeftBorderLine()->GetColor();
+					if (pLeftColor != 0)
+						pNewBorder->GetLeftBorderLine()->GetColor()->SetFromColor(pLeftColor);
+					NumberDuck::Style* __546827342 = pNewBorder;
+					pNewBorder = 0;
+					pBorderVector->PushBack(__546827342);
+					if (pNewBorder) delete pNewBorder;
+				}
+			}
+			{
+				pXmlWriter->StartElement("borders");
+				sTemp->Set("");
+				sTemp->AppendInt(pBorderVector->GetSize());
+				pXmlWriter->SetAttribute("count", sTemp->GetExternalString());
+				for (int i = 0; i < pBorderVector->GetSize(); i++)
+				{
+					Style* pBorder = pBorderVector->Get(i);
+					pXmlWriter->StartElement("border");
+					pXmlWriter->StartElement("left");
+					if (pBorder->GetLeftBorderLine()->GetType() != Line::Type::TYPE_NONE)
+					{
+						switch (pBorder->GetLeftBorderLine()->GetType())
+						{
+							case Line::Type::TYPE_THIN:
+							{
+								pXmlWriter->SetAttribute("style", "thin");
+								break;
+							}
+
+							case Line::Type::TYPE_MEDIUM:
+							{
+								pXmlWriter->SetAttribute("style", "medium");
+								break;
+							}
+
+							case Line::Type::TYPE_THICK:
+							{
+								pXmlWriter->SetAttribute("style", "thick");
+								break;
+							}
+
+							case Line::Type::TYPE_DASHED:
+							{
+								pXmlWriter->SetAttribute("style", "dashed");
+								break;
+							}
+
+							case Line::Type::TYPE_DOTTED:
+							{
+								pXmlWriter->SetAttribute("style", "dotted");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT:
+							{
+								pXmlWriter->SetAttribute("style", "dashDot");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT_DOT:
+							{
+								pXmlWriter->SetAttribute("style", "dashDotDot");
+								break;
+							}
+
+							default:
+							{
+								pXmlWriter->SetAttribute("style", "thin");
+								break;
+							}
+
+						}
+						Color* pLeftColor = pBorder->GetLeftBorderLine()->GetColor();
+						if (pLeftColor != 0)
+						{
+							pXmlWriter->StartElement("color");
+							sTemp->Set("");
+							sTemp->AppendHex(pLeftColor->GetRgba());
+							pXmlWriter->SetAttribute("rgb", sTemp->GetExternalString());
+							pXmlWriter->EndElement();
+						}
+					}
+					pXmlWriter->EndElement();
+					pXmlWriter->StartElement("right");
+					if (pBorder->GetRightBorderLine()->GetType() != Line::Type::TYPE_NONE)
+					{
+						switch (pBorder->GetRightBorderLine()->GetType())
+						{
+							case Line::Type::TYPE_THIN:
+							{
+								pXmlWriter->SetAttribute("style", "thin");
+								break;
+							}
+
+							case Line::Type::TYPE_MEDIUM:
+							{
+								pXmlWriter->SetAttribute("style", "medium");
+								break;
+							}
+
+							case Line::Type::TYPE_THICK:
+							{
+								pXmlWriter->SetAttribute("style", "thick");
+								break;
+							}
+
+							case Line::Type::TYPE_DASHED:
+							{
+								pXmlWriter->SetAttribute("style", "dashed");
+								break;
+							}
+
+							case Line::Type::TYPE_DOTTED:
+							{
+								pXmlWriter->SetAttribute("style", "dotted");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT:
+							{
+								pXmlWriter->SetAttribute("style", "dashDot");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT_DOT:
+							{
+								pXmlWriter->SetAttribute("style", "dashDotDot");
+								break;
+							}
+
+							default:
+							{
+								pXmlWriter->SetAttribute("style", "thin");
+								break;
+							}
+
+						}
+						Color* pRightColor = pBorder->GetRightBorderLine()->GetColor();
+						if (pRightColor != 0)
+						{
+							pXmlWriter->StartElement("color");
+							sTemp->Set("");
+							sTemp->AppendHex(pRightColor->GetRgba());
+							pXmlWriter->SetAttribute("rgb", sTemp->GetExternalString());
+							pXmlWriter->EndElement();
+						}
+					}
+					pXmlWriter->EndElement();
+					pXmlWriter->StartElement("top");
+					if (pBorder->GetTopBorderLine()->GetType() != Line::Type::TYPE_NONE)
+					{
+						switch (pBorder->GetTopBorderLine()->GetType())
+						{
+							case Line::Type::TYPE_THIN:
+							{
+								pXmlWriter->SetAttribute("style", "thin");
+								break;
+							}
+
+							case Line::Type::TYPE_MEDIUM:
+							{
+								pXmlWriter->SetAttribute("style", "medium");
+								break;
+							}
+
+							case Line::Type::TYPE_THICK:
+							{
+								pXmlWriter->SetAttribute("style", "thick");
+								break;
+							}
+
+							case Line::Type::TYPE_DASHED:
+							{
+								pXmlWriter->SetAttribute("style", "dashed");
+								break;
+							}
+
+							case Line::Type::TYPE_DOTTED:
+							{
+								pXmlWriter->SetAttribute("style", "dotted");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT:
+							{
+								pXmlWriter->SetAttribute("style", "dashDot");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT_DOT:
+							{
+								pXmlWriter->SetAttribute("style", "dashDotDot");
+								break;
+							}
+
+							default:
+							{
+								pXmlWriter->SetAttribute("style", "thin");
+								break;
+							}
+
+						}
+						Color* pTopColor = pBorder->GetTopBorderLine()->GetColor();
+						if (pTopColor != 0)
+						{
+							pXmlWriter->StartElement("color");
+							sTemp->Set("");
+							sTemp->AppendHex(pTopColor->GetRgba());
+							pXmlWriter->SetAttribute("rgb", sTemp->GetExternalString());
+							pXmlWriter->EndElement();
+						}
+					}
+					pXmlWriter->EndElement();
+					pXmlWriter->StartElement("bottom");
+					if (pBorder->GetBottomBorderLine()->GetType() != Line::Type::TYPE_NONE)
+					{
+						switch (pBorder->GetBottomBorderLine()->GetType())
+						{
+							case Line::Type::TYPE_THIN:
+							{
+								pXmlWriter->SetAttribute("style", "thin");
+								break;
+							}
+
+							case Line::Type::TYPE_MEDIUM:
+							{
+								pXmlWriter->SetAttribute("style", "medium");
+								break;
+							}
+
+							case Line::Type::TYPE_THICK:
+							{
+								pXmlWriter->SetAttribute("style", "thick");
+								break;
+							}
+
+							case Line::Type::TYPE_DASHED:
+							{
+								pXmlWriter->SetAttribute("style", "dashed");
+								break;
+							}
+
+							case Line::Type::TYPE_DOTTED:
+							{
+								pXmlWriter->SetAttribute("style", "dotted");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT:
+							{
+								pXmlWriter->SetAttribute("style", "dashDot");
+								break;
+							}
+
+							case Line::Type::TYPE_DASH_DOT_DOT:
+							{
+								pXmlWriter->SetAttribute("style", "dashDotDot");
+								break;
+							}
+
+							default:
+							{
+								pXmlWriter->SetAttribute("style", "thin");
+								break;
+							}
+
+						}
+						Color* pBottomColor = pBorder->GetBottomBorderLine()->GetColor();
+						if (pBottomColor != 0)
+						{
+							pXmlWriter->StartElement("color");
+							sTemp->Set("");
+							sTemp->AppendHex(pBottomColor->GetRgba());
+							pXmlWriter->SetAttribute("rgb", sTemp->GetExternalString());
+							pXmlWriter->EndElement();
+						}
+					}
+					pXmlWriter->EndElement();
+					pXmlWriter->StartElement("diagonal");
+					pXmlWriter->EndElement();
+					pXmlWriter->EndElement();
+				}
+				pXmlWriter->EndElement();
+			}
+			{
+				pXmlWriter->StartElement("cellStyleXfs");
+				pXmlWriter->SetAttribute("count", "1");
+				pXmlWriter->StartElement("xf");
+				pXmlWriter->SetAttribute("numFmtId", "0");
+				pXmlWriter->SetAttribute("fontId", "0");
+				pXmlWriter->SetAttribute("fillId", "0");
+				pXmlWriter->SetAttribute("borderId", "0");
+				pXmlWriter->EndElement();
+				pXmlWriter->EndElement();
+			}
+			{
+				pXmlWriter->StartElement("cellXfs");
+				sTemp->Set("");
+				sTemp->AppendInt(pWorkbook->m_pImpl->m_pWorkbookGlobals->GetNumStyle());
+				pXmlWriter->SetAttribute("count", sTemp->GetExternalString());
+				for (int i = 0; i < pWorkbook->m_pImpl->m_pWorkbookGlobals->GetNumStyle(); i++)
+				{
+					Style* pStyle = pWorkbook->m_pImpl->m_pWorkbookGlobals->GetStyleByIndex((unsigned short)(i));
+					pXmlWriter->StartElement("xf");
+					const char* szFormat = pStyle->GetFormat();
+					unsigned short nFormatIndex = 0;
+					for (int j = 0; j < pFormatVector->GetSize(); j++)
+					{
+						if (ExternalString::Equal(pFormatVector->Get(j), szFormat))
+						{
+							nFormatIndex = (unsigned short)(j);
+							break;
+						}
+					}
+					Font* pStyleFont = pStyle->GetFont();
+					unsigned short nFontIndex = 0;
+					for (int j = 0; j < pFontVector->GetSize(); j++)
+					{
+						Font* pTestFont = pFontVector->Get(j);
+						if (ExternalString::Equal(pTestFont->GetName(), pStyleFont->GetName()) && pTestFont->GetSize() == pStyleFont->GetSize() && pTestFont->GetBold() == pStyleFont->GetBold() && pTestFont->GetItalic() == pStyleFont->GetItalic() && pTestFont->GetUnderline() == pStyleFont->GetUnderline())
+						{
+							nFontIndex = (unsigned short)(j);
+							break;
+						}
+					}
+					Color* pBackgroundColor = pStyle->GetBackgroundColor(false);
+					Style::FillPattern eFillPattern = pStyle->GetFillPattern();
+					Color* pFillPatternColor = pStyle->GetFillPatternColor(false);
+					unsigned short nFillIndex = 0;
+					for (int j = 0; j < pFillVector->GetSize(); j++)
+					{
+						Style* pTestStyle = pFillVector->Get(j);
+						Color* pTestBackgroundColor = pTestStyle->GetBackgroundColor(false);
+						Color* pTestFillPatternColor = pTestStyle->GetFillPatternColor(false);
+						if (eFillPattern == pTestStyle->GetFillPattern() && ((pBackgroundColor == 0 && pTestBackgroundColor == 0) || (pBackgroundColor != 0 && pTestBackgroundColor != 0 && pBackgroundColor->Equals(pTestBackgroundColor))) && ((pFillPatternColor == 0 && pTestFillPatternColor == 0) || (pFillPatternColor != 0 && pTestFillPatternColor != 0 && pFillPatternColor->Equals(pTestFillPatternColor))))
+						{
+							nFillIndex = (unsigned short)(j);
+							break;
+						}
+					}
+					unsigned short nBorderIndex = 0;
+					for (int j = 0; j < pBorderVector->GetSize(); j++)
+					{
+						Style* pTestStyle = pBorderVector->Get(j);
+						if (pStyle->GetTopBorderLine()->GetType() == pTestStyle->GetTopBorderLine()->GetType() && pStyle->GetRightBorderLine()->GetType() == pTestStyle->GetRightBorderLine()->GetType() && pStyle->GetBottomBorderLine()->GetType() == pTestStyle->GetBottomBorderLine()->GetType() && pStyle->GetLeftBorderLine()->GetType() == pTestStyle->GetLeftBorderLine()->GetType())
+						{
+							nBorderIndex = (unsigned short)(j);
+							break;
+						}
+					}
+					sTemp->Set("");
+					sTemp->AppendUint32(nFormatIndex);
+					pXmlWriter->SetAttribute("numFmtId", sTemp->GetExternalString());
+					sTemp->Set("");
+					sTemp->AppendUint32(nFontIndex);
+					pXmlWriter->SetAttribute("fontId", sTemp->GetExternalString());
+					{
+						pXmlWriter->SetAttribute("applyFont", "1");
+					}
+					sTemp->Set("");
+					sTemp->AppendUint32(nFillIndex);
+					pXmlWriter->SetAttribute("fillId", sTemp->GetExternalString());
+					{
+						pXmlWriter->SetAttribute("applyFill", "1");
+					}
+					sTemp->Set("");
+					sTemp->AppendUint32(nBorderIndex);
+					pXmlWriter->SetAttribute("borderId", sTemp->GetExternalString());
+					{
+						pXmlWriter->SetAttribute("applyBorder", "1");
+					}
+					pXmlWriter->SetAttribute("xfId", "0");
+					Style::HorizontalAlign eHorizontalAlign = pStyle->GetHorizontalAlign();
+					Style::VerticalAlign eVerticalAlign = pStyle->GetVerticalAlign();
+					if (eHorizontalAlign != Style::HorizontalAlign::HORIZONTAL_ALIGN_GENERAL || eVerticalAlign != Style::VerticalAlign::VERTICAL_ALIGN_BOTTOM || pStyle->GetWrapText())
+					{
+						pXmlWriter->SetAttribute("applyAlignment", "1");
+						pXmlWriter->StartElement("alignment");
+						if (eHorizontalAlign != Style::HorizontalAlign::HORIZONTAL_ALIGN_GENERAL)
+						{
+							switch (eHorizontalAlign)
+							{
+								case Style::HorizontalAlign::HORIZONTAL_ALIGN_LEFT:
+								{
+									pXmlWriter->SetAttribute("horizontal", "left");
+									break;
+								}
+
+								case Style::HorizontalAlign::HORIZONTAL_ALIGN_CENTER:
+								{
+									pXmlWriter->SetAttribute("horizontal", "center");
+									break;
+								}
+
+								case Style::HorizontalAlign::HORIZONTAL_ALIGN_RIGHT:
+								{
+									pXmlWriter->SetAttribute("horizontal", "right");
+									break;
+								}
+
+								case Style::HorizontalAlign::HORIZONTAL_ALIGN_FILL:
+								{
+									pXmlWriter->SetAttribute("horizontal", "fill");
+									break;
+								}
+
+								case Style::HorizontalAlign::HORIZONTAL_ALIGN_JUSTIFY:
+								{
+									pXmlWriter->SetAttribute("horizontal", "justify");
+									break;
+								}
+
+								case Style::HorizontalAlign::HORIZONTAL_ALIGN_CENTER_ACROSS_SELECTION:
+								{
+									pXmlWriter->SetAttribute("horizontal", "centerContinuous");
+									break;
+								}
+
+								case Style::HorizontalAlign::HORIZONTAL_ALIGN_DISTRIBUTED:
+								{
+									pXmlWriter->SetAttribute("horizontal", "distributed");
+									break;
+								}
+
+								default:
+								{
+									break;
+								}
+
+							}
+						}
+						if (eVerticalAlign != Style::VerticalAlign::VERTICAL_ALIGN_BOTTOM)
+						{
+							switch (eVerticalAlign)
+							{
+								case Style::VerticalAlign::VERTICAL_ALIGN_TOP:
+								{
+									pXmlWriter->SetAttribute("vertical", "top");
+									break;
+								}
+
+								case Style::VerticalAlign::VERTICAL_ALIGN_CENTER:
+								{
+									pXmlWriter->SetAttribute("vertical", "center");
+									break;
+								}
+
+								case Style::VerticalAlign::VERTICAL_ALIGN_JUSTIFY:
+								{
+									pXmlWriter->SetAttribute("vertical", "justify");
+									break;
+								}
+
+								case Style::VerticalAlign::VERTICAL_ALIGN_DISTRIBUTED:
+								{
+									pXmlWriter->SetAttribute("vertical", "distributed");
+									break;
+								}
+
+								default:
+								{
+									break;
+								}
+
+							}
+						}
+						if (pStyle->GetWrapText())
+							pXmlWriter->SetAttribute("wrapText", "1");
+						pXmlWriter->EndElement();
+					}
+					pXmlWriter->EndElement();
+				}
+				pXmlWriter->EndElement();
+			}
+			pXmlWriter->EndElement();
+			Blob* pBlob = new Blob(true);
+			pXmlWriter->GetOutput()->BlobWriteUtf8(pBlob->GetBlobView(), false);
+			NumberDuck::Blob* __224849172 = pBlob;
+			pBlob = 0;
+			if (pXmlWriter) delete pXmlWriter;
+			if (sTemp) delete sTemp;
+			if (pFormatVector) delete pFormatVector;
+			if (pFormatIndexVector) delete pFormatIndexVector;
+			if (pFontVector) delete pFontVector;
+			if (pFillVector) delete pFillVector;
+			if (pBorderVector) delete pBorderVector;
+			if (pBlob) delete pBlob;
+			return pZipWriter->AddFileFromBlob("xl/styles.xml", __224849172);
+		}
+
+		bool XlsxSharedString::Load(Workbook* pWorkbook, Zip* pZip)
+		{
+			XmlFile* pXmlFile = new XmlFile();
+			Blob* pXmlBlob = new Blob(true);
+			BlobView* pXmlBlobView = pXmlBlob->GetBlobView();
+			XmlNode* pSstNode = 0;
+			XmlNode* pSiNode = 0;
+			if (pZip->ExtractFileByName("xl/sharedStrings.xml", pXmlBlobView))
+			{
+				pXmlBlobView->SetOffset(0);
+				if (!pXmlFile->Load(pXmlBlobView))
+				{
+					if (pXmlFile) delete pXmlFile;
+					if (pXmlBlob) delete pXmlBlob;
+					return false;
+				}
+				pSstNode = pXmlFile->GetFirstChildElement("sst");
+				if (pSstNode == 0)
+				{
+					if (pXmlFile) delete pXmlFile;
+					if (pXmlBlob) delete pXmlBlob;
+					return false;
+				}
+				pSiNode = pSstNode->GetFirstChildElement("si");
+				while (pSiNode != 0)
+				{
+					XmlNode* pTNode = 0;
+					pTNode = pSiNode->GetFirstChildElement("t");
+					if (pTNode == 0)
+					{
+						if (pXmlFile) delete pXmlFile;
+						if (pXmlBlob) delete pXmlBlob;
+						return false;
+					}
+					const char* szTemp = pTNode->GetText();
+					pWorkbook->m_pImpl->m_pWorkbookGlobals->PushSharedString(szTemp);
+					pSiNode = pSiNode->GetNextSiblingElement("si");
+				}
+			}
+			if (pXmlFile) delete pXmlFile;
+			if (pXmlBlob) delete pXmlBlob;
+			return true;
+		}
+
+		bool XlsxSharedString::Save(Workbook* pWorkbook, ZipWriter* pZipWriter)
+		{
+			XmlWriter* pXmlWriter = new XmlWriter(false);
+			int nStringCount = pWorkbook->m_pImpl->m_pWorkbookGlobals->m_pSharedStringContainer->GetSize();
+			InternalString* sTemp = new InternalString("");
+			sTemp->AppendInt(nStringCount);
+			pXmlWriter->StartElement("sst");
+			pXmlWriter->SetAttribute("xmlns", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+			pXmlWriter->SetAttribute("count", sTemp->GetExternalString());
+			pXmlWriter->SetAttribute("uniqueCount", sTemp->GetExternalString());
+			for (int i = 0; i < nStringCount; i++)
+			{
+				const char* szString = pWorkbook->m_pImpl->m_pWorkbookGlobals->GetSharedStringByIndex((unsigned int)(i));
+				pXmlWriter->StartElement("si");
+				pXmlWriter->StartElement("t");
+				pXmlWriter->SetText(szString);
+				pXmlWriter->EndElement();
+				pXmlWriter->EndElement();
+			}
+			pXmlWriter->EndElement();
+			Blob* pBlob = new Blob(true);
+			pXmlWriter->GetOutput()->BlobWriteUtf8(pBlob->GetBlobView(), false);
+			NumberDuck::Blob* __273759330 = pBlob;
+			pBlob = 0;
+			if (pXmlWriter) delete pXmlWriter;
+			if (sTemp) delete sTemp;
+			if (pBlob) delete pBlob;
+			return pZipWriter->AddFileFromBlob("xl/sharedStrings.xml", __273759330);
+		}
+
+		XlsxRelationship_Relationship::XlsxRelationship_Relationship(const char* sId, const char* sType, const char* sTarget)
+		{
+			m_sId = 0;
+			m_sType = 0;
+			m_sTarget = 0;
+			m_sId = new InternalString(sId);
+			m_sType = new InternalString(sType);
+			m_sTarget = new InternalString(sTarget);
+		}
+
+		XlsxRelationship_Relationship::~XlsxRelationship_Relationship()
+		{
+			if (m_sId) delete m_sId;
+			if (m_sType) delete m_sType;
+			if (m_sTarget) delete m_sTarget;
+		}
+
+		XlsxRelationship_File::XlsxRelationship_File(const char* sFilePath, XmlNode* pRelationshipsNode)
+		{
+			m_sFilePath = 0;
+			m_pRelationships = 0;
+			m_sFilePath = new InternalString(sFilePath);
+			m_pRelationships = new OwnedVector<XlsxRelationship_Relationship*>();
+			if (pRelationshipsNode != 0)
+			{
+				XmlNode* pRelNode = pRelationshipsNode->GetFirstChildElement("Relationship");
+				while (pRelNode != 0)
+				{
+					const char* sId = pRelNode->GetAttribute("Id");
+					const char* sType = pRelNode->GetAttribute("Type");
+					const char* sTarget = pRelNode->GetAttribute("Target");
+					XlsxRelationship_Relationship* pRel = new XlsxRelationship_Relationship(sId, sType, sTarget);
+					NumberDuck::Secret::XlsxRelationship_Relationship* __1030581626 = pRel;
+					pRel = 0;
+					m_pRelationships->PushBack(__1030581626);
+					pRelNode = pRelNode->GetNextSiblingElement("Relationship");
+					if (pRel) delete pRel;
+				}
+			}
+		}
+
+		XlsxRelationship_Relationship* XlsxRelationship_File::FindById(const char* sId)
+		{
+			for (int i = 0; i < m_pRelationships->GetSize(); i++)
+			{
+				XlsxRelationship_Relationship* pRel = m_pRelationships->Get(i);
+				if (pRel->m_sId->IsEqual(sId))
+					return pRel;
+			}
+			return 0;
+		}
+
+		void XlsxRelationship_File::AddRelationship(const char* sId, const char* sType, const char* sTarget)
+		{
+			XlsxRelationship_Relationship* pRel = new XlsxRelationship_Relationship(sId, sType, sTarget);
+			NumberDuck::Secret::XlsxRelationship_Relationship* __3379380013 = pRel;
+			pRel = 0;
+			m_pRelationships->PushBack(__3379380013);
+			if (pRel) delete pRel;
+		}
+
+		void XlsxRelationship_File::WriteToZip(ZipWriter* pZipWriter)
+		{
+			XmlWriter* pXmlWriter = new XmlWriter(false);
+			pXmlWriter->StartElement("Relationships");
+			pXmlWriter->SetAttribute("xmlns", "http://schemas.openxmlformats.org/package/2006/relationships");
+			for (int i = 0; i < m_pRelationships->GetSize(); i++)
+			{
+				XlsxRelationship_Relationship* pRel = m_pRelationships->Get(i);
+				pXmlWriter->StartElement("Relationship");
+				pXmlWriter->SetAttribute("Id", pRel->m_sId->GetExternalString());
+				pXmlWriter->SetAttribute("Type", pRel->m_sType->GetExternalString());
+				pXmlWriter->SetAttribute("Target", pRel->m_sTarget->GetExternalString());
+				pXmlWriter->EndElement();
+			}
+			pXmlWriter->EndElement();
+			Blob* pBlob = new Blob(true);
+			pXmlWriter->GetOutput()->BlobWriteUtf8(pBlob->GetBlobView(), false);
+			NumberDuck::Blob* __1297131688 = pBlob;
+			pBlob = 0;
+			pZipWriter->AddFileFromBlob(m_sFilePath->GetExternalString(), __1297131688);
+			if (pXmlWriter) delete pXmlWriter;
+			if (pBlob) delete pBlob;
+		}
+
+		XlsxRelationship_File::~XlsxRelationship_File()
+		{
+			if (m_sFilePath) delete m_sFilePath;
+			if (m_pRelationships) delete m_pRelationships;
+		}
+
+		XlsxRelationship::XlsxRelationship()
+		{
+			m_pRelationshipFiles = 0;
+			m_pRelationshipFiles = new OwnedVector<XlsxRelationship_File*>();
+		}
+
+		bool XlsxRelationship::Parse(Zip* pZip)
+		{
+			int nNumFiles = pZip->GetNumFile();
+			InternalString* sFileName = new InternalString("");
+			for (int i = 0; i < nNumFiles; i++)
+			{
+				ZipFileInfo* pZipFileInfo = pZip->GetFileInfo(i);
+				sFileName->Set(pZipFileInfo->GetFileName());
+				if (sFileName->GetLength() >= 5 && sFileName->EndsWith(".rels"))
+				{
+					Blob* pXmlBlob = new Blob(true);
+					BlobView* pXmlBlobView = pXmlBlob->GetBlobView();
+					if (pZip->ExtractFileByIndex(i, pXmlBlobView))
+					{
+						XmlFile* pXmlFile = new XmlFile();
+						pXmlBlobView->SetOffset(0);
+						if (pXmlFile->Load(pXmlBlobView))
+						{
+							XmlNode* pRelationshipsNode = pXmlFile->GetFirstChildElement("Relationships");
+							if (pRelationshipsNode != 0)
+							{
+								XlsxRelationship_File* pRelFile = new XlsxRelationship_File(sFileName->GetExternalString(), pRelationshipsNode);
+								NumberDuck::Secret::XlsxRelationship_File* __2050213011 = pRelFile;
+								pRelFile = 0;
+								m_pRelationshipFiles->PushBack(__2050213011);
+								if (pRelFile) delete pRelFile;
+							}
+						}
+						if (pXmlFile) delete pXmlFile;
+					}
+					{
+						delete pXmlBlob;
+						pXmlBlob = 0;
+					}
+					if (pXmlBlob) delete pXmlBlob;
+				}
+			}
+			if (sFileName) delete sFileName;
+			return true;
+		}
+
+		XlsxRelationship_File* XlsxRelationship::FindFileByPath(const char* sFilePath)
+		{
+			for (int i = 0; i < m_pRelationshipFiles->GetSize(); i++)
+			{
+				XlsxRelationship_File* pFile = m_pRelationshipFiles->Get(i);
+				if (pFile->m_sFilePath->IsEqual(sFilePath))
+					return pFile;
+			}
+			return 0;
+		}
+
+		void XlsxRelationship::WriteAllToZip(ZipWriter* pZipWriter)
+		{
+			for (int i = 0; i < m_pRelationshipFiles->GetSize(); i++)
+			{
+				XlsxRelationship_File* pFile = m_pRelationshipFiles->Get(i);
+				pFile->WriteToZip(pZipWriter);
+			}
+		}
+
+		XlsxRelationship::~XlsxRelationship()
+		{
+			if (m_pRelationshipFiles) delete m_pRelationshipFiles;
+		}
+
+		XlsxDrawing_PicturePosition::XlsxDrawing_PicturePosition(int nCol, int nRow, int nColOff, int nRowOff)
+		{
+			m_nCol = 0;
+			m_nRow = 0;
+			m_nColOff = 0;
+			m_nRowOff = 0;
+			m_nCol = nCol;
+			m_nRow = nRow;
+			m_nColOff = nColOff;
+			m_nRowOff = nRowOff;
+		}
+
+		XlsxDrawing_PictureAnchor::XlsxDrawing_PictureAnchor(XlsxDrawing_PicturePosition* pFrom, XlsxDrawing_PicturePosition* pTo, const char* sImageRelId, int nPictureId, Picture* pPicture)
+		{
+			m_pFrom = 0;
+			m_pTo = 0;
+			m_sImageRelId = 0;
+			m_nPictureId = 0;
+			m_pPicture = 0;
+			m_pFrom = pFrom;
+			m_pTo = pTo;
+			m_sImageRelId = new InternalString(sImageRelId);
+			m_nPictureId = nPictureId;
+			m_pPicture = pPicture;
+		}
+
+		XlsxDrawing_PictureAnchor::~XlsxDrawing_PictureAnchor()
+		{
+			if (m_pFrom) delete m_pFrom;
+			if (m_pTo) delete m_pTo;
+			if (m_sImageRelId) delete m_sImageRelId;
+		}
+
+		XlsxDrawing::XlsxDrawing()
+		{
+			m_pPictureAnchors = 0;
+			m_pPictureAnchors = new OwnedVector<XlsxDrawing_PictureAnchor*>();
+		}
+
+		bool XlsxDrawing::ParseFromBlob(Blob* pDrawingBlob)
+		{
+			XmlFile* pDrawingXml = new XmlFile();
+			if (!pDrawingXml->Load(pDrawingBlob->GetBlobView()))
+			{
+				if (pDrawingXml) delete pDrawingXml;
+				return false;
+			}
+			XmlNode* pRootNode = pDrawingXml->GetFirstChildElement("xdr:wsDr");
+			if (pRootNode == 0)
+			{
+				if (pDrawingXml) delete pDrawingXml;
+				return false;
+			}
+			XmlNode* pAnchorNode = pRootNode->GetFirstChildElement("xdr:twoCellAnchor");
+			while (pAnchorNode != 0)
+			{
+				XlsxDrawing_PictureAnchor* pAnchor = ParsePictureAnchor(pAnchorNode);
+				if (pAnchor != 0)
+				{
+					NumberDuck::Secret::XlsxDrawing_PictureAnchor* __1391587909 = pAnchor;
+					pAnchor = 0;
+					m_pPictureAnchors->PushBack(__1391587909);
+				}
+				pAnchorNode = pAnchorNode->GetNextSiblingElement("xdr:twoCellAnchor");
+				if (pAnchor) delete pAnchor;
+			}
+			pAnchorNode = pRootNode->GetFirstChildElement("xdr:oneCellAnchor");
+			while (pAnchorNode != 0)
+			{
+				XlsxDrawing_PictureAnchor* pAnchor = ParsePictureAnchor(pAnchorNode);
+				if (pAnchor != 0)
+				{
+					NumberDuck::Secret::XlsxDrawing_PictureAnchor* __4143045526 = pAnchor;
+					pAnchor = 0;
+					m_pPictureAnchors->PushBack(__4143045526);
+				}
+				pAnchorNode = pAnchorNode->GetNextSiblingElement("xdr:oneCellAnchor");
+				if (pAnchor) delete pAnchor;
+			}
+			if (pDrawingXml) delete pDrawingXml;
+			return true;
+		}
+
+		XlsxDrawing_PictureAnchor* XlsxDrawing::ParsePictureAnchor(XmlNode* pAnchorNode)
+		{
+			XmlNode* pFromNode = pAnchorNode->GetFirstChildElement("xdr:from");
+			if (pFromNode == 0)
+				return 0;
+			XlsxDrawing_PicturePosition* pFrom = ParsePicturePosition(pFromNode);
+			if (pFrom == 0)
+			{
+				if (pFrom) delete pFrom;
+				return 0;
+			}
+			XlsxDrawing_PicturePosition* pTo = 0;
+			XmlNode* pToNode = pAnchorNode->GetFirstChildElement("xdr:to");
+			if (pToNode != 0)
+			{
+				pTo = ParsePicturePosition(pToNode);
+				if (pTo == 0)
+				{
+					if (pFrom) delete pFrom;
+					if (pTo) delete pTo;
+					return 0;
+				}
+			}
+			XmlNode* pPicNode = pAnchorNode->GetFirstChildElement("xdr:pic");
+			if (pPicNode == 0)
+			{
+				if (pFrom) delete pFrom;
+				if (pTo) delete pTo;
+				return 0;
+			}
+			int nPictureId = 0;
+			XmlNode* pCnvPrNode = pPicNode->GetFirstChildElement("xdr:nvPicPr");
+			if (pCnvPrNode != 0)
+			{
+				XmlNode* pCnvPrChild = pCnvPrNode->GetFirstChildElement("xdr:cNvPr");
+				if (pCnvPrChild != 0)
+				{
+					const char* sId = pCnvPrChild->GetAttribute("id");
+					if (sId != 0)
+						nPictureId = ExternalString::atoi(sId);
+				}
+			}
+			const char* sImageRelId = 0;
+			XmlNode* pBlipFillNode = pPicNode->GetFirstChildElement("xdr:blipFill");
+			if (pBlipFillNode != 0)
+			{
+				XmlNode* pBlipNode = pBlipFillNode->GetFirstChildElement("a:blip");
+				if (pBlipNode != 0)
+				{
+					sImageRelId = pBlipNode->GetAttribute("r:embed");
+				}
+			}
+			if (sImageRelId == 0)
+			{
+				if (pFrom) delete pFrom;
+				if (pTo) delete pTo;
+				return 0;
+			}
+			NumberDuck::Secret::XlsxDrawing_PicturePosition* __1717127852 = pFrom;
+			pFrom = 0;
+			NumberDuck::Secret::XlsxDrawing_PicturePosition* __2096984030 = pTo;
+			pTo = 0;
+			if (pFrom) delete pFrom;
+			if (pTo) delete pTo;
+			return new XlsxDrawing_PictureAnchor(__1717127852, __2096984030, sImageRelId, nPictureId, 0);
+		}
+
+		XlsxDrawing_PicturePosition* XlsxDrawing::ParsePicturePosition(XmlNode* pPosNode)
+		{
+			XmlNode* pColNode = pPosNode->GetFirstChildElement("xdr:col");
+			XmlNode* pRowNode = pPosNode->GetFirstChildElement("xdr:row");
+			XmlNode* pColOffNode = pPosNode->GetFirstChildElement("xdr:colOff");
+			XmlNode* pRowOffNode = pPosNode->GetFirstChildElement("xdr:rowOff");
+			if (pColNode == 0 || pRowNode == 0)
+				return 0;
+			const char* sCol = pColNode->GetText();
+			const char* sRow = pRowNode->GetText();
+			const char* sColOff = pColOffNode != 0 ? pColOffNode->GetText() : "0";
+			const char* sRowOff = pRowOffNode != 0 ? pRowOffNode->GetText() : "0";
+			if (sCol == 0 || sRow == 0)
+				return 0;
+			int nCol = ExternalString::atoi(sCol);
+			int nRow = ExternalString::atoi(sRow);
+			int nColOff = ExternalString::atoi(sColOff);
+			int nRowOff = ExternalString::atoi(sRowOff);
+			return new XlsxDrawing_PicturePosition(nCol, nRow, nColOff, nRowOff);
+		}
+
+		int XlsxDrawing::GetNumPictureAnchors()
+		{
+			return m_pPictureAnchors->GetSize();
+		}
+
+		XlsxDrawing_PictureAnchor* XlsxDrawing::GetPictureAnchor(int nIndex)
+		{
+			if (nIndex >= 0 && nIndex < m_pPictureAnchors->GetSize())
+				return m_pPictureAnchors->Get(nIndex);
+			return 0;
+		}
+
+		void XlsxDrawing::Write(ZipWriter* pZipWriter, int nWorksheetIndex)
+		{
+			InternalString* sTemp = new InternalString("");
+			XmlWriter* pXmlWriter = new XmlWriter(false);
+			pXmlWriter->StartElement("xdr:wsDr");
+			pXmlWriter->SetAttribute("xmlns:xdr", "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing");
+			pXmlWriter->SetAttribute("xmlns:a", "http://schemas.openxmlformats.org/drawingml/2006/main");
+			int nNumAnchors = m_pPictureAnchors->GetSize();
+			for (int i = 0; i < nNumAnchors; i++)
+			{
+				XlsxDrawing_PictureAnchor* pAnchor = m_pPictureAnchors->Get(i);
+				if (pAnchor == 0)
+					continue;
+				const char* anchorTag = pAnchor->m_pTo != 0 ? "xdr:twoCellAnchor" : "xdr:oneCellAnchor";
+				pXmlWriter->StartElement(anchorTag);
+				if (pAnchor->m_pTo != 0)
+					pXmlWriter->SetAttribute("editAs", "oneCell");
+				pXmlWriter->StartElement("xdr:from");
+				pXmlWriter->StartElement("xdr:col");
+				sTemp->Set("");
+				sTemp->AppendInt(pAnchor->m_pFrom->m_nCol);
+				pXmlWriter->SetText(sTemp->GetExternalString());
+				pXmlWriter->EndElement();
+				pXmlWriter->StartElement("xdr:colOff");
+				sTemp->Set("");
+				sTemp->AppendInt(pAnchor->m_pFrom->m_nColOff);
+				pXmlWriter->SetText(sTemp->GetExternalString());
+				pXmlWriter->EndElement();
+				pXmlWriter->StartElement("xdr:row");
+				sTemp->Set("");
+				sTemp->AppendInt(pAnchor->m_pFrom->m_nRow);
+				pXmlWriter->SetText(sTemp->GetExternalString());
+				pXmlWriter->EndElement();
+				pXmlWriter->StartElement("xdr:rowOff");
+				sTemp->Set("");
+				sTemp->AppendInt(pAnchor->m_pFrom->m_nRowOff);
+				pXmlWriter->SetText(sTemp->GetExternalString());
+				pXmlWriter->EndElement();
+				pXmlWriter->EndElement();
+				if (pAnchor->m_pTo == 0)
+				{
+					Assert::Plz(pAnchor->m_pPicture != 0);
+					pXmlWriter->StartElement("xdr:ext");
+					sTemp->Set("");
+					sTemp->AppendUint32(pAnchor->m_pPicture->GetWidth() * 9525);
+					pXmlWriter->SetAttribute("cx", sTemp->GetExternalString());
+					sTemp->Set("");
+					sTemp->AppendUint32(pAnchor->m_pPicture->GetHeight() * 9525);
+					pXmlWriter->SetAttribute("cy", sTemp->GetExternalString());
+					pXmlWriter->EndElement();
+				}
+				if (pAnchor->m_pTo != 0)
+				{
+					pXmlWriter->StartElement("xdr:to");
+					pXmlWriter->StartElement("xdr:col");
+					sTemp->Set("");
+					sTemp->AppendInt(pAnchor->m_pTo->m_nCol);
+					pXmlWriter->SetText(sTemp->GetExternalString());
+					pXmlWriter->EndElement();
+					pXmlWriter->StartElement("xdr:colOff");
+					sTemp->Set("");
+					sTemp->AppendInt(pAnchor->m_pTo->m_nColOff);
+					pXmlWriter->SetText(sTemp->GetExternalString());
+					pXmlWriter->EndElement();
+					pXmlWriter->StartElement("xdr:row");
+					sTemp->Set("");
+					sTemp->AppendInt(pAnchor->m_pTo->m_nRow);
+					pXmlWriter->SetText(sTemp->GetExternalString());
+					pXmlWriter->EndElement();
+					pXmlWriter->StartElement("xdr:rowOff");
+					sTemp->Set("");
+					sTemp->AppendInt(pAnchor->m_pTo->m_nRowOff);
+					pXmlWriter->SetText(sTemp->GetExternalString());
+					pXmlWriter->EndElement();
+					pXmlWriter->EndElement();
+				}
+				pXmlWriter->StartElement("xdr:pic");
+				pXmlWriter->StartElement("xdr:nvPicPr");
+				pXmlWriter->StartElement("xdr:cNvPr");
+				sTemp->Set("");
+				sTemp->AppendInt(i + 2);
+				pXmlWriter->SetAttribute("id", sTemp->GetExternalString());
+				sTemp->Set("Picture ");
+				sTemp->AppendInt(i + 1);
+				pXmlWriter->SetAttribute("name", sTemp->GetExternalString());
+				pXmlWriter->EndElement();
+				pXmlWriter->StartElement("xdr:cNvPicPr");
+				pXmlWriter->EndElement();
+				pXmlWriter->EndElement();
+				pXmlWriter->StartElement("xdr:blipFill");
+				pXmlWriter->StartElement("a:blip");
+				pXmlWriter->SetAttribute("xmlns:r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+				pXmlWriter->SetAttribute("r:embed", pAnchor->m_sImageRelId->GetExternalString());
+				pXmlWriter->EndElement();
+				pXmlWriter->StartElement("a:stretch");
+				pXmlWriter->StartElement("a:fillRect");
+				pXmlWriter->EndElement();
+				pXmlWriter->EndElement();
+				pXmlWriter->EndElement();
+				pXmlWriter->StartElement("xdr:spPr");
+				pXmlWriter->StartElement("a:xfrm");
+				pXmlWriter->EndElement();
+				pXmlWriter->StartElement("a:prstGeom");
+				pXmlWriter->SetAttribute("prst", "rect");
+				pXmlWriter->StartElement("a:avLst");
+				pXmlWriter->EndElement();
+				pXmlWriter->EndElement();
+				pXmlWriter->EndElement();
+				pXmlWriter->EndElement();
+				pXmlWriter->StartElement("xdr:clientData");
+				pXmlWriter->EndElement();
+				pXmlWriter->EndElement();
+			}
+			pXmlWriter->EndElement();
+			Blob* pBlob = new Blob(true);
+			pXmlWriter->GetOutput()->BlobWriteUtf8(pBlob->GetBlobView(), false);
+			sTemp->Set("xl/drawings/drawing");
+			sTemp->AppendInt(nWorksheetIndex + 1);
+			sTemp->AppendString(".xml");
+			NumberDuck::Blob* __197626795 = pBlob;
+			pBlob = 0;
+			pZipWriter->AddFileFromBlob(sTemp->GetExternalString(), __197626795);
+			if (sTemp) delete sTemp;
+			if (pXmlWriter) delete pXmlWriter;
+			if (pBlob) delete pBlob;
+		}
+
+		XlsxDrawing::~XlsxDrawing()
+		{
+			if (m_pPictureAnchors) delete m_pPictureAnchors;
 		}
 
 		ColumnInfo::ColumnInfo()
@@ -52316,6 +53488,9 @@ namespace NumberDuck
 			m_sUrl = 0;
 			m_pBlob = 0;
 			m_eFormat = Picture::Format::PNG;
+			m_nGlobalImageIndex = 0;
+			m_sXlsxMediaPath = 0;
+			m_sXlsxDrawingRelId = 0;
 			m_nX = 0;
 			m_nY = 0;
 			m_nSubX = 0;
@@ -52323,18 +53498,18 @@ namespace NumberDuck
 			m_nWidth = 200;
 			m_nHeight = 100;
 			m_sUrl = new InternalString("");
-			BlobView* pBlobView = pBlob->GetBlobView();
-			pBlobView->SetOffset(0);
-			m_pBlob = new Blob(false);
-			m_pBlob->Resize(pBlob->GetSize(), false);
-			m_pBlob->GetBlobView()->Pack(pBlobView, pBlob->GetSize());
+			m_pBlob = pBlob->Clone();
 			m_eFormat = eFormat;
+			m_sXlsxMediaPath = new InternalString("");
+			m_sXlsxDrawingRelId = new InternalString("");
 		}
 
 		PictureImplementation::~PictureImplementation()
 		{
 			if (m_sUrl) delete m_sUrl;
 			if (m_pBlob) delete m_pBlob;
+			if (m_sXlsxMediaPath) delete m_sXlsxMediaPath;
+			if (m_sXlsxDrawingRelId) delete m_sXlsxDrawingRelId;
 		}
 
 		MergedCellImplementation::MergedCellImplementation()
@@ -52723,6 +53898,203 @@ namespace NumberDuck
 			if (m_pValue) delete m_pValue;
 		}
 
-																					}
+																						XmlWriter::XmlWriter(bool bCompact)
+		{
+			m_sOutput = 0;
+			m_nIndentLevel = 0;
+			m_bCompactMode = false;
+			m_bElementOpen = false;
+			m_bElementHasContent = false;
+			m_sElementStack = 0;
+			m_sOutput = new InternalString("");
+			m_nIndentLevel = 0;
+			m_bCompactMode = bCompact;
+			m_bElementOpen = false;
+			m_bElementHasContent = false;
+			m_sElementStack = new OwnedVector<InternalString*>();
+		}
+
+		void XmlWriter::StartElement(const char* sName)
+		{
+			Assert::Plz(sName != 0);
+			Assert::Plz(!ExternalString::Equal(sName, ""));
+			if (m_bElementOpen)
+			{
+				m_sOutput->AppendString(">");
+				m_bElementOpen = false;
+			}
+			if (!m_bCompactMode && m_nIndentLevel > 0)
+			{
+				m_sOutput->AppendString("\n");
+				WriteIndent();
+			}
+			m_sOutput->AppendString("<");
+			m_sOutput->AppendString(sName);
+			m_bElementOpen = true;
+			m_bElementHasContent = false;
+			m_nIndentLevel++;
+			m_sElementStack->PushBack(new InternalString(sName));
+		}
+
+		void XmlWriter::EndElement()
+		{
+			Assert::Plz(m_nIndentLevel > 0);
+			Assert::Plz(m_sElementStack->GetSize() > 0);
+			m_nIndentLevel--;
+			if (m_bElementOpen)
+			{
+				m_sOutput->AppendString(" />");
+				m_bElementOpen = false;
+				m_sElementStack->PopBack();
+			}
+			else
+			{
+				if (!m_bCompactMode && !m_bElementHasContent)
+				{
+					m_sOutput->AppendString("\n");
+					WriteIndent();
+				}
+				InternalString* sElementName = m_sElementStack->PopBack();
+				m_sOutput->AppendString("</");
+				m_sOutput->AppendString(sElementName->GetExternalString());
+				m_sOutput->AppendString(">");
+				if (sElementName) delete sElementName;
+			}
+			m_bElementHasContent = false;
+		}
+
+		void XmlWriter::SetAttribute(const char* sName, const char* sValue)
+		{
+			Assert::Plz(sName != 0);
+			Assert::Plz(!ExternalString::Equal(sName, ""));
+			Assert::Plz(m_bElementOpen);
+			Assert::Plz(sValue != 0);
+			m_sOutput->AppendString(" ");
+			m_sOutput->AppendString(sName);
+			m_sOutput->AppendString("=\"");
+			WriteEscapedAttribute(sValue);
+			m_sOutput->AppendString("\"");
+		}
+
+		void XmlWriter::SetText(const char* sText)
+		{
+			Assert::Plz(sText != 0);
+			Assert::Plz(!ExternalString::Equal(sText, ""));
+			Assert::Plz(!m_bElementHasContent);
+			if (m_bElementOpen)
+			{
+				m_sOutput->AppendString(">");
+				m_bElementOpen = false;
+			}
+			m_bElementHasContent = true;
+			WriteEscapedText(sText);
+		}
+
+		InternalString* XmlWriter::GetOutput()
+		{
+			return m_sOutput;
+		}
+
+		void XmlWriter::WriteIndent()
+		{
+			for (int i = 0; i < m_nIndentLevel; i++)
+			{
+				m_sOutput->AppendString("    ");
+			}
+		}
+
+		void XmlWriter::WriteEscapedText(const char* sText)
+		{
+			InternalString* sTemp = new InternalString(sText);
+			for (int i = 0; i < sTemp->GetLength(); i++)
+			{
+				unsigned short c = sTemp->GetChar(i);
+				switch (c)
+				{
+					case '<':
+					{
+						m_sOutput->AppendString("&lt;");
+						break;
+					}
+
+					case '>':
+					{
+						m_sOutput->AppendString("&gt;");
+						break;
+					}
+
+					case '&':
+					{
+						m_sOutput->AppendString("&amp;");
+						break;
+					}
+
+					default:
+					{
+						m_sOutput->AppendChar(c);
+						break;
+					}
+
+				}
+			}
+			if (sTemp) delete sTemp;
+		}
+
+		void XmlWriter::WriteEscapedAttribute(const char* sValue)
+		{
+			InternalString* sTemp = new InternalString(sValue);
+			for (int i = 0; i < sTemp->GetLength(); i++)
+			{
+				unsigned short c = sTemp->GetChar(i);
+				switch (c)
+				{
+					case '<':
+					{
+						m_sOutput->AppendString("&lt;");
+						break;
+					}
+
+					case '>':
+					{
+						m_sOutput->AppendString("&gt;");
+						break;
+					}
+
+					case '&':
+					{
+						m_sOutput->AppendString("&amp;");
+						break;
+					}
+
+					case '"':
+					{
+						m_sOutput->AppendString("&quot;");
+						break;
+					}
+
+					case '\'':
+					{
+						m_sOutput->AppendString("&apos;");
+						break;
+					}
+
+					default:
+					{
+						m_sOutput->AppendChar(c);
+						break;
+					}
+
+				}
+			}
+			if (sTemp) delete sTemp;
+		}
+
+		XmlWriter::~XmlWriter()
+		{
+			if (m_sOutput) delete m_sOutput;
+			if (m_sElementStack) delete m_sElementStack;
+		}
+
+	}
 }
 
