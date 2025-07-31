@@ -1,5 +1,5 @@
 # Number Duck
-v3.2.0 [J233]
+v3.2.0 [J237]
 
 Copyright (C) 2012-2025, File Scribe
 
@@ -9,6 +9,17 @@ https://numberduck.com
 Number Duck is a programming library for developers to read and write Microsoft Excel compatible spreadsheets from a variety of languages.
 
 See NumberDuck.html for API details, or check the example folders.
+
+## 🫶🏻 Compatability
+NumberDuck has automated testing to maintain that every feature can be written and read from XLS files. The current priority is to extend that support to XLSX files.
+
+| Feature | XLSX Support |
+| --- | --- |
+| Font Styles | ✅ |
+| Pictures | ✅ |
+| Themes / Fill Patterns | ❌ |
+| Charts | ❌ |
+| Formulas | ❌ |
 
 ## 🚧 Installation
 There are currently three ways to build Number Duck.
@@ -43,7 +54,7 @@ CPMAddPackage("gh:NumberDuck/NumberDuck-CPlusPlus@3.2.0")
 Here is a simple example of writing to a spreadsheet, and then reading it back in.
 
 ```cpp
-#include "../NumberDuck.hpp"
+#include "../../NumberDuck.hpp"
 
 #include <stdio.h>
 

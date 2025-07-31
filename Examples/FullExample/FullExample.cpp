@@ -1,4 +1,4 @@
-#include "../NumberDuck.hpp"
+#include "../../NumberDuck.hpp"
 
 #include <stdio.h>
 #include <string>
